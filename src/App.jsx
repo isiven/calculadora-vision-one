@@ -101,7 +101,26 @@ function ProductPicker({ onPick, onClose, triggerRef, isMobile }) {
     const h = e => {
       if (popRef.current && !popRef.current.contains(e.target) && !triggerRef?.current?.contains(e.target)) onClose();
     };
-    const onScroll = () => onClose();
+    // Reposition on scroll instead of closing — so you can scroll inside the dropdown
+    const onScroll = (e) => {
+      // If scroll happens INSIDE the dropdown, ignore (let it scroll normally)
+      if (popRef.current && popRef.current.contains(e.target)) return;
+      // Otherwise, reposition the dropdown to follow its trigger
+      if (triggerRef?.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        // If trigger is off-screen, close the picker
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+          onClose();
+          return;
+        }
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const needed = 360;
+        const top = spaceBelow < needed && rect.top > needed
+          ? rect.top - needed - 4
+          : rect.bottom + 4;
+        setCoords({ top, left: rect.left, width: rect.width });
+      }
+    };
     document.addEventListener("mousedown", h);
     window.addEventListener("scroll", onScroll, true);
     return () => {
@@ -265,8 +284,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   // Desktop table-row layout
   return (
     <div style={{
-      display:"grid", gridTemplateColumns:"34px 1fr 135px 135px 72px 110px 60px",
-      alignItems:"center", gap:8, padding:"10px 14px",
+      display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px",
+      alignItems:"center", gap:10, padding:"10px 14px",
       background: active ? "#FAFCFF" : C.surface,
       borderBottom:`1px solid ${C.border}`, position:"relative"
     }}>
@@ -300,11 +319,11 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 
       <input type="date" value={line.startDate || ""} onChange={e=>onUpdate({...line, startDate:e.target.value})}
         title="Fecha de inicio"
-        style={{ ...mono, fontSize:11, color:C.text2, border:`1px solid ${C.border}`, borderRadius:5, padding:"5px 7px", background:"transparent", width:"100%" }} />
+        style={{ ...mono, fontSize:12, color:C.text2, border:`1px solid ${C.border}`, borderRadius:6, padding:"7px 10px", background:"transparent", width:"100%", boxSizing:"border-box" }} />
 
       <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
         title="Fecha de vencimiento"
-        style={{ ...mono, fontSize:11, color:C.text2, border:`1px solid ${isProrated?C.amber:C.border}`, borderRadius:5, padding:"5px 7px", background:"transparent", width:"100%" }} />
+        style={{ ...mono, fontSize:12, color:C.text2, border:`1px solid ${isProrated?C.amber:C.border}`, borderRadius:6, padding:"7px 10px", background:"transparent", width:"100%", boxSizing:"border-box" }} />
 
       <input type="number" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
         onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
@@ -1034,7 +1053,7 @@ export default function App() {
             <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 135px 135px 72px 110px 60px", gap:8, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px", gap:10, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
             {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
               <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}
