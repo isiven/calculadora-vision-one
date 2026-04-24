@@ -265,7 +265,7 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   // Desktop table-row layout
   return (
     <div style={{
-      display:"grid", gridTemplateColumns:"34px 1fr 110px 110px 72px 110px 60px",
+      display:"grid", gridTemplateColumns:"34px 1fr 135px 135px 72px 110px 60px",
       alignItems:"center", gap:8, padding:"10px 14px",
       background: active ? "#FAFCFF" : C.surface,
       borderBottom:`1px solid ${C.border}`, position:"relative"
@@ -696,6 +696,80 @@ export default function App() {
     if (currency === "VES" && !rates.updatedAt) fetchRates();
   }, [currency]);
 
+  // --- Import quote modal state ---
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState(null);
+  const [importResult, setImportResult] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileImport = async (file) => {
+    if (!file) return;
+    setImporting(true);
+    setImportError(null);
+    setImportResult(null);
+    try {
+      // Read file as base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          const b64 = result.split(",")[1]; // strip "data:...;base64,"
+          resolve(b64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const resp = await fetch("/api/parse-quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileBase64: base64,
+          mediaType: file.type || "application/octet-stream",
+          fileName: file.name
+        })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) {
+        throw new Error(data.error || `HTTP ${resp.status}`);
+      }
+      setImportResult(data);
+    } catch (e) {
+      console.error("Import error:", e);
+      setImportError(e.message || "Error desconocido");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const applyImportResult = () => {
+    if (!importResult) return;
+    const newLines = importResult.lines
+      .filter(l => l.prodId && l.quantity > 0) // only mappable lines with qty
+      .map((l, i) => ({
+        rowId: rc + i,
+        prodId: l.prodId,
+        qty: l.quantity,
+        startDate: importResult.startDate || defaultDates().startDate,
+        date: importResult.endDate || defaultDates().date
+      }));
+    if (newLines.length === 0) {
+      setImportError("No se encontraron productos reconocidos en el archivo");
+      return;
+    }
+    setRc(c => c + newLines.length);
+    setLines(newLines);
+    if (importResult.clientName) setClientName(importResult.clientName);
+    if (importResult.soportePlatinum?.present) {
+      setSoporteSale(importResult.soportePlatinum.price || 0);
+      setSoporteDate(importResult.endDate || "");
+    }
+    setImportOpen(false);
+    setImportResult(null);
+  };
+
   const activeRate = rateSource === "manual" ? manualRate : (rates[rateSource] || 0);
   const vesRate = currency === "VES" ? activeRate : 1;
   const toView = usd => currency === "VES" ? usd * vesRate : usd;
@@ -873,6 +947,9 @@ export default function App() {
             </div>
             <input type="text" placeholder="Nombre del cliente (opcional)" value={clientName} onChange={e=>setClientName(e.target.value)}
               style={{ fontSize:12, padding:"7px 12px", border:`1px solid ${C.border}`, borderRadius:6, background:C.surface, color:C.text, width:200, outline:"none" }} />
+            <button onClick={() => setImportOpen(true)} style={{ fontSize:12, color:"#fff", background:C.blue, border:"none", borderRadius:6, padding:"7px 12px", cursor:"pointer", fontWeight:600, display:"flex", alignItems:"center", gap:5 }}>
+              ✨ Importar cotización
+            </button>
             <button onClick={clearAll} style={{ fontSize:12, color:C.text2, background:C.surface, border:`1px solid ${C.border}`, borderRadius:6, padding:"6px 12px", cursor:"pointer" }}>Limpiar</button>
           </div>
           )}
@@ -880,7 +957,11 @@ export default function App() {
 
         {/* Mobile: client name input */}
         {isMobile && (
-          <div style={{ marginBottom:12 }}>
+          <div style={{ marginBottom:10, display:"flex", flexDirection:"column", gap:8 }}>
+            <button onClick={() => setImportOpen(true)}
+              style={{ fontSize:14, color:"#fff", background:C.blue, border:"none", borderRadius:9, padding:"12px", cursor:"pointer", fontWeight:600, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              ✨ Importar cotización con IA
+            </button>
             <input type="text" placeholder="Nombre del cliente (opcional)" value={clientName} onChange={e=>setClientName(e.target.value)}
               style={{ fontSize:15, padding:"11px 13px", border:`1px solid ${C.border}`, borderRadius:8, background:C.surface, color:C.text, width:"100%", outline:"none", boxSizing:"border-box" }} />
           </div>
@@ -953,7 +1034,7 @@ export default function App() {
             <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 110px 110px 72px 110px 60px", gap:8, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 135px 135px 72px 110px 60px", gap:8, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
             {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
               <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}
@@ -1107,6 +1188,152 @@ export default function App() {
               <div style={{ fontSize:10, color:C.text3, lineHeight:1.5, textAlign:"center" }}>
                 Nextcom Systems, Inc. · Trend Micro Platinum Partner · Panamá
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IMPORT QUOTE MODAL */}
+      {importOpen && (
+        <div style={{ position:"fixed", inset:0, zIndex:10000, background:"rgba(0,0,0,0.55)", display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile?0:20 }}
+          onClick={() => { if (!importing) { setImportOpen(false); setImportResult(null); setImportError(null); } }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: C.surface, borderRadius: isMobile?"16px 16px 0 0":12,
+            width: isMobile?"100%":"100%", maxWidth: isMobile?"none":620,
+            maxHeight: isMobile?"92vh":"85vh", overflow:"auto",
+            position: isMobile?"fixed":"relative", bottom: isMobile?0:"auto", left:0, right:0,
+            boxShadow:"0 20px 60px rgba(0,0,0,0.25)"
+          }}>
+            {isMobile && <div style={{ width:40, height:4, background:C.border, borderRadius:2, margin:"12px auto 0" }} />}
+            <div style={{ padding:"20px 22px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div>
+                <div style={{ fontSize:17, fontWeight:700, letterSpacing:"-.01em" }}>✨ Importar cotización</div>
+                <div style={{ fontSize:12, color:C.text3, marginTop:3 }}>PDF, Word, Excel, imagen o email. La IA extrae los productos automáticamente.</div>
+              </div>
+              {!importing && (
+                <button onClick={() => { setImportOpen(false); setImportResult(null); setImportError(null); }}
+                  style={{ width:32, height:32, borderRadius:8, border:`1px solid ${C.border}`, background:C.surface, fontSize:14, cursor:"pointer" }}>✕</button>
+              )}
+            </div>
+
+            <div style={{ padding:"20px 22px" }}>
+              {!importResult && !importing && (
+                <>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.blue; e.currentTarget.style.background = C.blueBg; }}
+                    onDragLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.surface; }}
+                    onDrop={e => {
+                      e.preventDefault();
+                      e.currentTarget.style.borderColor = C.border;
+                      e.currentTarget.style.background = C.surface;
+                      const file = e.dataTransfer.files[0];
+                      if (file) handleFileImport(file);
+                    }}
+                    style={{
+                      border:`2px dashed ${C.border}`, borderRadius:10, padding:"36px 20px",
+                      textAlign:"center", cursor:"pointer", background:C.surface,
+                      transition:"all 0.15s"
+                    }}>
+                    <div style={{ fontSize:36, marginBottom:10 }}>📎</div>
+                    <div style={{ fontSize:14, fontWeight:600, color:C.text, marginBottom:4 }}>
+                      {isMobile ? "Toca para seleccionar archivo" : "Arrastra un archivo aquí o haz clic para seleccionar"}
+                    </div>
+                    <div style={{ fontSize:11, color:C.text3 }}>
+                      PDF · JPG · PNG · DOCX · XLSX · TXT (máx. 30 MB)
+                    </div>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx,.xls,.txt,.csv,application/pdf,image/*"
+                    style={{ display:"none" }}
+                    onChange={e => e.target.files[0] && handleFileImport(e.target.files[0])} />
+
+                  {importError && (
+                    <div style={{ marginTop:14, padding:"11px 14px", background:"#FEF2F2", border:`1px solid #FCA5A5`, borderRadius:8, fontSize:12, color:C.red }}>
+                      ⚠ {importError}
+                    </div>
+                  )}
+
+                  <div style={{ marginTop:14, padding:"11px 14px", background:C.panel, borderRadius:8, fontSize:11, color:C.text2, lineHeight:1.5 }}>
+                    <strong>Funciona con:</strong> cotizaciones de Nextcom, Trend Micro, otros partners, emails con listas de productos, fotos de cotizaciones, etc. La IA reconoce SKUs (VORN0034, VONN0309...) y nombres de productos.
+                  </div>
+                </>
+              )}
+
+              {importing && (
+                <div style={{ textAlign:"center", padding:"50px 20px" }}>
+                  <div style={{ fontSize:36, marginBottom:14 }}>🤖</div>
+                  <div style={{ fontSize:15, fontWeight:600, color:C.text, marginBottom:4 }}>Analizando cotización...</div>
+                  <div style={{ fontSize:12, color:C.text3 }}>Claude está leyendo el documento y extrayendo las líneas (puede tardar 5–15 segundos)</div>
+                </div>
+              )}
+
+              {importResult && !importing && (
+                <div>
+                  <div style={{ padding:"12px 14px", background: importResult.confidence === "high" ? C.greenBg : importResult.confidence === "medium" ? C.amberBg : "#FEF2F2", borderRadius:8, marginBottom:14 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color: importResult.confidence === "high" ? C.green : importResult.confidence === "medium" ? C.amber : C.red, marginBottom:2 }}>
+                      {importResult.confidence === "high" ? "✓ Extracción exitosa" : importResult.confidence === "medium" ? "⚠ Revisa los resultados" : "⚠ Confianza baja — verifica manualmente"}
+                    </div>
+                    {importResult.notes && <div style={{ fontSize:11, color:C.text2 }}>{importResult.notes}</div>}
+                  </div>
+
+                  {importResult.clientName && (
+                    <div style={{ fontSize:12, marginBottom:8 }}>
+                      <span style={{ color:C.text3 }}>Cliente:</span> <strong>{importResult.clientName}</strong>
+                      {importResult.quoteNumber && <span style={{ color:C.text3 }}> · Cot. #{importResult.quoteNumber}</span>}
+                      {importResult.isRenewal && <span style={{ marginLeft:6, fontSize:10, background:C.blueBg, color:C.blue, padding:"1px 6px", borderRadius:3, fontWeight:700 }}>RENOVACIÓN</span>}
+                    </div>
+                  )}
+
+                  {(importResult.startDate || importResult.endDate) && (
+                    <div style={{ fontSize:12, color:C.text2, marginBottom:12 }}>
+                      Vigencia: <span style={{ ...mono }}>{importResult.startDate || "—"} → {importResult.endDate || "—"}</span>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>
+                    {importResult.lines.length} líneas detectadas
+                  </div>
+                  <div style={{ border:`1px solid ${C.border}`, borderRadius:8, overflow:"hidden", marginBottom:14, maxHeight:260, overflowY:"auto" }}>
+                    {importResult.lines.map((l, i) => (
+                      <div key={i} style={{ padding:"10px 12px", borderBottom: i < importResult.lines.length - 1 ? `1px solid ${C.border}` : "none", display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, background: l.prodId ? C.surface : C.panel }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:12, fontWeight:500, color: l.prodId ? C.text : C.text3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                            {l.productName}
+                          </div>
+                          <div style={{ fontSize:10, color:C.text3, marginTop:1, ...mono }}>
+                            {l.sku && <span>{l.sku} · </span>}
+                            {l.prodId ? (
+                              <span style={{ color:C.green }}>✓ reconocido</span>
+                            ) : (
+                              <span style={{ color:C.red }}>✗ no mapeado — se omitirá</span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ ...mono, fontSize:13, fontWeight:700, color:C.blue, whiteSpace:"nowrap" }}>
+                          {l.quantity}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {importResult.soportePlatinum?.present && (
+                    <div style={{ fontSize:12, color:C.text2, marginBottom:12, padding:"8px 12px", background:C.panel, borderRadius:6 }}>
+                      + Soporte Platinum: <strong style={{ ...mono }}>${importResult.soportePlatinum.price?.toLocaleString() || 0}</strong>
+                    </div>
+                  )}
+
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button onClick={() => { setImportResult(null); }}
+                      style={{ flex:1, padding:"11px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:500, color:C.text2 }}>
+                      Probar otro archivo
+                    </button>
+                    <button onClick={applyImportResult}
+                      style={{ flex:2, padding:"11px", background:C.blue, color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:700 }}>
+                      Aplicar a la calculadora →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
