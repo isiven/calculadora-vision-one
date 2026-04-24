@@ -341,7 +341,11 @@ const PRINT_CSS = `
 `;
 
 function downloadReport(data) {
-  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName } = data;
+  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency = "USD", rateSource = "bcv", activeRate = 0, vesRate = 1 } = data;
+  const isVES = currency === "VES";
+  const sym = isVES ? "Bs." : "$";
+  const fmtView = usd => `${sym} ${(usd * (isVES ? vesRate : 1)).toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
+  const fmtUSDsm = usd => `$${usd.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
   const mC = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => { const p = CATALOG.find(c => c.id===l.prodId); return { ...l, prod:p, total:l.qty * p.credits }; });
@@ -408,7 +412,7 @@ function downloadReport(data) {
       <div style="display:flex;align-items:center;gap:12px">
         <div style="display:flex;flex-direction:column;gap:4">
           <img src="${TRENDAI_LOGO}" alt="TrendAI" style="height:36px;width:auto" />
-          <div style="font-size:11px;color:#A8A29E">${clientName ? `Cliente: ${clientName} · ` : ""}Análisis de Rentabilidad · Uso Interno</div>
+          <div style="font-size:11px;color:#A8A29E">${clientName ? `Cliente: ${clientName} · ` : ""}Análisis de Rentabilidad · Uso Interno${isVES ? " · 🇻🇪 Venezuela" : " · 🇵🇦 Panamá"}</div>
         </div>
       </div>
       <div style="text-align:right">
@@ -417,6 +421,15 @@ function downloadReport(data) {
         <div style="display:inline-block;margin-top:4px;background:#FEF3C7;color:#B45309;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em">CONFIDENCIAL · USO INTERNO</div>
       </div>
     </div>
+
+    ${isVES ? `
+    <div style="background:#EFF6FF;border:1px solid #C7D9EF;border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:#1E40AF">
+        <strong>Tasa aplicada:</strong> ${rateSource.toUpperCase()} · <span style="font-family:'SF Mono',monospace">Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</span> por USD
+      </div>
+      <div style="font-size:10px;color:#57534E">Rentabilidad calculada siempre en USD · Ingresos mostrados en Bs. para el cliente</div>
+    </div>
+    ` : ""}
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
       ${[
@@ -429,11 +442,11 @@ function downloadReport(data) {
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px">
       ${[
         {l:"Créditos",v:fmt(totalCredits),c:"#1E40AF"},
-        {l:"Ingresos",v:fmtU(totalRevenue),c:"#0C0A09"},
-        {l:"Costo",v:fmtU(totalCost),c:"#57534E"},
-        {l:"Margen",v:fmtU(totalMargin),c:mC(marginPct)},
+        {l:isVES?"Ingresos (Bs.)":"Ingresos",v:fmtView(totalRevenue),c:"#0C0A09",sub:isVES?fmtUSDsm(totalRevenue):null},
+        {l:"Costo (USD)",v:fmtUSDsm(totalCost),c:"#57534E"},
+        {l:"Margen (USD)",v:fmtUSDsm(totalMargin),c:mC(marginPct)},
         {l:"Rentab.",v:`${marginPct.toFixed(1)}%`,c:mC(marginPct)}
-      ].map(k => `<div style="border:1px solid #E7E5E4;border-radius:6px;padding:9px 11px;background:#fff"><div style="font-size:10px;color:#A8A29E;margin-bottom:2px">${k.l}</div><div style="font-family:'SF Mono',monospace;font-size:13px;font-weight:700;color:${k.c}">${k.v}</div></div>`).join("")}
+      ].map(k => `<div style="border:1px solid #E7E5E4;border-radius:6px;padding:9px 11px;background:#fff"><div style="font-size:10px;color:#A8A29E;margin-bottom:2px">${k.l}</div><div style="font-family:'SF Mono',monospace;font-size:13px;font-weight:700;color:${k.c}">${k.v}</div>${k.sub?`<div style="font-size:9px;color:#A8A29E;font-family:'SF Mono',monospace;margin-top:2px">${k.sub}</div>`:""}</div>`).join("")}
     </div>
 
     <div style="font-size:10px;font-weight:700;color:#A8A29E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Líneas del negocio</div>
@@ -483,6 +496,52 @@ export default function App() {
   const [soporteCost, setSoporteCost] = useState(0);
   const [soporteDate, setSoporteDate] = useState("");
   const [clientName, setClientName] = useState("");
+
+  // --- Currency / FX ---
+  const [currency, setCurrency] = useState("USD"); // "USD" | "VES"
+  const [rateSource, setRateSource] = useState("bcv"); // "bcv" | "binance" | "paralelo" | "manual"
+  const [rates, setRates] = useState({ bcv: null, binance: null, paralelo: null, updatedAt: null });
+  const [manualRate, setManualRate] = useState(40);
+  const [fxLoading, setFxLoading] = useState(false);
+  const [fxError, setFxError] = useState(null);
+
+  const fetchRates = async () => {
+    setFxLoading(true);
+    setFxError(null);
+    try {
+      const r = await fetch("/api/rates");
+      if (!r.ok) {
+        const errData = await r.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${r.status}`);
+      }
+      const d = await r.json();
+      setRates({
+        bcv: d.bcv,
+        binance: d.binance,
+        paralelo: d.paralelo,
+        updatedAt: new Date()
+      });
+    } catch (e) {
+      console.error("Rate fetch error:", e);
+      setFxError(`No se pudieron obtener las tasas: ${e.message}. Usa 'Manual'.`);
+    } finally {
+      setFxLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (currency === "VES" && !rates.updatedAt) fetchRates();
+  }, [currency]);
+
+  const activeRate = rateSource === "manual" ? manualRate : (rates[rateSource] || 0);
+  const vesRate = currency === "VES" ? activeRate : 1;
+  const toView = usd => currency === "VES" ? usd * vesRate : usd;
+  const viewSymbol = currency === "VES" ? "Bs." : "$";
+  const fmtMoney = (usd, opts = {}) => {
+    const val = toView(usd);
+    const dec = opts.decimals ?? 2;
+    return `${viewSymbol} ${val.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
+  };
 
   let totalCredits = 0;
   lines.forEach(l => {
@@ -557,9 +616,9 @@ export default function App() {
           <div style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Resumen del negocio</div>
           {[
             { l:"Créditos totales",   v:fmt(totalCredits), c:C.blue },
-            { l:"Ingresos (cliente)", v:fmtU(totalRevenue), c:C.text },
-            { l:"Costo (proveedor)",  v:fmtU(totalCost), c:C.text2 },
-            { l:"Margen bruto",       v:fmtU(totalMargin), c:mColor(marginPct) },
+            { l:"Ingresos (cliente)", v:fmtMoney(totalRevenue), c:C.text },
+            { l:"Costo (proveedor)",  v:fmtU(totalCost) + " USD", c:C.text2 },
+            { l:"Margen bruto",       v:fmtU(totalMargin) + " USD", c:mColor(marginPct) },
             { l:"Rentabilidad",       v:`${marginPct.toFixed(1)}%`, c:mColor(marginPct) },
           ].map(m => (
             <div key={m.l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
@@ -570,7 +629,7 @@ export default function App() {
         </div>
 
         <div style={{ padding:"12px 20px", borderTop:`1px solid ${C.border}` }}>
-          <button onClick={() => downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName })}
+          <button onClick={() => downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate })}
             style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding:"10px", background:C.text, color:"#fff", border:"none", borderRadius:7, fontSize:13, fontWeight:600, cursor:"pointer" }}>
             ⬇ Exportar análisis PDF
           </button>
@@ -582,23 +641,79 @@ export default function App() {
 
       <main style={{ padding:"28px 34px", overflowY:"auto" }}>
 
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:22 }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18, gap:14, flexWrap:"wrap" }}>
           <div>
             <div style={{ fontSize:22, fontWeight:700, letterSpacing:"-.025em", marginBottom:3 }}>Nueva cotización</div>
             <div style={{ fontSize:13, color:C.text3 }}>Busca productos del catálogo y construye la propuesta línea por línea</div>
           </div>
-          <div style={{ display:"flex", gap:8 }}>
+          <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+            {/* Currency toggle */}
+            <div style={{ display:"flex", background:C.panel, border:`1px solid ${C.border}`, borderRadius:7, padding:2 }}>
+              {[
+                { code:"USD", label:"🇵🇦 USD", sub:"Panamá" },
+                { code:"VES", label:"🇻🇪 Bs.", sub:"Venezuela" },
+              ].map(c => (
+                <button key={c.code} onClick={() => setCurrency(c.code)}
+                  style={{ padding:"6px 12px", fontSize:12, fontWeight:currency===c.code?700:500, background:currency===c.code?C.surface:"transparent", color:currency===c.code?C.text:C.text2, border:"none", borderRadius:5, cursor:"pointer", boxShadow: currency===c.code ? "0 1px 2px rgba(0,0,0,.06)" : "none" }}>
+                  {c.label}
+                </button>
+              ))}
+            </div>
             <input type="text" placeholder="Nombre del cliente (opcional)" value={clientName} onChange={e=>setClientName(e.target.value)}
-              style={{ fontSize:12, padding:"7px 12px", border:`1px solid ${C.border}`, borderRadius:6, background:C.surface, color:C.text, width:220, outline:"none" }} />
+              style={{ fontSize:12, padding:"7px 12px", border:`1px solid ${C.border}`, borderRadius:6, background:C.surface, color:C.text, width:200, outline:"none" }} />
             <button onClick={clearAll} style={{ fontSize:12, color:C.text2, background:C.surface, border:`1px solid ${C.border}`, borderRadius:6, padding:"6px 12px", cursor:"pointer" }}>Limpiar</button>
           </div>
         </div>
 
+        {/* FX panel — only when VES */}
+        {currency === "VES" && (
+          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:"14px 16px", marginBottom:16, boxShadow:"0 1px 2px rgba(0,0,0,.02)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10, flexWrap:"wrap", gap:8 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:13, fontWeight:600 }}>Tasa de cambio USD → VES</span>
+                {rates.updatedAt && <span style={{ fontSize:10, color:C.text3 }}>Actualizado: {rates.updatedAt.toLocaleTimeString("es-PA", { hour:"2-digit", minute:"2-digit" })}</span>}
+              </div>
+              <button onClick={fetchRates} disabled={fxLoading}
+                style={{ fontSize:11, color:C.text2, background:C.panel, border:`1px solid ${C.border}`, borderRadius:5, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
+                {fxLoading ? "⟳ Actualizando..." : "↻ Actualizar tasas"}
+              </button>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8 }}>
+              {[
+                { key:"bcv", label:"BCV", sub:"Oficial", value:rates.bcv },
+                { key:"binance", label:"Binance P2P", sub:"Cripto", value:rates.binance },
+                { key:"paralelo", label:"Paralelo", sub:"Monitor", value:rates.paralelo },
+                { key:"manual", label:"Manual", sub:"Ingresar", value:manualRate },
+              ].map(t => {
+                const sel = rateSource === t.key;
+                return (
+                  <button key={t.key} onClick={() => setRateSource(t.key)}
+                    style={{ textAlign:"left", padding:"10px 12px", background:sel?C.blueBg:C.surface, border:`1.5px solid ${sel?C.blue:C.border}`, borderRadius:7, cursor:"pointer" }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:sel?C.blue:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:3 }}>{t.label}</div>
+                    {t.key === "manual" ? (
+                      <input type="number" value={manualRate} step={0.01} min={0}
+                        onClick={e => { e.stopPropagation(); setRateSource("manual"); }}
+                        onChange={e => setManualRate(parseFloat(e.target.value) || 0)}
+                        style={{ ...mono, width:"100%", fontSize:15, fontWeight:700, color:sel?C.blue:C.text, background:"transparent", border:"none", outline:"none", padding:0 }} />
+                    ) : (
+                      <div style={{ ...mono, fontSize:15, fontWeight:700, color:sel?C.blue:(t.value?C.text:C.text3) }}>
+                        {t.value ? `Bs. ${t.value.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}` : "—"}
+                      </div>
+                    )}
+                    <div style={{ fontSize:10, color:C.text3, marginTop:2 }}>{t.sub}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {fxError && <div style={{ fontSize:11, color:C.red, marginTop:8 }}>⚠ {fxError}</div>}
+          </div>
+        )}
+
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:20 }}>
           {[
             { l:"Créditos totales", v:fmt(totalCredits), c:C.blue, sub:null },
-            { l:"Ingresos", v:fmtU(totalRevenue), c:C.text, sub:null },
-            { l:"Margen bruto", v:fmtU(totalMargin), c:mColor(marginPct), sub:`${marginPct.toFixed(1)}% rentabilidad` },
+            { l:`Ingresos${currency==="VES"?" (Bs.)":""}`, v:fmtMoney(totalRevenue), c:C.text, sub: currency==="VES" ? `$${totalRevenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} USD` : null },
+            { l:"Margen bruto", v:fmtMoney(totalMargin), c:mColor(marginPct), sub:`${marginPct.toFixed(1)}% rentabilidad` },
             { l:"Líneas activas", v:activeLines, c:C.text, sub:`de ${lines.length} total` },
           ].map(m => (
             <div key={m.l} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:9, padding:"13px 15px" }}>
