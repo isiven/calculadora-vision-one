@@ -43,14 +43,28 @@ const C = {
   amber:"#B45309", amberBg:"#FFFBEB",
 };
 
-function ProductPicker({ onPick, onClose, triggerRef }) {
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", check);
+    check();
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
+function ProductPicker({ onPick, onClose, triggerRef, isMobile }) {
   const [q, setQ] = useState("");
   const [coords, setCoords] = useState(null);
   const inpRef = useRef(null);
   const popRef = useRef(null);
 
   useEffect(() => {
-    if (triggerRef.current) {
+    if (isMobile) {
+      // Full screen on mobile
+      setCoords({ mobile: true });
+    } else if (triggerRef?.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const needed = 360;
@@ -59,10 +73,11 @@ function ProductPicker({ onPick, onClose, triggerRef }) {
         : rect.bottom + 4;
       setCoords({ top, left: rect.left, width: rect.width });
     }
-    inpRef.current?.focus();
-  }, [triggerRef]);
+    setTimeout(() => inpRef.current?.focus(), 50);
+  }, [triggerRef, isMobile]);
 
   useEffect(() => {
+    if (isMobile) return; // no outside-click close on mobile (has X button)
     const h = e => {
       if (popRef.current && !popRef.current.contains(e.target) && !triggerRef?.current?.contains(e.target)) onClose();
     };
@@ -73,7 +88,7 @@ function ProductPicker({ onPick, onClose, triggerRef }) {
       document.removeEventListener("mousedown", h);
       window.removeEventListener("scroll", onScroll, true);
     };
-  }, [onClose, triggerRef]);
+  }, [onClose, triggerRef, isMobile]);
 
   const filtered = CATALOG.filter(p => {
     const s = q.toLowerCase();
@@ -84,38 +99,42 @@ function ProductPicker({ onPick, onClose, triggerRef }) {
 
   if (!coords) return null;
 
+  const wrapStyle = isMobile ? {
+    position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:9999,
+    background:C.surface, display:"flex", flexDirection:"column"
+  } : {
+    position:"fixed", top:coords.top, left:coords.left, width:coords.width, zIndex:9999,
+    background:C.surface, border:`1px solid ${C.border}`, borderRadius:8,
+    boxShadow:"0 10px 40px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)",
+    maxHeight:360, overflow:"hidden", display:"flex", flexDirection:"column"
+  };
+
   return (
-    <div ref={popRef} style={{
-      position:"fixed", top:coords.top, left:coords.left, width:coords.width, zIndex:9999,
-      background:C.surface, border:`1px solid ${C.border}`, borderRadius:8,
-      boxShadow:"0 10px 40px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06)",
-      maxHeight:360, overflow:"hidden", display:"flex", flexDirection:"column"
-    }}>
-      <div style={{ padding:"8px 10px", borderBottom:`1px solid ${C.border}` }}>
+    <div ref={popRef} style={wrapStyle}>
+      <div style={{ padding:isMobile?"14px 14px 10px":"8px 10px", borderBottom:`1px solid ${C.border}`, display:"flex", gap:8, alignItems:"center" }}>
         <input ref={inpRef} type="text" placeholder="Buscar producto, SKU o categoría..." value={q} onChange={e=>setQ(e.target.value)}
-          style={{ width:"100%", fontSize:13, padding:"7px 10px", border:`1px solid ${C.border}`, borderRadius:6, outline:"none", background:C.bg }}
+          style={{ flex:1, fontSize:isMobile?16:13, padding: isMobile?"11px 13px":"7px 10px", border:`1px solid ${C.border}`, borderRadius:7, outline:"none", background:C.bg }}
           onKeyDown={e => { if(e.key==="Escape") onClose(); if(e.key==="Enter" && filtered.length) { onPick(filtered[0]); onClose(); } }}
         />
+        {isMobile && <button onClick={onClose} style={{ fontSize:14, padding:"10px 14px", background:C.panel, border:"none", borderRadius:7, color:C.text2, fontWeight:600 }}>Cancelar</button>}
       </div>
-      <div style={{ overflowY:"auto", flex:1 }}>
+      <div style={{ overflowY:"auto", flex:1, WebkitOverflowScrolling:"touch" }}>
         {Object.entries(grouped).length === 0 ? (
           <div style={{ padding:"20px 14px", textAlign:"center", fontSize:12, color:C.text3 }}>Sin resultados</div>
         ) : Object.entries(grouped).map(([cat, items]) => (
           <div key={cat}>
-            <div style={{ padding:"7px 12px 3px", fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", background:C.panel }}>{cat}</div>
+            <div style={{ padding:"8px 14px 4px", fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", background:C.panel, position:"sticky", top:0 }}>{cat}</div>
             {items.map(p => (
               <button key={p.id} onClick={() => { onPick(p); onClose(); }}
-                style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"8px 12px", background:"none", border:"none", borderBottom:`1px solid ${C.border}`, cursor:"pointer", textAlign:"left" }}
-                onMouseEnter={e => e.currentTarget.style.background=C.panel}
-                onMouseLeave={e => e.currentTarget.style.background="none"}>
+                style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding: isMobile?"14px 14px":"8px 12px", background:"none", border:"none", borderBottom:`1px solid ${C.border}`, cursor:"pointer", textAlign:"left", minHeight:isMobile?54:"auto" }}>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12, fontWeight:500, color:C.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</div>
-                  <div style={{ fontSize:10, color:C.text3, marginTop:1, display:"flex", gap:6 }}>
+                  <div style={{ fontSize:isMobile?14:12, fontWeight:500, color:C.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</div>
+                  <div style={{ fontSize:isMobile?11:10, color:C.text3, marginTop:2, display:"flex", gap:6 }}>
                     <span>por {p.unit}</span>
                     {p.sku && <span style={{ ...mono }}>· {p.sku}</span>}
                   </div>
                 </div>
-                <span style={{ ...mono, fontSize:11, fontWeight:600, color:C.blue, background:C.blueBg, padding:"2px 7px", borderRadius:4, whiteSpace:"nowrap" }}>{fmt(p.credits)} cr</span>
+                <span style={{ ...mono, fontSize:isMobile?12:11, fontWeight:600, color:C.blue, background:C.blueBg, padding:"3px 8px", borderRadius:5, whiteSpace:"nowrap" }}>{fmt(p.credits)} cr</span>
               </button>
             ))}
           </div>
@@ -125,13 +144,80 @@ function ProductPicker({ onPick, onClose, triggerRef }) {
   );
 }
 
-function LineRow({ line, onUpdate, onDelete, onDuplicate, idx }) {
+function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   const [picking, setPicking] = useState(false);
   const triggerRef = useRef(null);
   const prod = line.prodId ? CATALOG.find(p => p.id === line.prodId) : null;
   const total = prod ? line.qty * prod.credits : 0;
   const active = line.qty > 0 && prod;
 
+  // Mobile card layout
+  if (isMobile) {
+    return (
+      <div style={{
+        background: active ? "#FAFCFF" : C.surface,
+        border: `1px solid ${active ? "#C7D9EF" : C.border}`,
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 8,
+        position: "relative"
+      }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+          <span style={{ ...mono, fontSize:11, color:C.text3, fontWeight:600 }}>#{String(idx+1).padStart(2,"0")}</span>
+          <div style={{ display:"flex", gap:4 }}>
+            <button onClick={() => onDuplicate(line.rowId)} disabled={!prod} title="Duplicar"
+              style={{ width:32,height:32,borderRadius:6,border:`1px solid ${C.border}`,background:C.surface,cursor:prod?"pointer":"not-allowed",fontSize:14,color:C.text2,opacity:prod?1:0.4 }}>⊕</button>
+            <button onClick={() => onDelete(line.rowId)} title="Eliminar"
+              style={{ width:32,height:32,borderRadius:6,border:`1px solid ${C.border}`,background:C.surface,cursor:"pointer",fontSize:13,color:C.red }}>✕</button>
+          </div>
+        </div>
+
+        <div ref={triggerRef} style={{ position:"relative", marginBottom:10 }}>
+          <button onClick={() => setPicking(!picking)}
+            style={{ width:"100%", textAlign:"left", background:C.surface, border:`1px solid ${C.border}`, borderRadius:7, padding:"10px 12px", cursor:"pointer", minHeight:54 }}>
+            {prod ? (
+              <div>
+                <div style={{ fontSize:14, fontWeight:600, color:C.text }}>{prod.name}</div>
+                <div style={{ fontSize:11, color:C.text3, marginTop:2, display:"flex", gap:6, flexWrap:"wrap" }}>
+                  <span>{prod.cat}</span>
+                  <span>· {fmt(prod.credits)} cr/{prod.unit}</span>
+                  {prod.sku && <span style={{ ...mono }}>· {prod.sku}</span>}
+                </div>
+              </div>
+            ) : (
+              <div style={{ color:C.text3, fontSize:14, display:"flex", alignItems:"center", gap:6 }}>
+                <span style={{ fontSize:16 }}>⊕</span> Buscar producto...
+              </div>
+            )}
+          </button>
+          {picking && <ProductPicker triggerRef={triggerRef} isMobile={true} onPick={p => onUpdate({ ...line, prodId:p.id })} onClose={() => setPicking(false)} />}
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+          <div>
+            <div style={{ fontSize:10, fontWeight:600, color:C.text3, marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>Cantidad</div>
+            <input type="number" inputMode="numeric" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
+              onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
+              style={{ ...mono, fontSize:16, fontWeight:600, textAlign:"right", padding:"10px 12px", border:`1px solid ${active?C.blue:C.border}`, borderRadius:7, background:active?"#fff":prod?C.surface:C.panel, color:C.text, outline:"none", width:"100%" }} />
+          </div>
+          <div>
+            <div style={{ fontSize:10, fontWeight:600, color:C.text3, marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>Vencimiento</div>
+            <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
+              style={{ ...mono, fontSize:13, color:C.text2, border:`1px solid ${C.border}`, borderRadius:7, padding:"10px 10px", background:C.surface, width:"100%" }} />
+          </div>
+        </div>
+
+        {active && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:C.blueBg, borderRadius:7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontSize:11, color:C.text2, fontWeight:500 }}>Total de esta línea</span>
+            <span style={{ ...mono, fontSize:15, fontWeight:700, color:C.blue }}>{fmt(total)} créditos</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop table-row layout
   return (
     <div style={{
       display:"grid", gridTemplateColumns:"40px 1fr 130px 80px 110px 70px",
@@ -159,7 +245,7 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx }) {
             </div>
           )}
         </button>
-        {picking && <ProductPicker triggerRef={triggerRef} onPick={p => onUpdate({ ...line, prodId:p.id })} onClose={() => setPicking(false)} />}
+        {picking && <ProductPicker triggerRef={triggerRef} isMobile={false} onPick={p => onUpdate({ ...line, prodId:p.id })} onClose={() => setPicking(false)} />}
       </div>
 
       <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
@@ -496,6 +582,8 @@ export default function App() {
   const [soporteCost, setSoporteCost] = useState(0);
   const [soporteDate, setSoporteDate] = useState("");
   const [clientName, setClientName] = useState("");
+  const isMobile = useIsMobile();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // --- Currency / FX ---
   const [currency, setCurrency] = useState("USD"); // "USD" | "VES"
@@ -581,8 +669,18 @@ export default function App() {
 
       <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName }} />
 
-      <div className="no-print" style={{ display:"grid", gridTemplateColumns:"272px 1fr", minHeight:"100vh", fontFamily:"system-ui,-apple-system,sans-serif", background:C.bg, color:C.text, fontSize:14 }}>
+      <div className="no-print" style={{
+        display: isMobile ? "block" : "grid",
+        gridTemplateColumns: isMobile ? "none" : "272px 1fr",
+        minHeight: "100vh",
+        fontFamily: "system-ui,-apple-system,sans-serif",
+        background: C.bg,
+        color: C.text,
+        fontSize: 14,
+        paddingBottom: isMobile ? "calc(80px + env(safe-area-inset-bottom, 0px))" : 0
+      }}>
 
+      {!isMobile && (
       <aside style={{ background:C.surface, borderRight:`1px solid ${C.border}`, display:"flex", flexDirection:"column", position:"sticky", top:0, height:"100vh", overflowY:"auto" }}>
         <div style={{ padding:"22px 22px 18px", borderBottom:`1px solid ${C.border}`, background:"linear-gradient(180deg, #FAFAF9 0%, #fff 100%)" }}>
           <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:44, width:"auto", display:"block", marginBottom:10 }} />
@@ -638,14 +736,40 @@ export default function App() {
           Nextcom Systems, Inc.<br/>Trend Micro Platinum Partner · Panamá
         </div>
       </aside>
+      )}
 
-      <main style={{ padding:"28px 34px", overflowY:"auto" }}>
-
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:18, gap:14, flexWrap:"wrap" }}>
-          <div>
-            <div style={{ fontSize:22, fontWeight:700, letterSpacing:"-.025em", marginBottom:3 }}>Nueva cotización</div>
-            <div style={{ fontSize:13, color:C.text3 }}>Busca productos del catálogo y construye la propuesta línea por línea</div>
+      {/* Mobile top header with logo + currency toggle + settings */}
+      {isMobile && (
+      <header style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:"10px 14px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100, gap:10 }}>
+        <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:28, width:"auto" }} />
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ display:"flex", background:C.panel, border:`1px solid ${C.border}`, borderRadius:6, padding:2 }}>
+            {[
+              { code:"USD", label:"🇵🇦" },
+              { code:"VES", label:"🇻🇪" },
+            ].map(c => (
+              <button key={c.code} onClick={() => setCurrency(c.code)}
+                style={{ padding:"5px 9px", fontSize:13, background:currency===c.code?C.surface:"transparent", border:"none", borderRadius:4, cursor:"pointer", boxShadow: currency===c.code ? "0 1px 2px rgba(0,0,0,.08)" : "none" }}>
+                {c.label}
+              </button>
+            ))}
           </div>
+          <button onClick={() => setSettingsOpen(true)}
+            style={{ width:38, height:38, borderRadius:8, border:`1px solid ${C.border}`, background:C.surface, cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>
+            ⚙
+          </button>
+        </div>
+      </header>
+      )}
+
+      <main style={{ padding: isMobile ? "14px 14px 20px" : "28px 34px", overflowY:"auto" }}>
+
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:isMobile?12:18, gap:14, flexWrap:"wrap" }}>
+          <div>
+            <div style={{ fontSize:isMobile?18:22, fontWeight:700, letterSpacing:"-.025em", marginBottom:3 }}>Nueva cotización</div>
+            {!isMobile && <div style={{ fontSize:13, color:C.text3 }}>Busca productos del catálogo y construye la propuesta línea por línea</div>}
+          </div>
+          {!isMobile && (
           <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
             {/* Currency toggle */}
             <div style={{ display:"flex", background:C.panel, border:`1px solid ${C.border}`, borderRadius:7, padding:2 }}>
@@ -663,22 +787,31 @@ export default function App() {
               style={{ fontSize:12, padding:"7px 12px", border:`1px solid ${C.border}`, borderRadius:6, background:C.surface, color:C.text, width:200, outline:"none" }} />
             <button onClick={clearAll} style={{ fontSize:12, color:C.text2, background:C.surface, border:`1px solid ${C.border}`, borderRadius:6, padding:"6px 12px", cursor:"pointer" }}>Limpiar</button>
           </div>
+          )}
         </div>
+
+        {/* Mobile: client name input */}
+        {isMobile && (
+          <div style={{ marginBottom:12 }}>
+            <input type="text" placeholder="Nombre del cliente (opcional)" value={clientName} onChange={e=>setClientName(e.target.value)}
+              style={{ fontSize:15, padding:"11px 13px", border:`1px solid ${C.border}`, borderRadius:8, background:C.surface, color:C.text, width:"100%", outline:"none", boxSizing:"border-box" }} />
+          </div>
+        )}
 
         {/* FX panel — only when VES */}
         {currency === "VES" && (
-          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:"14px 16px", marginBottom:16, boxShadow:"0 1px 2px rgba(0,0,0,.02)" }}>
+          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding: isMobile?"12px":"14px 16px", marginBottom:16, boxShadow:"0 1px 2px rgba(0,0,0,.02)" }}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10, flexWrap:"wrap", gap:8 }}>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ fontSize:13, fontWeight:600 }}>Tasa de cambio USD → VES</span>
-                {rates.updatedAt && <span style={{ fontSize:10, color:C.text3 }}>Actualizado: {rates.updatedAt.toLocaleTimeString("es-PA", { hour:"2-digit", minute:"2-digit" })}</span>}
+                <span style={{ fontSize:13, fontWeight:600 }}>Tasa USD → VES</span>
+                {rates.updatedAt && <span style={{ fontSize:10, color:C.text3 }}>{rates.updatedAt.toLocaleTimeString("es-PA", { hour:"2-digit", minute:"2-digit" })}</span>}
               </div>
               <button onClick={fetchRates} disabled={fxLoading}
                 style={{ fontSize:11, color:C.text2, background:C.panel, border:`1px solid ${C.border}`, borderRadius:5, padding:"4px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
                 {fxLoading ? "⟳ Actualizando..." : "↻ Actualizar tasas"}
               </button>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap:8 }}>
               {[
                 { key:"bcv", label:"BCV", sub:"Oficial", value:rates.bcv },
                 { key:"binance", label:"Binance P2P", sub:"Cripto", value:rates.binance },
@@ -709,7 +842,7 @@ export default function App() {
           </div>
         )}
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:20 }}>
+        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap:8, marginBottom:isMobile?14:20 }}>
           {[
             { l:"Créditos totales", v:fmt(totalCredits), c:C.blue, sub:null },
             { l:`Ingresos${currency==="VES"?" (Bs.)":""}`, v:fmtMoney(totalRevenue), c:C.text, sub: currency==="VES" ? `$${totalRevenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} USD` : null },
@@ -724,7 +857,9 @@ export default function App() {
           ))}
         </div>
 
-        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, overflow:"hidden", boxShadow:"0 1px 2px rgba(0,0,0,.02)" }}>
+        <div style={{ background: isMobile?"transparent":C.surface, border: isMobile?"none":`1px solid ${C.border}`, borderRadius:10, overflow:"hidden", boxShadow: isMobile?"none":"0 1px 2px rgba(0,0,0,.02)" }}>
+          {!isMobile && (
+          <>
           <div style={{ padding:"11px 14px", background:C.panel, borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div style={{ fontSize:13, fontWeight:600 }}>Productos de la cotización</div>
             <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>
@@ -735,19 +870,26 @@ export default function App() {
               <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=3&&i<5?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}
           </div>
+          </>
+          )}
+
+          {isMobile && (
+            <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>
+              Productos ({lines.length})
+            </div>
+          )}
 
           {lines.map((line, idx) => (
-            <LineRow key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} onDuplicate={duplicateLine} />
+            <LineRow key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} onDuplicate={duplicateLine} isMobile={isMobile} />
           ))}
 
           <button onClick={addLine} style={{
             width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            padding:"11px", background:C.surface, border:"none", borderTop:`1px dashed ${C.border}`,
-            cursor:"pointer", color:C.blue, fontSize:12, fontWeight:500
-          }}
-          onMouseEnter={e => e.currentTarget.style.background=C.blueBg}
-          onMouseLeave={e => e.currentTarget.style.background=C.surface}>
-            <span style={{ fontSize:14 }}>＋</span> Agregar producto
+            padding: isMobile?"14px":"11px", background: isMobile?C.blueBg:C.surface, border: isMobile?`1.5px dashed ${C.blue}`:"none", borderTop: isMobile?`1.5px dashed ${C.blue}`:`1px dashed ${C.border}`,
+            borderRadius: isMobile?10:0, marginTop: isMobile?4:0,
+            cursor:"pointer", color:C.blue, fontSize: isMobile?14:12, fontWeight:600
+          }}>
+            <span style={{ fontSize: isMobile?18:14 }}>＋</span> Agregar producto
           </button>
         </div>
 
@@ -756,7 +898,7 @@ export default function App() {
             <span style={{ fontSize:13, fontWeight:600 }}>Soporte Platinum</span>
             <span style={{ fontSize:11, color:C.text3 }}>Precio libre · línea especial sin créditos</span>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 130px 110px", gap:12, alignItems:"end", padding:"14px", background:soporteSale>0?"#FAFCFF":C.surface }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 130px 110px", gap:12, alignItems:"end", padding:"14px", background:soporteSale>0?"#FAFCFF":C.surface }}>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
               { l:"Costo proveedor",   v:soporteCost, set:setSoporteCost },
@@ -786,6 +928,101 @@ export default function App() {
 
         <p style={{ fontSize:11, color:C.text3, marginTop:12, textAlign:"center" }}>Créditos calculados para 12 meses · Trend Micro Vision One Jan 2026</p>
       </main>
+
+      {/* Mobile: fixed bottom bar with totals + PDF button */}
+      {isMobile && (
+        <div style={{
+          position:"fixed", bottom:0, left:0, right:0,
+          background:C.surface, borderTop:`1px solid ${C.border}`,
+          padding: "10px 14px calc(10px + env(safe-area-inset-bottom, 0px))",
+          display:"flex", alignItems:"center", justifyContent:"space-between", gap:10,
+          boxShadow:"0 -2px 10px rgba(0,0,0,.04)", zIndex:90
+        }}>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:10, color:C.text3, marginBottom:1 }}>{fmt(totalCredits)} créditos · {activeLines} líneas</div>
+            <div style={{ ...mono, fontSize:16, fontWeight:700, color:C.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+              {fmtMoney(totalRevenue)}
+            </div>
+            <div style={{ fontSize:10, color:mColor(marginPct), fontWeight:600 }}>
+              Margen {fmtU(totalMargin)} · {marginPct.toFixed(1)}%
+            </div>
+          </div>
+          <button onClick={() => downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate })}
+            style={{ padding:"12px 16px", background:C.text, color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6 }}>
+            ⬇ PDF
+          </button>
+        </div>
+      )}
+
+      {/* Mobile: settings drawer */}
+      {isMobile && settingsOpen && (
+        <div style={{ position:"fixed", inset:0, zIndex:9998, background:"rgba(0,0,0,0.5)" }} onClick={() => setSettingsOpen(false)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            position:"absolute", bottom:0, left:0, right:0,
+            background:C.surface, borderRadius:"16px 16px 0 0",
+            maxHeight:"85vh", overflowY:"auto",
+            padding: "16px 16px calc(16px + env(safe-area-inset-bottom, 0px))",
+            boxShadow:"0 -8px 30px rgba(0,0,0,0.2)"
+          }}>
+            <div style={{ width:40, height:4, background:C.border, borderRadius:2, margin:"0 auto 14px" }} />
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:14 }}>
+              <div style={{ fontSize:17, fontWeight:700 }}>Ajustes</div>
+              <button onClick={() => setSettingsOpen(false)} style={{ width:32, height:32, borderRadius:8, border:`1px solid ${C.border}`, background:C.surface, fontSize:14, cursor:"pointer" }}>✕</button>
+            </div>
+
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Precios por crédito</div>
+                {[
+                  { label:"Precio al cliente", sub:"Lo que cobra Nextcom", val:salePrice, set:setSalePrice, accent:true },
+                  { label:"Costo proveedor",   sub:"Lo que paga Nextcom",  val:costPrice, set:setCostPrice, accent:false },
+                ].map(f => (
+                  <div key={f.label} style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:11, color:C.text3, marginBottom:4, fontWeight:600 }}>{f.label}</div>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, background:C.bg, borderRadius:8, padding:"10px 14px", border:`1px solid ${C.border}` }}>
+                      <span style={{ fontSize:14, color:C.text3 }}>$</span>
+                      <input type="number" inputMode="decimal" value={f.val} step={0.005} min={0} onChange={e => f.set(parseFloat(e.target.value)||0)}
+                        style={{ ...mono, width:"100%", fontSize:17, fontWeight:600, color:f.accent?C.blue:C.text, background:"none", border:"none", outline:"none" }} />
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:mBg(perCrPct), borderRadius:7, padding:"8px 12px", marginTop:4 }}>
+                  <span style={{ fontSize:12, color:C.text2 }}>Margen / crédito</span>
+                  <span style={{ ...mono, fontSize:13, fontWeight:700, color:mColor(perCrPct) }}>{fmtU(salePrice-costPrice)} · {perCrPct.toFixed(1)}%</span>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Resumen del negocio</div>
+                <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 12px" }}>
+                  {[
+                    { l:"Créditos totales",   v:fmt(totalCredits), c:C.blue },
+                    { l:"Ingresos (cliente)", v:fmtMoney(totalRevenue), c:C.text },
+                    { l:"Costo (proveedor)",  v:fmtU(totalCost) + " USD", c:C.text2 },
+                    { l:"Margen bruto",       v:fmtU(totalMargin) + " USD", c:mColor(marginPct) },
+                    { l:"Rentabilidad",       v:`${marginPct.toFixed(1)}%`, c:mColor(marginPct) },
+                  ].map(m => (
+                    <div key={m.l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
+                      <span style={{ fontSize:12, color:C.text2 }}>{m.l}</span>
+                      <span style={{ ...mono, fontSize:13, fontWeight:600, color:m.c }}>{m.v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={() => { clearAll(); setSettingsOpen(false); }} style={{
+                fontSize:13, color:C.red, background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:"12px", cursor:"pointer", fontWeight:600
+              }}>
+                Limpiar cotización
+              </button>
+
+              <div style={{ fontSize:10, color:C.text3, lineHeight:1.5, textAlign:"center" }}>
+                Nextcom Systems, Inc. · Trend Micro Platinum Partner · Panamá
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
