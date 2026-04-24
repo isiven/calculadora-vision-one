@@ -33,6 +33,26 @@ const fmt  = n => n.toLocaleString("en-US");
 const fmtU = n => "$" + n.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 });
 const mono = { fontFamily:"'JetBrains Mono','SF Mono','Fira Mono',monospace" };
 
+// Calculate months between two date strings (YYYY-MM-DD), rounded to 1 decimal
+function monthsBetween(startDate, endDate) {
+  if (!startDate || !endDate) return 12; // default to 1 year
+  const s = new Date(startDate);
+  const e = new Date(endDate);
+  if (isNaN(s) || isNaN(e) || e <= s) return 12;
+  // More precise: days / 30.4375 (average month length)
+  const days = (e - s) / (1000 * 60 * 60 * 24);
+  return Math.round((days / 30.4375) * 10) / 10;
+}
+
+// Default fill for lines: start = today, end = today + 1 year
+function defaultDates() {
+  const today = new Date();
+  const nextYear = new Date(today);
+  nextYear.setFullYear(today.getFullYear() + 1);
+  const fmt = d => d.toISOString().split("T")[0];
+  return { startDate: fmt(today), date: fmt(nextYear) };
+}
+
 const C = {
   bg:"#FAFAF9", surface:"#FFFFFF", panel:"#F5F5F4", border:"#E7E5E4",
   text:"#0C0A09", text2:"#57534E", text3:"#A8A29E",
@@ -151,6 +171,11 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   const total = prod ? line.qty * prod.credits : 0;
   const active = line.qty > 0 && prod;
 
+  // Compute proration
+  const months = monthsBetween(line.startDate, line.date);
+  const proratedTotal = prod ? Math.round(line.qty * prod.credits * (months / 12)) : 0;
+  const isProrated = prod && line.qty > 0 && Math.abs(months - 12) > 0.1;
+
   // Mobile card layout
   if (isMobile) {
     return (
@@ -180,7 +205,7 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
                 <div style={{ fontSize:14, fontWeight:600, color:C.text }}>{prod.name}</div>
                 <div style={{ fontSize:11, color:C.text3, marginTop:2, display:"flex", gap:6, flexWrap:"wrap" }}>
                   <span>{prod.cat}</span>
-                  <span>· {fmt(prod.credits)} cr/{prod.unit}</span>
+                  <span>· {fmt(prod.credits)} cr/año/{prod.unit}</span>
                   {prod.sku && <span style={{ ...mono }}>· {prod.sku}</span>}
                 </div>
               </div>
@@ -193,24 +218,44 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
           {picking && <ProductPicker triggerRef={triggerRef} isMobile={true} onPick={p => onUpdate({ ...line, prodId:p.id })} onClose={() => setPicking(false)} />}
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+        {/* Dates: start + end */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
           <div>
-            <div style={{ fontSize:10, fontWeight:600, color:C.text3, marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>Cantidad</div>
-            <input type="number" inputMode="numeric" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
-              onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
-              style={{ ...mono, fontSize:16, fontWeight:600, textAlign:"right", padding:"10px 12px", border:`1px solid ${active?C.blue:C.border}`, borderRadius:7, background:active?"#fff":prod?C.surface:C.panel, color:C.text, outline:"none", width:"100%" }} />
+            <div style={{ fontSize:10, fontWeight:600, color:C.text3, marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>Inicio</div>
+            <input type="date" value={line.startDate || ""} onChange={e=>onUpdate({...line, startDate:e.target.value})}
+              style={{ ...mono, fontSize:13, color:C.text2, border:`1px solid ${C.border}`, borderRadius:7, padding:"10px 10px", background:C.surface, width:"100%", boxSizing:"border-box" }} />
           </div>
           <div>
             <div style={{ fontSize:10, fontWeight:600, color:C.text3, marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>Vencimiento</div>
             <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
-              style={{ ...mono, fontSize:13, color:C.text2, border:`1px solid ${C.border}`, borderRadius:7, padding:"10px 10px", background:C.surface, width:"100%" }} />
+              style={{ ...mono, fontSize:13, color:C.text2, border:`1px solid ${isProrated?C.amber:C.border}`, borderRadius:7, padding:"10px 10px", background:C.surface, width:"100%", boxSizing:"border-box" }} />
           </div>
         </div>
 
+        {/* Quantity */}
+        <div>
+          <div style={{ fontSize:10, fontWeight:600, color:C.text3, marginBottom:3, textTransform:"uppercase", letterSpacing:".05em" }}>Cantidad</div>
+          <input type="number" inputMode="numeric" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
+            onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
+            style={{ ...mono, fontSize:16, fontWeight:600, textAlign:"right", padding:"10px 12px", border:`1px solid ${active?C.blue:C.border}`, borderRadius:7, background:active?"#fff":prod?C.surface:C.panel, color:C.text, outline:"none", width:"100%", boxSizing:"border-box" }} />
+        </div>
+
+        {/* Proration indicator */}
+        {isProrated && (
+          <div style={{ marginTop:10, padding:"8px 12px", background:C.amberBg, border:`1px solid #FDE68A`, borderRadius:7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontSize:11, color:C.amber, fontWeight:600 }}>⚠ Vigencia prorrateada</span>
+            <span style={{ ...mono, fontSize:12, fontWeight:700, color:C.amber }}>{months} meses</span>
+          </div>
+        )}
+
+        {/* Total */}
         {active && (
           <div style={{ marginTop:10, padding:"8px 12px", background:C.blueBg, borderRadius:7, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <span style={{ fontSize:11, color:C.text2, fontWeight:500 }}>Total de esta línea</span>
-            <span style={{ ...mono, fontSize:15, fontWeight:700, color:C.blue }}>{fmt(total)} créditos</span>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ ...mono, fontSize:15, fontWeight:700, color:C.blue }}>{fmt(proratedTotal)} créditos</div>
+              {isProrated && <div style={{ fontSize:10, color:C.text3, ...mono }}>base anual: {fmt(line.qty * prod.credits)}</div>}
+            </div>
           </div>
         )}
       </div>
@@ -220,8 +265,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   // Desktop table-row layout
   return (
     <div style={{
-      display:"grid", gridTemplateColumns:"40px 1fr 130px 80px 110px 70px",
-      alignItems:"center", gap:10, padding:"10px 14px",
+      display:"grid", gridTemplateColumns:"34px 1fr 110px 110px 72px 110px 60px",
+      alignItems:"center", gap:8, padding:"10px 14px",
       background: active ? "#FAFCFF" : C.surface,
       borderBottom:`1px solid ${C.border}`, position:"relative"
     }}>
@@ -233,10 +278,15 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
           {prod ? (
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:13, fontWeight:500, color:C.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{prod.name}</div>
-              <div style={{ fontSize:10, color:C.text3, marginTop:1, display:"flex", gap:8 }}>
+              <div style={{ fontSize:10, color:C.text3, marginTop:1, display:"flex", gap:8, alignItems:"center" }}>
                 <span>{prod.cat}</span>
-                <span>· {fmt(prod.credits)} cr / {prod.unit}</span>
+                <span>· {fmt(prod.credits)} cr/año/{prod.unit}</span>
                 {prod.sku && <span style={{ ...mono }}>· {prod.sku}</span>}
+                {isProrated && (
+                  <span style={{ background:C.amberBg, color:C.amber, padding:"1px 6px", borderRadius:3, fontWeight:700, ...mono }}>
+                    {months}m · prorrateado
+                  </span>
+                )}
               </div>
             </div>
           ) : (
@@ -248,15 +298,25 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
         {picking && <ProductPicker triggerRef={triggerRef} isMobile={false} onPick={p => onUpdate({ ...line, prodId:p.id })} onClose={() => setPicking(false)} />}
       </div>
 
-      <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
+      <input type="date" value={line.startDate || ""} onChange={e=>onUpdate({...line, startDate:e.target.value})}
+        title="Fecha de inicio"
         style={{ ...mono, fontSize:11, color:C.text2, border:`1px solid ${C.border}`, borderRadius:5, padding:"5px 7px", background:"transparent", width:"100%" }} />
+
+      <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
+        title="Fecha de vencimiento"
+        style={{ ...mono, fontSize:11, color:C.text2, border:`1px solid ${isProrated?C.amber:C.border}`, borderRadius:5, padding:"5px 7px", background:"transparent", width:"100%" }} />
 
       <input type="number" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
         onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
         style={{ ...mono, fontSize:13, fontWeight:500, textAlign:"right", padding:"6px 9px", border:`1px solid ${active?C.blue:C.border}`, borderRadius:5, background:active?"#fff":prod?C.surface:C.panel, color:C.text, outline:"none", width:"100%" }} />
 
       <div style={{ ...mono, fontSize:13, fontWeight:600, textAlign:"right", color:active?C.blue:C.text3 }}>
-        {active ? fmt(total) : "—"}
+        {active ? (
+          <div>
+            <div>{fmt(proratedTotal)}</div>
+            {isProrated && <div style={{ fontSize:9, color:C.text3, fontWeight:400 }}>base: {fmt(line.qty * prod.credits)}</div>}
+          </div>
+        ) : "—"}
       </div>
 
       <div style={{ display:"flex", gap:2, justifyContent:"flex-end" }}>
@@ -434,7 +494,12 @@ function downloadReport(data) {
   const fmtUSDsm = usd => `$${usd.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
   const mC = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
-  const active = lines.filter(l => l.prodId && l.qty > 0).map(l => { const p = CATALOG.find(c => c.id===l.prodId); return { ...l, prod:p, total:l.qty * p.credits }; });
+  const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
+    const p = CATALOG.find(c => c.id===l.prodId);
+    const months = monthsBetween(l.startDate, l.date);
+    const prorated = Math.round(l.qty * p.credits * (months / 12));
+    return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
+  });
 
   const rowsHTML = active.map((l, i) => `
     <tr>
@@ -442,18 +507,25 @@ function downloadReport(data) {
       <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E7E5E4">
         ${l.prod.name}<br>
         <span style="font-size:10px;color:#A8A29E;${l.prod.sku ? "font-family:'SF Mono',monospace" : ""}">${l.prod.sku ? `${l.prod.sku} · ${l.prod.cat}` : l.prod.cat}</span>
+        ${l.isProrated ? `<br><span style="font-size:9px;color:#B45309;background:#FFFBEB;padding:1px 5px;border-radius:3px;font-family:'SF Mono',monospace;display:inline-block;margin-top:2px">⚠ ${l.months}m prorrateado</span>` : ""}
       </td>
-      <td style="padding:8px 10px;font-size:11px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace">${l.date || "—"}</td>
+      <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace;line-height:1.4">
+        ${l.startDate || "—"}<br>
+        <span style="color:#A8A29E">→ ${l.date || "—"}</span>
+      </td>
       <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4">${l.qty.toLocaleString()}</td>
-      <td style="padding:8px 10px;font-size:11px;font-family:'SF Mono',monospace;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">${fmt(l.prod.credits)} cr/u</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">${fmt(l.total)}</td>
+      <td style="padding:8px 10px;font-size:11px;font-family:'SF Mono',monospace;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">${fmt(l.prod.credits)} cr/año</td>
+      <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">
+        ${fmt(l.prorated)}
+        ${l.isProrated ? `<br><span style="font-size:9px;color:#A8A29E;font-weight:400">base: ${fmt(l.baseTotal)}</span>` : ""}
+      </td>
     </tr>`).join("");
 
   const sopRow = soporteSale > 0 ? `
     <tr>
       <td style="padding:8px 10px;font-size:11px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4">${String(active.length+1).padStart(2,"0")}</td>
       <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E7E5E4">Soporte Platinum Trend Micro<br><span style="font-size:10px;color:#A8A29E">Servicio profesional · Precio fijo</span></td>
-      <td style="padding:8px 10px;font-size:11px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace">${soporteDate || "—"}</td>
+      <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace">${soporteDate || "—"}</td>
       <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4">1</td>
       <td style="padding:8px 10px;font-size:11px;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">servicio</td>
       <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">${fmtU(soporteSale)}</td>
@@ -537,7 +609,7 @@ function downloadReport(data) {
 
     <div style="font-size:10px;font-weight:700;color:#A8A29E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Líneas del negocio</div>
     <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4">
-      <thead><tr style="background:#F5F5F4">${["#","Producto","Vencimiento","Cant.","Rate","Total cr / $"].map((h,i)=>`<th style="padding:8px 10px;text-align:${i>=3?"right":"left"};font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join("")}</tr></thead>
+      <thead><tr style="background:#F5F5F4">${["#","Producto","Vigencia (inicio → fin)","Cant.","Rate","Total cr / $"].map((h,i)=>`<th style="padding:8px 10px;text-align:${i>=3?"right":"left"};font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join("")}</tr></thead>
       <tbody>${rowsHTML}${sopRow}</tbody>
       <tfoot><tr style="background:#EFF6FF;border-top:2px solid #1E40AF"><td colspan="5" style="padding:10px;font-size:12px;font-weight:700;color:#1E40AF">TOTAL CRÉDITOS VISION ONE</td><td style="padding:10px;font-size:14px;font-weight:700;font-family:'SF Mono',monospace;text-align:right;color:#1E40AF">${fmt(totalCredits)}</td></tr></tfoot>
     </table>
@@ -574,7 +646,10 @@ function downloadReport(data) {
 }
 
 export default function App() {
-  const [lines, setLines] = useState([{ rowId: 1, prodId: null, qty: 0, date: "" }]);
+  const [lines, setLines] = useState(() => {
+    const d = defaultDates();
+    return [{ rowId: 1, prodId: null, qty: 0, date: d.date, startDate: d.startDate }];
+  });
   const [rc, setRc] = useState(2);
   const [salePrice, setSalePrice] = useState(1.05);
   const [costPrice, setCostPrice] = useState(0.73);
@@ -635,9 +710,13 @@ export default function App() {
   lines.forEach(l => {
     if (l.prodId && l.qty > 0) {
       const p = CATALOG.find(c => c.id === l.prodId);
-      if (p) totalCredits += l.qty * p.credits;
+      if (p) {
+        const months = monthsBetween(l.startDate, l.date);
+        totalCredits += l.qty * p.credits * (months / 12);
+      }
     }
   });
+  totalCredits = Math.round(totalCredits);
   const creditRevenue = totalCredits * salePrice;
   const creditCost    = totalCredits * costPrice;
   const totalRevenue  = creditRevenue + soporteSale;
@@ -649,19 +728,28 @@ export default function App() {
   const mColor = pct => pct >= 20 ? C.green : pct > 0 ? C.amber : C.red;
   const mBg    = pct => pct >= 20 ? C.greenBg : pct > 0 ? C.amberBg : "#FEF2F2";
 
-  const addLine = () => { setLines(p => [...p, { rowId:rc, prodId:null, qty:0, date:"" }]); setRc(c => c+1); };
+  const addLine = () => {
+    const d = defaultDates();
+    setLines(p => [...p, { rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]);
+    setRc(c => c+1);
+  };
   const updateLine = (row) => setLines(p => p.map(l => l.rowId===row.rowId ? row : l));
-  const deleteLine = (id) => setLines(p => p.length>1 ? p.filter(l => l.rowId!==id) : [{ rowId:rc, prodId:null, qty:0, date:"" }]);
+  const deleteLine = (id) => setLines(p => {
+    if (p.length > 1) return p.filter(l => l.rowId!==id);
+    const d = defaultDates();
+    return [{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }];
+  });
   const duplicateLine = (id) => {
     setLines(p => {
       const idx = p.findIndex(l => l.rowId===id);
+      const d = defaultDates();
       const next = [...p];
-      next.splice(idx+1, 0, { rowId:rc, prodId:p[idx].prodId, qty:0, date:"" });
+      next.splice(idx+1, 0, { rowId:rc, prodId:p[idx].prodId, qty:0, date:d.date, startDate:d.startDate });
       return next;
     });
     setRc(c => c+1);
   };
-  const clearAll = () => { if(confirm("¿Limpiar todo?")){ setLines([{ rowId:rc, prodId:null, qty:0, date:"" }]); setRc(c => c+1); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setClientName(""); }};
+  const clearAll = () => { if(confirm("¿Limpiar todo?")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setClientName(""); }};
 
   return (
     <>
@@ -865,9 +953,9 @@ export default function App() {
             <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>
           </div>
 
-          <div style={{ display:"grid", gridTemplateColumns:"40px 1fr 130px 80px 110px 70px", gap:10, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
-            {["#","Producto","Vencimiento","Cant.","Créditos",""].map((h,i) => (
-              <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=3&&i<5?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
+          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 110px 110px 72px 110px 60px", gap:8, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
+            {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
+              <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}
           </div>
           </>
