@@ -3,30 +3,84 @@ import { useState, useRef, useEffect } from "react";
 const TRENDAI_LOGO = "data:image/jpeg;base64,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";
 
 const CATALOG = [
-  { cat:"Vision One Credits", id:"VC", name:"Vision One Credits", credits:1, unit:"crédito", sku:"VORN0309" },
-  { cat:"Endpoint Security", id:"r", name:"Endpoint Security — Core", credits:45, unit:"endpoint", sku:"VORN0034" },
-  { cat:"Endpoint Security", id:"s", name:"Endpoint Security — Essentials", credits:65, unit:"endpoint" },
-  { cat:"Endpoint Security", id:"t", name:"Endpoint Security — Pro", credits:300, unit:"endpoint", sku:"VORN0051" },
-  { cat:"Endpoint Security", id:"v", name:"Mobile Security", credits:5, unit:"dispositivo" },
-  { cat:"Email & Collaboration", id:"x", name:"Email & Collaboration — Core", credits:25, unit:"usuario", sku:"VORN0175" },
-  { cat:"Email & Collaboration", id:"y", name:"Email & Collaboration — Essentials", credits:50, unit:"usuario" },
-  { cat:"Email & Collaboration", id:"z", name:"Email & Collaboration — Pro", credits:105, unit:"usuario" },
-  { cat:"Cyber Risk & Cloud", id:"A", name:"Cyber Risk Exposure Mgmt — Core", credits:20, unit:"dispositivo", sku:"VORN0150" },
-  { cat:"Cyber Risk & Cloud", id:"B", name:"Cyber Risk Exposure Mgmt — Essentials", credits:50, unit:"dispositivo" },
-  { cat:"Cyber Risk & Cloud", id:"D", name:"Cloud Risk Mgmt — 1–500 recursos", credits:1000, unit:"cuenta cloud", sku:"VORN0256" },
-  { cat:"Cyber Risk & Cloud", id:"E", name:"Cloud Risk Mgmt — 501–1000 recursos", credits:2000, unit:"cuenta cloud" },
-  { cat:"Cyber Risk & Cloud", id:"F", name:"Cloud Risk Mgmt — 1001–1500 recursos", credits:3000, unit:"cuenta cloud" },
-  { cat:"Cyber Risk & Cloud", id:"G", name:"Cloud Risk Mgmt — 1501–2000 recursos", credits:4000, unit:"cuenta cloud" },
-  { cat:"Cyber Risk & Cloud", id:"H", name:"Cloud Risk Mgmt — 2001–2500 recursos", credits:5000, unit:"cuenta cloud" },
-  { cat:"XDR / Security Ops", id:"R", name:"XDR for Endpoints (EDR)", credits:20, unit:"endpoint" },
-  { cat:"XDR / Security Ops", id:"S", name:"XDR for Email (EmDR)", credits:5, unit:"usuario" },
-  { cat:"XDR / Security Ops", id:"V", name:"XDR for Cloud (CDR)", credits:3, unit:"GB/año" },
-  { cat:"XDR / Security Ops", id:"P", name:"Forensics", credits:400, unit:"GB" },
-  { cat:"Network Security", id:"AA", name:"ZTSA — Internet + Private Access", credits:110, unit:"usuario" },
-  { cat:"Network Security", id:"AB", name:"ZTSA — Internet Access", credits:60, unit:"usuario" },
-  { cat:"Network Security", id:"AC", name:"ZTSA — Private Access", credits:50, unit:"usuario" },
-  { cat:"Network Security", id:"AD", name:"ZTSA — AI Service Access", credits:50, unit:"usuario" },
-  { cat:"Data Security", id:"AG", name:"Data Security — Endpoint", credits:30, unit:"endpoint" },
+  // Vision One Credits (the credit pool itself)
+  { cat:"Vision One Credits", id:"AK", name:"Trend Vision One Credits", credits:1, unit:"crédito", sku:"VORN0309" },
+
+  // Cyber Risk Exposure Management
+  { cat:"Cyber Risk Exposure Management", id:"A", name:"Cyber Risk Exposure Management - Core", credits:20, unit:"dispositivo evaluado o activo de red", sku:"VORN0150" },
+  { cat:"Cyber Risk Exposure Management", id:"B", name:"Cyber Risk Exposure Management - Essentials (device)", credits:50, unit:"dispositivo evaluado" },
+  { cat:"Cyber Risk Exposure Management", id:"C", name:"Cyber Risk Exposure Management - Essentials (network assets)", credits:20, unit:"activo de red evaluado" },
+
+  // Cloud Risk Management
+  { cat:"Cloud Risk Management", id:"D", name:"Cloud Risk Management 1-500 Resources or cloud assets", credits:1000, unit:"cuenta cloud", sku:"VORN0256" },
+  { cat:"Cloud Risk Management", id:"E", name:"Cloud Risk Management 501-1000 Resources or cloud assets", credits:2000, unit:"cuenta cloud" },
+  { cat:"Cloud Risk Management", id:"F", name:"Cloud Risk Management 1001-1500 Resources or cloud assets", credits:3000, unit:"cuenta cloud" },
+  { cat:"Cloud Risk Management", id:"G", name:"Cloud Risk Management 1501-2000 Resources or cloud assets", credits:4000, unit:"cuenta cloud" },
+  { cat:"Cloud Risk Management", id:"H", name:"Cloud Risk Management 2001-2500 Resources or cloud assets", credits:5000, unit:"cuenta cloud" },
+  { cat:"Cloud Risk Management", id:"I", name:"Cloud Risk Management 2501-3000 Resources or cloud assets", credits:6000, unit:"cuenta cloud" },
+  { cat:"Cloud Risk Management", id:"J", name:"Cloud Risk Management 3001-3500 Resources or cloud assets", credits:7000, unit:"cuenta cloud" },
+  { cat:"Cloud Risk Management", id:"K", name:"Cloud Risk Management 3501+ Resources or cloud assets", credits:8000, unit:"cuenta cloud" },
+
+  // Security Operations
+  { cat:"Security Operations", id:"L", name:"Agentic SIEM - Analytic Data Ingestion", credits:3, unit:"GB de datos ingeridos por día" },
+  { cat:"Security Operations", id:"M", name:"Agentic SIEM - Archival Data Ingestion", credits:1, unit:"GB de datos ingeridos por día" },
+  { cat:"Security Operations", id:"N", name:"Agentic SIEM - Analytic Data Retention", credits:2.4, unit:"GB por mes de retención" },
+  { cat:"Security Operations", id:"O", name:"Agentic SIEM - Archival Data Retention", credits:0.6, unit:"GB por mes de retención" },
+  { cat:"Security Operations", id:"P", name:"Forensics", credits:400, unit:"GB de almacenamiento" },
+  { cat:"Security Operations", id:"Q", name:"Data Pipeline (Outbound)", credits:800, unit:"TB exportado" },
+  { cat:"Security Operations", id:"R", name:"XDR for Endpoints (EDR)", credits:20, unit:"endpoint" },
+  { cat:"Security Operations", id:"S", name:"XDR for Email (EmDR)", credits:5, unit:"usuario" },
+  { cat:"Security Operations", id:"T", name:"XDR for Networks (NDR) - Deep Discovery Inspector", credits:12500, unit:"500Mbps de tráfico" },
+  { cat:"Security Operations", id:"U", name:"XDR for Networks (NDR)", credits:12500, unit:"500Mbps de tráfico" },
+  { cat:"Security Operations", id:"V", name:"XDR for Cloud (CDR)", credits:3, unit:"GB de datos" },
+
+  // Threat Intelligence
+  { cat:"Threat Intelligence", id:"X", name:"Sandbox Analysis - Manual Submission", credits:2, unit:"submission" },
+  { cat:"Threat Intelligence", id:"Y", name:"Sandbox Analysis - Auto Submission con ZTSA Internet Access", credits:7, unit:"usuario" },
+  { cat:"Threat Intelligence", id:"Z", name:"Sandbox Analysis - Auto Submission con Networks", credits:2000, unit:"500Mbps de tráfico" },
+  { cat:"Threat Intelligence", id:"a", name:"Sandbox Analysis - Auto Submission con Endpoint Security", credits:7, unit:"endpoint" },
+  { cat:"Threat Intelligence", id:"b", name:"Threat Intelligence", credits:80000, unit:"V1 tenant" },
+  { cat:"Threat Intelligence", id:"c", name:"Threat Intelligence for Service Providers (V1 xSP)", credits:500000, unit:"V1 tenant" },
+
+  // Cloud Security
+  { cat:"Cloud Security", id:"d", name:"Container Security - Kubernetes node o Amazon ECS instance", credits:1100, unit:"nodo o instancia" },
+  { cat:"Cloud Security", id:"e", name:"Container Security - Serverless container pod o task", credits:110, unit:"pod o task serverless" },
+  { cat:"Cloud Security", id:"f", name:"Container Security - Custom Rule Detection", credits:3, unit:"GB de datos" },
+  { cat:"Cloud Security", id:"g", name:"File Security Virtual Appliance - scans", credits:5000, unit:"500K scans" },
+  { cat:"Cloud Security", id:"i", name:"File Security Virtual Appliance - scanner (5TB)", credits:6000, unit:"scanner" },
+  { cat:"Cloud Security", id:"j", name:"File Security Containerized Scanning - scans", credits:5000, unit:"500K scans" },
+  { cat:"Cloud Security", id:"l", name:"File Security Containerized Scanning - scanner (5TB)", credits:6000, unit:"scanner" },
+  { cat:"Cloud Security", id:"m", name:"File Security SDK - scans", credits:5000, unit:"500K scans" },
+  { cat:"Cloud Security", id:"o", name:"File Security Storage - scans", credits:5000, unit:"500K scans" },
+  { cat:"Cloud Security", id:"q", name:"File Security Storage - bucket", credits:9636, unit:"bucket reservado" },
+
+  // Endpoint Security
+  { cat:"Endpoint Security", id:"r", name:"Endpoint Security Core", credits:45, unit:"endpoint", sku:"VORN0034" },
+  { cat:"Endpoint Security", id:"s", name:"Endpoint Security Essentials", credits:65, unit:"endpoint" },
+  { cat:"Endpoint Security", id:"t", name:"Endpoint Security Pro", credits:300, unit:"endpoint", sku:"VORN0051" },
+  { cat:"Endpoint Security", id:"u", name:"SAP Scanner for Endpoint Security Pro", credits:4800, unit:"servidor SAP" },
+  { cat:"Endpoint Security", id:"v", name:"Mobile Security", credits:5, unit:"dispositivo móvil" },
+
+  // Email and Collaboration Security
+  { cat:"Email and Collaboration Security", id:"x", name:"Email and Collaboration Security Core", credits:25, unit:"usuario", sku:"VORN0175" },
+  { cat:"Email and Collaboration Security", id:"y", name:"Email and Collaboration Security Essentials", credits:50, unit:"usuario" },
+  { cat:"Email and Collaboration Security", id:"z", name:"Email and Collaboration Security Pro", credits:105, unit:"usuario" },
+
+  // Zero Trust Secure Access (Network Security)
+  { cat:"Zero Trust Secure Access", id:"AA", name:"Zero Trust Secure Access - Internet + Private Access", credits:110, unit:"usuario" },
+  { cat:"Zero Trust Secure Access", id:"AB", name:"Zero Trust Secure Access - Internet Access", credits:60, unit:"usuario" },
+  { cat:"Zero Trust Secure Access", id:"AC", name:"Zero Trust Secure Access - Private Access", credits:50, unit:"usuario" },
+  { cat:"Zero Trust Secure Access", id:"AD", name:"Zero Trust Secure Access - AI Service Access", credits:50, unit:"usuario" },
+  { cat:"Zero Trust Secure Access", id:"AE", name:"Zero Trust Secure Access - Internet + AI Service Access", credits:85, unit:"usuario" },
+  { cat:"Zero Trust Secure Access", id:"AF", name:"Zero Trust Secure Access - Outbound Static IP Add-on", credits:4000, unit:"256Mbps de bandwidth" },
+
+  // Data Security
+  { cat:"Data Security", id:"AG", name:"Data Security - Endpoint", credits:30, unit:"endpoint" },
+
+  // AI Security
+  { cat:"AI Security", id:"AH", name:"AI Application Security - Private Cloud", credits:7200, unit:"instancia private cloud" },
+  { cat:"AI Security", id:"AI", name:"AI Application Security - SaaS", credits:9600, unit:"5,000 API usage diario" },
+  { cat:"AI Security", id:"AJ", name:"AI Security Package", credits:1200, unit:"empleado total" },
 ];
 
 const fmt  = n => n.toLocaleString("en-US");
