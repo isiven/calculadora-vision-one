@@ -1688,14 +1688,14 @@ function LineCard({ line, onUpdate, onDelete, idx, isMobile }) {
           )}
 
           {active && (
-            <div style={{ padding:"14px 16px", background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`, borderRadius:9, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div style={{ padding:"14px 16px", backgroundColor:C.blue, background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`, borderRadius:9, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 2px 8px rgba(30,64,175,.2)" }}>
               <div>
-                <div style={{ fontSize:11, color:"#BFDBFE", fontWeight:500 }}>Esta línea consume</div>
-                <div style={{ fontSize:9, color:"#93C5FD", marginTop:1 }}>{fmt(prod.credits)} cr × {line.qty} × {(months/12).toFixed(2)} año(s)</div>
+                <div style={{ fontSize:12, color:"#FFFFFF", fontWeight:600 }}>Esta línea consume</div>
+                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:2, fontWeight:500 }}>{fmt(prod.credits)} cr × {line.qty} × {(months/12).toFixed(2)} año(s)</div>
               </div>
               <div style={{ textAlign:"right" }}>
-                <div style={{ ...mono, fontSize:22, fontWeight:800, color:"#fff" }}>{fmt(proratedTotal)}</div>
-                <div style={{ fontSize:10, color:"#BFDBFE", fontWeight:500, textTransform:"uppercase", letterSpacing:".06em" }}>créditos</div>
+                <div style={{ ...mono, fontSize:24, fontWeight:800, color:"#FFFFFF", lineHeight:1 }}>{fmt(proratedTotal)}</div>
+                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:600, textTransform:"uppercase", letterSpacing:".06em", marginTop:3 }}>créditos</div>
               </div>
             </div>
           )}
@@ -1963,16 +1963,17 @@ function ClientApp() {
 
         {!isMobile && totalCredits > 0 && (
           <div style={{
+            backgroundColor:C.blue,
             background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
-            color:"#fff", borderRadius:14, padding:24,
+            color:"#FFFFFF", borderRadius:14, padding:24,
             display:"flex", alignItems:"center", justifyContent:"space-between", gap:16,
             boxShadow:"0 10px 30px rgba(30,64,175,.25)", marginBottom:18
           }}>
             <div>
-              <div style={{ fontSize:12, color:"#BFDBFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:600, marginBottom:4 }}>Total estimado</div>
+              <div style={{ fontSize:12, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700, marginBottom:4 }}>Total estimado</div>
               <div style={{ display:"flex", alignItems:"baseline", gap:10 }}>
-                <span style={{ ...mono, fontSize:38, fontWeight:800, letterSpacing:"-.02em" }}>{fmt(totalCredits)}</span>
-                <span style={{ fontSize:14, color:"#BFDBFE" }}>créditos Vision One</span>
+                <span style={{ ...mono, fontSize:38, fontWeight:800, letterSpacing:"-.02em", color:"#FFFFFF" }}>{fmt(totalCredits)}</span>
+                <span style={{ fontSize:14, color:"#DBEAFE", fontWeight:500 }}>créditos Vision One</span>
               </div>
             </div>
             <div style={{ display:"flex", gap:10 }}>
@@ -1996,16 +1997,17 @@ function ClientApp() {
       {isMobile && totalCredits > 0 && (
         <div style={{
           position:"fixed", bottom:0, left:0, right:0,
-          background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`, color:"#fff",
+          backgroundColor:C.blue,
+          background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`, color:"#FFFFFF",
           padding:"14px 16px calc(14px + env(safe-area-inset-bottom, 0px))",
           boxShadow:"0 -4px 16px rgba(0,0,0,.15)", zIndex:90
         }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:10 }}>
             <div>
-              <div style={{ fontSize:10, color:"#BFDBFE", textTransform:"uppercase", letterSpacing:".08em" }}>Total estimado</div>
-              <div style={{ ...mono, fontSize:24, fontWeight:800, letterSpacing:"-.01em" }}>{fmt(totalCredits)}</div>
+              <div style={{ fontSize:10, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700 }}>Total estimado</div>
+              <div style={{ ...mono, fontSize:24, fontWeight:800, letterSpacing:"-.01em", color:"#FFFFFF" }}>{fmt(totalCredits)}</div>
             </div>
-            <div style={{ fontSize:10, color:"#BFDBFE", textAlign:"right" }}>créditos<br/>Vision One</div>
+            <div style={{ fontSize:10, color:"#DBEAFE", textAlign:"right", fontWeight:600 }}>créditos<br/>Vision One</div>
           </div>
           <div style={{ display:"flex", gap:8 }}>
             <button onClick={() => downloadEstimate({ lines, totalCredits, clientName, contactName, contactEmail, contactPhone })}
@@ -2050,8 +2052,8 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
         {/* Header with logos */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isMobile?24:32, paddingBottom:20, borderBottom:`1px solid ${C.border}` }}>
           <img src={NEXTCOM_LOGO} alt="Nextcom" style={{ height:isMobile?32:38, width:"auto" }} />
-          <div style={{ height:24, width:1, background:C.border }} />
-          <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?22:26, width:"auto" }} />
+          <div style={{ height:30, width:1, background:C.border }} />
+          <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?32:38, width:"auto" }} />
         </div>
 
         {/* Title */}
