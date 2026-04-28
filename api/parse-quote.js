@@ -55,41 +55,104 @@ Data Security:
 
 // Mapping from SKU to our internal product IDs (matches CATALOG in App.jsx)
 const SKU_TO_ID = {
-  "VORN0309": "VC", "VONN0309": "VC",
-  "VORN0034": "r",  "VONN0034": "r",
-  "VORN0051": "t",  "VONN0051": "t",
-  "VORN0175": "x",  "VONN0175": "x",
-  "VORN0150": "A",  "VONN0150": "A",
-  "VORN0256": "D",  "VONN0256": "D",
+  "VORN0309": "AK", "VONN0309": "AK",   // Vision One Credits
+  "VORN0034": "r",  "VONN0034": "r",     // Endpoint Core
+  "VORN0051": "t",  "VONN0051": "t",     // Endpoint Pro
+  "VORN0175": "x",  "VONN0175": "x",     // Email Core
+  "VORN0150": "A",  "VONN0150": "A",     // CREM Core
+  "VORN0256": "D",  "VONN0256": "D",     // Cloud Risk Mgmt 1-500
 };
 
 // Name-based fallback mapping for when SKU isn't recognized
+// IMPORTANT: more specific patterns must come BEFORE generic ones
 const NAME_HINTS = [
+  // Vision One Credits (specific first)
+  { match: /vision one credits|trend vision one credits/i, id: "AK" },
+
+  // Endpoint Security
+  { match: /sap scanner.*endpoint/i, id: "u" },
   { match: /endpoint.*core/i, id: "r" },
   { match: /endpoint.*essentials/i, id: "s" },
   { match: /endpoint.*pro/i, id: "t" },
-  { match: /mobile/i, id: "v" },
-  { match: /email.*core/i, id: "x" },
-  { match: /email.*essentials/i, id: "y" },
-  { match: /email.*pro/i, id: "z" },
-  { match: /crem.*core|cyber risk.*core/i, id: "A" },
-  { match: /crem.*essentials|cyber risk.*essentials/i, id: "B" },
-  { match: /cloud risk.*1-500|cloud risk.*500/i, id: "D" },
-  { match: /cloud risk.*501|cloud risk.*1000/i, id: "E" },
-  { match: /cloud risk.*1001|cloud risk.*1500/i, id: "F" },
-  { match: /cloud risk.*1501|cloud risk.*2000/i, id: "G" },
+  { match: /mobile security/i, id: "v" },
+
+  // Email
+  { match: /email.*core|email and collab.*core/i, id: "x" },
+  { match: /email.*essentials|email and collab.*essentials/i, id: "y" },
+  { match: /email.*pro|email and collab.*pro/i, id: "z" },
+
+  // Cyber Risk Exposure Management
+  { match: /crem.*core|cyber risk.*core|exposure management.*core/i, id: "A" },
+  { match: /crem.*essentials.*network|exposure management.*essentials.*network/i, id: "C" },
+  { match: /crem.*essentials|exposure management.*essentials/i, id: "B" },
+
+  // Cloud Risk Management (specific tiers)
+  { match: /cloud risk.*3501|cloud risk.*3500\+/i, id: "K" },
+  { match: /cloud risk.*3001|cloud risk.*3500/i, id: "J" },
+  { match: /cloud risk.*2501|cloud risk.*3000/i, id: "I" },
   { match: /cloud risk.*2001|cloud risk.*2500/i, id: "H" },
-  { match: /cloud risk|cloud assets/i, id: "D" }, // default cloud risk
+  { match: /cloud risk.*1501|cloud risk.*2000/i, id: "G" },
+  { match: /cloud risk.*1001|cloud risk.*1500/i, id: "F" },
+  { match: /cloud risk.*501|cloud risk.*1000/i, id: "E" },
+  { match: /cloud risk.*1-500|cloud risk.*500/i, id: "D" },
+  { match: /cloud risk|cloud assets/i, id: "D" }, // generic fallback
+
+  // XDR
+  { match: /xdr.*networks.*deep discovery|deep discovery inspector/i, id: "T" },
+  { match: /xdr.*networks|ndr/i, id: "U" },
   { match: /edr|xdr.*endpoint/i, id: "R" },
   { match: /emdr|xdr.*email/i, id: "S" },
   { match: /cdr|xdr.*cloud/i, id: "V" },
+
+  // Forensics & Data Pipeline
   { match: /forensics/i, id: "P" },
-  { match: /ztsa.*internet.*private/i, id: "AA" },
-  { match: /ztsa.*internet/i, id: "AB" },
-  { match: /ztsa.*private/i, id: "AC" },
-  { match: /ztsa.*ai/i, id: "AD" },
+  { match: /data pipeline/i, id: "Q" },
+
+  // Agentic SIEM
+  { match: /siem.*analytic.*ingestion/i, id: "L" },
+  { match: /siem.*archival.*ingestion/i, id: "M" },
+  { match: /siem.*analytic.*retention/i, id: "N" },
+  { match: /siem.*archival.*retention/i, id: "O" },
+
+  // Sandbox
+  { match: /sandbox.*manual/i, id: "X" },
+  { match: /sandbox.*ztsa|sandbox.*internet access/i, id: "Y" },
+  { match: /sandbox.*networks/i, id: "Z" },
+  { match: /sandbox.*endpoint/i, id: "a" },
+
+  // Threat Intelligence
+  { match: /threat intelligence.*service provider|threat.*xsp/i, id: "c" },
+  { match: /threat intelligence/i, id: "b" },
+
+  // Container Security
+  { match: /container.*custom rule/i, id: "f" },
+  { match: /container.*serverless/i, id: "e" },
+  { match: /container/i, id: "d" },
+
+  // File Security
+  { match: /file security.*virtual.*scanner/i, id: "i" },
+  { match: /file security.*virtual/i, id: "g" },
+  { match: /file security.*containerized.*scanner/i, id: "l" },
+  { match: /file security.*containerized/i, id: "j" },
+  { match: /file security.*sdk/i, id: "m" },
+  { match: /file security.*storage.*bucket/i, id: "q" },
+  { match: /file security.*storage/i, id: "o" },
+
+  // ZTSA
+  { match: /ztsa.*internet.*private|zero trust.*internet.*private/i, id: "AA" },
+  { match: /ztsa.*internet.*ai|zero trust.*internet.*ai/i, id: "AE" },
+  { match: /ztsa.*outbound|zero trust.*outbound|static ip/i, id: "AF" },
+  { match: /ztsa.*internet|zero trust.*internet/i, id: "AB" },
+  { match: /ztsa.*private|zero trust.*private/i, id: "AC" },
+  { match: /ztsa.*ai|zero trust.*ai/i, id: "AD" },
+
+  // Data Security
   { match: /data security.*endpoint/i, id: "AG" },
-  { match: /vision one credits/i, id: "VC" },
+
+  // AI Security
+  { match: /ai.*application.*private/i, id: "AH" },
+  { match: /ai.*application.*saas/i, id: "AI" },
+  { match: /ai security package/i, id: "AJ" },
 ];
 
 function resolveProductId(sku, productName) {
