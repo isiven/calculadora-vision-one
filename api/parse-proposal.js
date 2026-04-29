@@ -95,53 +95,124 @@ NOTAS SOBRE SKUs DE TREND MICRO:
   * VORN0150 / VONN0150 / VONN0159 / VONN0161 → Cyber Risk Exposure Management Core (A)
   * VORN0256 / VONN0256 / VONN0305 → Cloud Risk Management 1001-1500 (F) o el rango que aplique (D=1-500, E=501-1000, F=1001-1500, G=1501-2000, H=2001-2500, I=2501-3000)
 
-⚠️ REGLAS CRÍTICAS PARA ENTITLEMENT CERTIFICATES DE TREND MICRO:
+⚠️⚠️⚠️ REGLA #1 — LA MÁS IMPORTANTE — LEE CON CUIDADO ⚠️⚠️⚠️
 
-1. EL CAMPO "Volume" ES LA CANTIDAD REAL COMPRADA, no el rango.
-   Ejemplo: "Endpoint Security (Core) Normal 251-500 Devices, Volume: 25"
-   → quantity = 25 (NO 250-500). El "Normal 251-500" indica el TIER de pricing.
+EN LOS ENTITLEMENT CERTIFICATES DE TREND MICRO, EL CAMPO "Volume:" ES LA ÚNICA FUENTE DE VERDAD PARA LA CANTIDAD.
 
-2. CUANDO EL SKU ES VONN0000 / VORN0232 / VORN0309 / VONN0309 / VONN0358:
+NUNCA, JAMÁS, BAJO NINGUNA CIRCUNSTANCIA uses los números que aparecen en el NOMBRE del producto como cantidad. Los números en el nombre son RANGOS DE PRICING TIER, no cantidades.
+
+Ejemplos PROHIBIDOS de mala interpretación:
+
+❌ MAL: "Endpoint Security (Core) Normal 51-250 Devices, Volume: 230"
+   La IA NO debe leer "51-250" como rango y poner quantity=250 o promediarlo.
+   Tampoco debe tomar 51 ni 250.
+
+✅ BIEN: quantity = 230 (del campo Volume)
+   El "Normal 51-250 Devices" significa: "este SKU aplica para clientes que compran entre 51 y 250 dispositivos"
+   Es solo el TIER comercial. La cantidad real comprada es 230.
+
+❌ MAL: "Cyber Risk Exposure Management - Core Normal 251-500, Volume: 295"
+   La IA NO debe leer "251-500" como cantidad ni 500 ni 251.
+   Tampoco debe sumarlos.
+
+✅ BIEN: quantity = 295 (del campo Volume)
+
+❌ MAL: "Email and Collaboration Security - Core Normal 251-500 Users, Volume: 460"
+   La IA NO debe usar 500 como qty.
+
+✅ BIEN: quantity = 460 (del campo Volume)
+
+EJEMPLOS DE TIERS COMERCIALES TÍPICOS (estos son SIEMPRE rangos, NUNCA cantidades):
+- "Normal 1-100"
+- "Normal 1-250"
+- "Normal 1-500"
+- "Normal 51-250"
+- "Normal 251-500"
+- "Normal 501-1000"
+- "Normal 1001-1500"
+- "Normal 1501-2000"
+- "Normal 2001-2500"
+- "Normal 1+" (capacidad ilimitada)
+
+Cuando veas cualquier patrón "Normal X-Y" o "Normal X+" en el nombre del producto, IGNÓRALO para efectos de cantidad. Solo usa el campo "Volume:" del bloque del Entitlement Certificate.
+
+═══════════════════════════════════════════════════════════════════
+
+OTRAS REGLAS CRÍTICAS PARA ENTITLEMENT CERTIFICATES:
+
+1. CUANDO EL SKU ES VONN0000 / VORN0232 / VORN0309 / VONN0309 / VONN0358:
    → Es un POOL puro de créditos, NO un producto regular.
    → Debe ir en el campo "total_credits_purchased" del JSON raíz.
    → NO ponerlo dentro del array "products".
    → El "Volume" ES directamente el número de créditos comprados.
    → matched_id NO se usa para el pool.
 
-3. PARA PRODUCTOS REGULARES (no pool):
-   → quantity = Volume (el número de licencias/dispositivos/usuarios)
-   → credits_per_unit = los créditos del catálogo (ej. Email Core = 25, Endpoint Core = 45, Endpoint Pro = 300, CREM Core = 20)
+2. PARA PRODUCTOS REGULARES (no pool):
+   → quantity = Volume (NUNCA del rango del nombre)
+   → credits_per_unit = los créditos del catálogo:
+     * Email & Collaboration Core = 25 cr/usuario
+     * Email & Collaboration Essentials = 50 cr/usuario
+     * Email & Collaboration Pro = 105 cr/usuario
+     * Endpoint Core = 45 cr/dispositivo
+     * Endpoint Essentials = 65 cr/dispositivo
+     * Endpoint Pro = 300 cr/dispositivo
+     * CREM Core = 20 cr/dispositivo
+     * CREM Essentials = 50 cr/dispositivo
+     * CREM Pro = 100 cr/dispositivo
+     * Cloud Risk Mgmt 1-500 = 1000 cr (la unidad ES la suscripción a ese rango)
+     * Cloud Risk Mgmt 501-1000 = 2000 cr
+     * Cloud Risk Mgmt 1001-1500 = 3000 cr
+     * Cloud Risk Mgmt 1501-2000 = 4000 cr
    → total_credits = quantity × credits_per_unit
-   → NUNCA inflar quantity con el rango de pricing
+   → unit: para todos los productos regulares la unidad es "seat" / "usuario" / "dispositivo" / "endpoint" según corresponda. SOLO Vision One Credits Pool usa "crédito" como unidad.
 
-4. EJEMPLO COMPLETO DE INTERPRETACIÓN CORRECTA:
-   Documento: "Trend Vision One Email and Collaboration Security - Core Normal 1-250 Users, Volume: 200, SKU: VONN0186"
-   Resultado correcto:
+3. EJEMPLO COMPLETO DE INTERPRETACIÓN CORRECTA:
+
+   Documento muestra:
+     "Trend Vision One Email and Collaboration Security - Core Normal 251-500 Users Renew"
+     SKU: VORN0174
+     Volume: 460
+     Start Date: 04/30/25
+     End Date: 04/29/26
+
+   Respuesta correcta:
    {
      "name_in_proposal": "Email and Collaboration Security - Core",
-     "sku": "VONN0186",
+     "sku": "VORN0174",
      "matched_id": "x",
-     "quantity": 200,           ← el VOLUMEN, no el rango "1-250"
-     "credits_per_unit": 25,    ← Email Core son 25 créditos por usuario
-     "total_credits": 5000,     ← 200 × 25
-     "unit": "usuarios"
+     "quantity": 460,           ← del campo Volume, NO del rango "251-500"
+     "unit": "usuarios",
+     "credits_per_unit": 25,    ← Email Core son 25 cr/usuario
+     "total_credits": 11500,    ← 460 × 25 = 11,500
+     "start_date": "2025-04-30",
+     "end_date": "2026-04-29",
+     "dates_confidence": "explicit",
+     "match_confidence": "high"
    }
 
-5. EJEMPLO PARA POOL:
+4. EJEMPLO PARA POOL:
    Documento: "Trend Vision One Credits Normal 1+ Credits New, Volume: 2135, SKU: VONN0000"
    Resultado correcto:
    {
      "total_credits_purchased": 2135,
-     "products": []  ← (o productos individuales si los hay en otras páginas, pero el pool NO va aquí)
+     "products": []  ← NO se pone aquí, va en total_credits_purchased
    }
 
-6. SI UN PDF TIENE MÚLTIPLES CERTIFICADOS (varias páginas):
+5. SI UN PDF TIENE MÚLTIPLES CERTIFICADOS (varias páginas):
    → Cada página es un certificado independiente
-   → Cada producto regular va al array "products"
+   → Cada producto regular va al array "products" con su propio Volume
    → Cada certificado de pool standalone se SUMA al total_credits_purchased
    → Ejemplo: si hay un certificado de pool de 2,135 cr y 5 certificados de productos regulares:
      total_credits_purchased = 2135
-     products = [los 5 productos individuales]
+     products = [los 5 productos individuales, cada uno con SU PROPIO Volume]
+
+VERIFICACIÓN ANTES DE RESPONDER:
+Antes de devolver el JSON, REVISA cada producto:
+- ¿quantity coincide con el campo "Volume" del documento? ← SÍ DEBE
+- ¿quantity coincide con algún rango del nombre del producto (51, 250, 500, 1000)? ← NO DEBE
+- ¿total_credits = quantity × credits_per_unit? ← SÍ DEBE
+
+Si una respuesta no pasa estas 3 verificaciones, está MAL.
 `;
 
 const SYSTEM_PROMPT = `Eres un experto en propuestas, certificados y cotizaciones de Trend Micro Vision One.
