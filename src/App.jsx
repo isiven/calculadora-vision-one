@@ -263,8 +263,11 @@ function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
   usageItems.forEach(it => { usageAnnual += (Number(it.monthly) || 0) * 12; });
   let proposalSum = 0;
   proposalItems.forEach(it => { proposalSum += Number(it.totalCredits) || 0; });
-  // Pool standalone es ADITIVO con productos individuales
-  const proposalEffective = (proposalTotalPool || 0) + proposalSum;
+
+  // proposalTotalPool viene como el EFFECTIVE TOTAL ya calculado por el código del cliente
+  // (suma de pool standalone + productos individuales, evitando doble conteo).
+  // Por lo tanto, lo usamos directamente como la fuente de verdad.
+  const proposalEffective = Number(proposalTotalPool) || 0;
 
   result.totalAnnualUsage = usageAnnual;
   result.totalProposalEffective = proposalEffective;
@@ -3297,9 +3300,9 @@ function ClientApp() {
              Solo aparece si hay propuesta + consumo
         ═══════════════════════════════════════════════════════════════ */}
         {hasComparative && (() => {
-          // Pasar SOLO el pool standalone, no el effectiveTotal
-          // (el audit internamente suma pool + items)
-          const audit = auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool);
+          // proposalEffectiveTotal ya viene calculado correctamente como pool + items
+          // (sin doble conteo). Lo pasamos directo al audit como fuente de verdad.
+          const audit = auditUsageVsProposal(proposalItems, usageItems, proposalEffectiveTotal);
           return audit.hasFindings ? (
             <AuditPanel audit={audit} isMobile={isMobile} mode="client" />
           ) : null;
