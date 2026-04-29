@@ -269,6 +269,8 @@ function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
   result.totalAnnualUsage = usageAnnual;
   result.totalProposalEffective = proposalEffective;
   result.totalUnallocated = Math.max(0, proposalEffective - usageAnnual);
+  result.totalDeficit = Math.max(0, usageAnnual - proposalEffective);
+  result.isOverPool = usageAnnual > proposalEffective;
 
   // ═══ Detección 1: Saltos de tier ═══
   // Para cada familia, ver qué tier compró vs qué tier consume
@@ -398,7 +400,8 @@ function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
     result.tierEscalations.length > 0 ||
     result.unplannedProducts.length > 0 ||
     result.unusedProducts.length > 0 ||
-    result.totalUnallocated > 0;
+    result.totalUnallocated > 0 ||
+    result.totalDeficit > 0;
 
   return result;
 }
@@ -3294,7 +3297,9 @@ function ClientApp() {
              Solo aparece si hay propuesta + consumo
         ═══════════════════════════════════════════════════════════════ */}
         {hasComparative && (() => {
-          const audit = auditUsageVsProposal(proposalItems, usageItems, proposalEffectiveTotal);
+          // Pasar SOLO el pool standalone, no el effectiveTotal
+          // (el audit internamente suma pool + items)
+          const audit = auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool);
           return audit.hasFindings ? (
             <AuditPanel audit={audit} isMobile={isMobile} mode="client" />
           ) : null;
@@ -3802,8 +3807,38 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
           </div>
         )}
 
-        {/* ═══ UNALLOCATED POOL ═══ */}
-        {audit.totalUnallocated > 0 && (
+        {/* ═══ DÉFICIT (consumo > pool) ═══ */}
+        {audit.totalDeficit > 0 && (
+          <div style={{ background: "#FEF2F2", border: "2px solid #F87171", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 18 }}>🚨</span>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#991B1B" }}>
+                  Estás excediendo tu pool comprado
+                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, color: "#7F1D1D", marginTop: 2, lineHeight: 1.5 }}>
+                  {isInternal
+                    ? "Cliente está consumiendo más créditos de los que compró. Trend Micro le está cobrando overages PAYG sobre el contrato. Oportunidad CRÍTICA de upsell en próxima renovación."
+                    : "Tu consumo actual supera los créditos disponibles en tu contrato. Trend Micro factura el excedente como cargos adicionales (pay-as-you-go) sobre tu plan anual."}
+                </div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#DC2626" }}>
+                  +{fmt(audit.totalDeficit)} cr
+                </div>
+                <div style={{ fontSize: 10, color: "#991B1B", fontWeight: 600, marginTop: 2 }}>en exceso/año</div>
+              </div>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 7, padding: 10, fontSize: 11, color: "#7F1D1D", lineHeight: 1.5 }}>
+              💡 <strong>{isInternal ? "Acción comercial:" : "Recomendación:"}</strong> {isInternal
+                ? `Cliente debería renovar con un pool ampliado de al menos ${fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos (consumo actual + 10% buffer) para evitar seguir pagando overages.`
+                : `Para tu próxima renovación, considera ampliar tu pool a al menos ${fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos (consumo actual + 10% de buffer para crecimiento) y dejar de pagar cargos PAYG sobre tu contrato.`}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SOBRANTE (pool > consumo) — solo si NO hay déficit ═══ */}
+        {audit.totalUnallocated > 0 && audit.totalDeficit === 0 && (
           <div style={{ background: "#ECFDF5", border: "1.5px solid #6EE7B7", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
               <span style={{ fontSize: 18 }}>💰</span>
