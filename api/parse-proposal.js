@@ -87,15 +87,61 @@ VISION ONE CREDITS POOL:
 NOTAS SOBRE SKUs DE TREND MICRO:
 - Los SKUs pueden tener prefijo "VORN" (renovación) o "VONN" (new purchase). Son el MISMO producto, solo cambia si es nueva compra o renovación.
 - Mapping de SKUs comunes:
-  * VORN0309 / VONN0309 → Vision One Credits Pool (AK)
-  * VORN0034 / VONN0034 → Endpoint Security Core (r)
-  * VORN0051 / VONN0051 → Endpoint Security Pro (t)
-  * VORN0175 / VONN0175 → Email and Collaboration Core (x)
-  * VORN0150 / VONN0150 / VONN0159 → Cyber Risk Exposure Management Core (A)
-  * VORN0256 / VONN0256 → Cloud Risk Management 1-500 (D)
-  * VONN0358 / VORN0358 → Vision One Credits 1-year pricing (este es POOL, AK)
-- Si ves un SKU "VONN0XXX" o "VORN0XXX" no listado arriba, deduce el producto del nombre del producto que aparece al lado.
-- "Trend Vision One Credits - 1-year pricing" → es el POOL principal (AK), su volumen ES el total de créditos comprados.
+  * VONN0000 / VORN0232 / VORN0309 / VONN0309 / VONN0358 → Vision One Credits Pool (matched_id="AK")
+    ESTOS SON CRÉDITOS PUROS, NO un producto individual.
+  * VORN0033 / VONN0034 / VONN0035 → Endpoint Security Core (r) — distintos rangos de pricing
+  * VORN0051 / VONN0051 / VONN0052 → Endpoint Security Pro (t) — distintos rangos de pricing
+  * VORN0174 / VONN0175 / VONN0186 → Email and Collaboration Core (x) — distintos rangos
+  * VORN0150 / VONN0150 / VONN0159 / VONN0161 → Cyber Risk Exposure Management Core (A)
+  * VORN0256 / VONN0256 / VONN0305 → Cloud Risk Management 1001-1500 (F) o el rango que aplique (D=1-500, E=501-1000, F=1001-1500, G=1501-2000, H=2001-2500, I=2501-3000)
+
+⚠️ REGLAS CRÍTICAS PARA ENTITLEMENT CERTIFICATES DE TREND MICRO:
+
+1. EL CAMPO "Volume" ES LA CANTIDAD REAL COMPRADA, no el rango.
+   Ejemplo: "Endpoint Security (Core) Normal 251-500 Devices, Volume: 25"
+   → quantity = 25 (NO 250-500). El "Normal 251-500" indica el TIER de pricing.
+
+2. CUANDO EL SKU ES VONN0000 / VORN0232 / VORN0309 / VONN0309 / VONN0358:
+   → Es un POOL puro de créditos, NO un producto regular.
+   → Debe ir en el campo "total_credits_purchased" del JSON raíz.
+   → NO ponerlo dentro del array "products".
+   → El "Volume" ES directamente el número de créditos comprados.
+   → matched_id NO se usa para el pool.
+
+3. PARA PRODUCTOS REGULARES (no pool):
+   → quantity = Volume (el número de licencias/dispositivos/usuarios)
+   → credits_per_unit = los créditos del catálogo (ej. Email Core = 25, Endpoint Core = 45, Endpoint Pro = 300, CREM Core = 20)
+   → total_credits = quantity × credits_per_unit
+   → NUNCA inflar quantity con el rango de pricing
+
+4. EJEMPLO COMPLETO DE INTERPRETACIÓN CORRECTA:
+   Documento: "Trend Vision One Email and Collaboration Security - Core Normal 1-250 Users, Volume: 200, SKU: VONN0186"
+   Resultado correcto:
+   {
+     "name_in_proposal": "Email and Collaboration Security - Core",
+     "sku": "VONN0186",
+     "matched_id": "x",
+     "quantity": 200,           ← el VOLUMEN, no el rango "1-250"
+     "credits_per_unit": 25,    ← Email Core son 25 créditos por usuario
+     "total_credits": 5000,     ← 200 × 25
+     "unit": "usuarios"
+   }
+
+5. EJEMPLO PARA POOL:
+   Documento: "Trend Vision One Credits Normal 1+ Credits New, Volume: 2135, SKU: VONN0000"
+   Resultado correcto:
+   {
+     "total_credits_purchased": 2135,
+     "products": []  ← (o productos individuales si los hay en otras páginas, pero el pool NO va aquí)
+   }
+
+6. SI UN PDF TIENE MÚLTIPLES CERTIFICADOS (varias páginas):
+   → Cada página es un certificado independiente
+   → Cada producto regular va al array "products"
+   → Cada certificado de pool standalone se SUMA al total_credits_purchased
+   → Ejemplo: si hay un certificado de pool de 2,135 cr y 5 certificados de productos regulares:
+     total_credits_purchased = 2135
+     products = [los 5 productos individuales]
 `;
 
 const SYSTEM_PROMPT = `Eres un experto en propuestas, certificados y cotizaciones de Trend Micro Vision One.
