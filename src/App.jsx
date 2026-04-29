@@ -2364,6 +2364,21 @@ function ClientApp() {
           const tc = Number(p.total_credits) || (qty * cpu);
           computedFromProducts += tc;
 
+          // ⚠ SUSPICION CHECK: detectar si la IA confundió el rango con la cantidad
+          // Patrones tipo "Normal 51-250", "Normal 251-500", "Normal 1-100" en el nombre
+          // y el qty coincide EXACTAMENTE con uno de los límites del rango
+          let suspiciousQty = false;
+          const nameStr = (p.name_in_proposal || "").toLowerCase();
+          const rangeMatch = nameStr.match(/normal\s+(\d+)\s*[-]\s*(\d+)/);
+          if (rangeMatch) {
+            const lower = parseInt(rangeMatch[1]);
+            const upper = parseInt(rangeMatch[2]);
+            // Si el qty coincide exactamente con uno de los límites del rango, es muy sospechoso
+            if (qty === lower || qty === upper) {
+              suspiciousQty = true;
+            }
+          }
+
           // Date confidence per product
           const datesConf = p.dates_confidence || "unknown";
           let pStart = "";
@@ -2390,6 +2405,7 @@ function ClientApp() {
             datesConfidence: datesConf,
             startDate: pStart,
             endDate: pEnd,
+            suspiciousQty: suspiciousQty,
           });
         });
 
@@ -2456,6 +2472,8 @@ function ClientApp() {
       // Recalc total when qty or creditsPerUnit changes
       if (field === "qty" || field === "creditsPerUnit") {
         updated.totalCredits = (Number(updated.qty) || 0) * (Number(updated.creditsPerUnit) || 0);
+        // User edited qty manually → ya no es "sospechosa"
+        if (field === "qty") updated.suspiciousQty = false;
       }
       // When user manually edits dates, mark as confirmed by user
       if (field === "startDate" || field === "endDate") {
@@ -3055,6 +3073,9 @@ function ClientApp() {
                               )}
                               {needsDates && (
                                 <div style={{ fontSize:11, color:"#DC2626", marginTop:3, fontWeight:600 }}>⚠ Confirma las fechas →</div>
+                              )}
+                              {it.suspiciousQty && (
+                                <div style={{ fontSize:11, color:"#DC2626", marginTop:3, fontWeight:600, background:"#FEF2F2", padding:"3px 6px", borderRadius:4, display:"inline-block" }}>⚠ Verifica esta cantidad — coincide con un rango de pricing del nombre</div>
                               )}
                             </td>
                             <td style={{ padding:"6px 12px", textAlign:"right" }}>
