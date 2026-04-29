@@ -1706,7 +1706,12 @@ function LineCard({ line, onUpdate, onDelete, idx, isMobile }) {
 }
 
 function downloadEstimate(data) {
-  const { lines, totalCredits, clientName, contactName, contactEmail, contactPhone } = data;
+  const {
+    lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
+    usageItems = [], usageMonth = "", usageMonthlyTotal = 0, usageAnnualTotal = 0,
+    proposalItems = [], proposalEffectiveTotal = 0, proposalDate = "", proposalPeriod = "",
+    hasComparative = false, efficiency = 0, surplus = 0, deficit = 0, recommendedAnnual = 0
+  } = data;
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
@@ -1715,22 +1720,163 @@ function downloadEstimate(data) {
     return { ...l, prod:p, months, prorated, isProrated: Math.abs(months - 12) > 0.1 };
   });
 
-  const rowsHTML = active.map((l, i) => `
-    <tr>
-      <td style="padding:10px 12px;font-size:11px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4;vertical-align:top">${String(i+1).padStart(2,"0")}</td>
-      <td style="padding:10px 12px;font-size:12px;border-bottom:1px solid #E7E5E4;vertical-align:top">
-        <strong>${l.prod.name}</strong>
-        ${DESC[l.prod.id] ? `<br><span style="font-size:10px;color:#57534E">${DESC[l.prod.id]}</span>` : ""}
-        ${l.isProrated ? `<br><span style="font-size:9px;color:#B45309;background:#FFFBEB;padding:1px 5px;border-radius:3px;font-family:'SF Mono',monospace;display:inline-block;margin-top:3px">⚠ ${l.months}m vigencia</span>` : ""}
-      </td>
-      <td style="padding:10px 12px;font-size:11px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace;line-height:1.4;vertical-align:top">
-        ${l.startDate || "—"}<br><span style="color:#A8A29E">→ ${l.date || "—"}</span>
-      </td>
-      <td style="padding:10px 12px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4;vertical-align:top">${l.qty.toLocaleString()}<br><span style="font-size:9px;color:#A8A29E;font-weight:400">${l.prod.unit}</span></td>
-      <td style="padding:10px 12px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4;vertical-align:top;font-size:14px">${fmt(l.prorated)}</td>
-    </tr>`).join("");
+  const hasUsage = usageItems.length > 0 && usageAnnualTotal > 0;
+  const hasProposal = proposalEffectiveTotal > 0;
+  const hasNewQuote = active.length > 0;
 
-  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Estimado Vision One${clientName ? " — " + clientName : ""}</title>
+  // Helper to render usage section
+  const usageSection = !hasUsage ? "" : `
+  <div style="margin-bottom:24px;page-break-inside:avoid">
+    <div style="font-size:11px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <span style="background:#1E40AF;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px">📊 Sección 1</span>
+      <span>Consumo actual de Vision One${usageMonth ? ` · ${usageMonth}` : ""}</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
+      <thead><tr style="background:#F5F5F4">
+        <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Producto</th>
+        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Mensual</th>
+        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Anual ×12</th>
+        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">≈ Licencias</th>
+      </tr></thead>
+      <tbody>
+        ${usageItems.map(it => {
+          const prod = it.prodId ? CATALOG.find(c => c.id === it.prodId) : null;
+          const annual = (Number(it.monthly) || 0) * 12;
+          const licenses = prod && prod.credits > 0 ? Math.round(annual / prod.credits) : null;
+          return `<tr>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;font-size:11px">${prod ? prod.name : (it.nameInScreenshot || "—")}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;text-align:right;font-family:'SF Mono',monospace;font-size:11px">${fmt(it.monthly)}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700">${fmt(annual)}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#1E40AF;font-weight:700">${licenses !== null ? `≈ ${fmt(licenses)} ${prod.unit}${licenses !== 1 ? "s" : ""}` : "—"}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+      <tfoot>
+        <tr style="background:#EFF6FF">
+          <td style="padding:10px;font-size:11px;font-weight:700;color:#1E40AF">Total consumo proyectado anual</td>
+          <td style="padding:10px;text-align:right;font-family:'SF Mono',monospace;font-size:12px;font-weight:700;color:#1E40AF">${fmt(usageMonthlyTotal)}</td>
+          <td style="padding:10px;text-align:right;font-family:'SF Mono',monospace;font-size:14px;font-weight:800;color:#1E40AF">${fmt(usageAnnualTotal)}</td>
+          <td style="padding:10px;font-size:10px;color:#1E40AF">cr/año</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>`;
+
+  // Helper to render proposal section
+  const proposalSection = !hasProposal ? "" : `
+  <div style="margin-bottom:24px;page-break-inside:avoid">
+    <div style="font-size:11px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <span style="background:#B45309;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px">📄 Sección ${hasUsage ? "2" : "1"}</span>
+      <span>Propuesta anterior${proposalPeriod ? ` · ${proposalPeriod}` : ""}${proposalDate ? ` · ${proposalDate}` : ""}</span>
+    </div>
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:11px;color:#78350F;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Pool total comprado</div>
+        <div style="font-family:'SF Mono',monospace;font-size:22px;font-weight:800;color:#B45309">${fmt(proposalEffectiveTotal)} cr</div>
+      </div>
+    </div>
+    ${proposalItems.length > 0 ? `
+    <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
+      <thead><tr style="background:#F5F5F4">
+        <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Producto</th>
+        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Comprado</th>
+        <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Créditos</th>
+      </tr></thead>
+      <tbody>
+        ${proposalItems.map(it => {
+          const prod = it.prodId ? CATALOG.find(c => c.id === it.prodId) : null;
+          const unit = prod ? prod.unit : "";
+          return `<tr>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;font-size:11px">${prod ? prod.name : (it.nameInProposal || "—")}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;text-align:right;font-family:'SF Mono',monospace;font-size:11px">${fmt(it.qty)} ${unit}${it.qty !== 1 ? "s" : ""}</td>
+            <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#B45309;font-weight:700">${fmt(it.totalCredits)}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>` : ""}
+  </div>`;
+
+  // Helper to render comparative section
+  const comparativeSection = !hasComparative ? "" : `
+  <div style="margin-bottom:24px;page-break-inside:avoid">
+    <div style="font-size:11px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <span style="background:#1E40AF;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px">📈 Sección 3</span>
+      <span>Análisis comparativo</span>
+    </div>
+    <div style="background:linear-gradient(135deg,#1E40AF 0%,#1E3A8A 100%);background-color:#1E40AF;border-radius:10px;padding:18px;color:#fff;margin-bottom:10px">
+      <table style="width:100%;border-collapse:separate;border-spacing:8px">
+        <tr>
+          <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Comprado</div>
+            <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800">${fmt(proposalEffectiveTotal)}</div>
+          </td>
+          <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Consumido</div>
+            <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800">${fmt(usageAnnualTotal)}</div>
+          </td>
+          <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Eficiencia</div>
+            <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800;color:${efficiency > 100 ? "#FCA5A5" : "#FFFFFF"}">${efficiency.toFixed(1)}%</div>
+          </td>
+          <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${efficiency > 100 ? "Déficit" : "Sobrante"}</div>
+            <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800;color:${efficiency > 100 ? "#FCA5A5" : "#86EFAC"}">${efficiency > 100 ? "+" + fmt(deficit) : fmt(surplus)}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div style="background:#FAFAF9;border-left:4px solid #1E40AF;padding:12px 16px;border-radius:0 8px 8px 0">
+      <div style="font-size:11px;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Recomendación</div>
+      <div style="font-size:11px;color:#0C0A09;line-height:1.55">
+        ${efficiency > 100
+          ? `<strong>Tu consumo supera lo comprado.</strong> Estás usando ${fmt(deficit)} créditos más al año. Para tu próxima renovación, considera <strong>${fmt(recommendedAnnual)} créditos</strong> (incluye 10% buffer para crecimiento).`
+          : efficiency < 70
+          ? `<strong>Estás muy por debajo de tu pool comprado.</strong> Solo usas el ${efficiency.toFixed(1)}% de tus créditos. Para optimizar, considera <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer) y ahorra significativamente.`
+          : `<strong>Tu pool está bien dimensionado</strong> con sobrante saludable de ${fmt(surplus)} créditos. Para próxima renovación podrías mantener algo similar o considerar <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer).`
+        }
+      </div>
+    </div>
+  </div>`;
+
+  // Helper for new quote section
+  const sectionNumber = hasComparative ? "4" : (hasUsage && hasProposal ? "3" : (hasUsage || hasProposal ? "2" : "1"));
+  const newQuoteSection = !hasNewQuote ? "" : `
+  <div style="margin-bottom:24px">
+    <div style="font-size:11px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+      <span style="background:#047857;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px">🛒 Sección ${sectionNumber}</span>
+      <span>Cotización deseada para próximo periodo</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
+      <thead><tr style="background:#F5F5F4">
+        ${["#","Producto","Vigencia","Cantidad","Créditos"].map((h,i)=>`<th style="padding:8px 10px;text-align:${i>=3?"right":"left"};font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join("")}
+      </tr></thead>
+      <tbody>
+        ${active.map((l, i) => `<tr>
+          <td style="padding:8px 10px;font-size:10px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4;vertical-align:top">${String(i+1).padStart(2,"0")}</td>
+          <td style="padding:8px 10px;font-size:11px;border-bottom:1px solid #E7E5E4;vertical-align:top">
+            <strong>${l.prod.name}</strong>
+            ${l.isProrated ? `<br><span style="font-size:9px;color:#B45309">⚠ ${l.months}m vigencia</span>` : ""}
+          </td>
+          <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace;vertical-align:top">${l.startDate || "—"} → ${l.date || "—"}</td>
+          <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4;vertical-align:top;font-size:11px">${l.qty.toLocaleString()} ${l.prod.unit}${l.qty !== 1 ? "s" : ""}</td>
+          <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4;vertical-align:top;font-size:13px">${fmt(l.prorated)}</td>
+        </tr>`).join("")}
+      </tbody>
+      <tfoot><tr style="background:#EFF6FF;border-top:2px solid #1E40AF">
+        <td colspan="4" style="padding:10px;font-size:12px;font-weight:700;color:#1E40AF">TOTAL CRÉDITOS COTIZACIÓN</td>
+        <td style="padding:10px;font-size:16px;font-weight:800;font-family:'SF Mono',monospace;text-align:right;color:#1E40AF">${fmt(totalCredits)}</td>
+      </tr></tfoot>
+    </table>
+  </div>`;
+
+  // Document title based on what was included
+  const docTitle = hasComparative
+    ? `Análisis Vision One${clientName ? " — " + clientName : ""}`
+    : hasUsage
+    ? `Análisis de Consumo Vision One${clientName ? " — " + clientName : ""}`
+    : `Estimado Vision One${clientName ? " — " + clientName : ""}`;
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${docTitle}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:system-ui,-apple-system,sans-serif;color:#0C0A09;background:#fff;font-size:13px;padding:24px 28px}
@@ -1750,39 +1896,33 @@ function downloadEstimate(data) {
     <div style="display:flex;align-items:center;gap:14px">
       <img src="${NEXTCOM_LOGO}" alt="Nextcom" style="height:38px;width:auto" />
       <div style="border-left:1px solid #E7E5E4;padding-left:14px">
-        <div style="font-size:11px;color:#A8A29E;font-weight:500">Estimado de Créditos</div>
+        <div style="font-size:11px;color:#A8A29E;font-weight:500">${hasComparative ? "Análisis de Consumo y Optimización" : hasUsage && !hasNewQuote ? "Análisis de Consumo Mensual" : "Estimado de Créditos"}</div>
         <div style="font-size:14px;color:#0C0A09;font-weight:700;letter-spacing:-.01em">Trend Vision One${clientName ? ` · ${clientName}` : ""}</div>
       </div>
     </div>
     <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       <img src="${TRENDAI_LOGO}" alt="TrendAI" style="height:26px;width:auto" />
       <div style="font-size:11px;color:#A8A29E">${today}</div>
-      <div style="display:inline-block;background:#EFF6FF;color:#1E40AF;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;letter-spacing:.04em">ESTIMADO PRELIMINAR</div>
+      <div style="display:inline-block;background:#EFF6FF;color:#1E40AF;font-size:9px;font-weight:700;padding:3px 9px;border-radius:4px;letter-spacing:.04em">DOCUMENTO PRELIMINAR</div>
     </div>
   </div>
 
-  <div style="background:linear-gradient(135deg,#1E40AF 0%,#1E3A8A 100%);border-radius:12px;padding:24px;margin-bottom:24px;color:#fff;text-align:center">
-    <div style="font-size:12px;color:#BFDBFE;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Total de créditos estimados</div>
-    <div style="font-family:'SF Mono',monospace;font-size:48px;font-weight:800;line-height:1;letter-spacing:-.02em">${fmt(totalCredits)}</div>
-    <div style="font-size:13px;color:#BFDBFE;margin-top:6px">para ${active.length} producto${active.length !== 1 ? "s" : ""} de Vision One</div>
-  </div>
+  ${hasNewQuote ? `
+  <div style="background:linear-gradient(135deg,#1E40AF 0%,#1E3A8A 100%);background-color:#1E40AF;border-radius:12px;padding:20px;margin-bottom:24px;color:#fff;text-align:center">
+    <div style="font-size:11px;color:#BFDBFE;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Total de la cotización</div>
+    <div style="font-family:'SF Mono',monospace;font-size:42px;font-weight:800;line-height:1;letter-spacing:-.02em">${fmt(totalCredits)}</div>
+    <div style="font-size:12px;color:#BFDBFE;margin-top:6px">créditos Vision One para ${active.length} producto${active.length !== 1 ? "s" : ""}</div>
+  </div>` : ""}
 
-  <div style="font-size:11px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Detalle de productos solicitados</div>
-  <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;margin-bottom:24px">
-    <thead><tr style="background:#F5F5F4">
-      ${["#","Producto","Vigencia","Cantidad","Créditos"].map((h,i)=>`<th style="padding:9px 12px;text-align:${i>=3?"right":"left"};font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join("")}
-    </tr></thead>
-    <tbody>${rowsHTML}</tbody>
-    <tfoot><tr style="background:#EFF6FF;border-top:2px solid #1E40AF">
-      <td colspan="4" style="padding:12px;font-size:13px;font-weight:700;color:#1E40AF">TOTAL CRÉDITOS VISION ONE</td>
-      <td style="padding:12px;font-size:18px;font-weight:800;font-family:'SF Mono',monospace;text-align:right;color:#1E40AF">${fmt(totalCredits)}</td>
-    </tr></tfoot>
-  </table>
+  ${usageSection}
+  ${proposalSection}
+  ${comparativeSection}
+  ${newQuoteSection}
 
   <div style="background:#FAFAF9;border-left:4px solid #1E40AF;padding:14px 18px;border-radius:0 8px 8px 0;margin-bottom:18px">
     <div style="font-size:12px;font-weight:700;color:#0C0A09;margin-bottom:6px">📋 Importante</div>
     <div style="font-size:11px;color:#57534E;line-height:1.6">
-      Este estimado refleja únicamente la cantidad de créditos Vision One requeridos según los productos seleccionados. <strong>El precio final del licenciamiento será proporcionado por Nextcom Systems</strong> en una cotización formal, considerando volumen, soporte adicional y términos comerciales.
+      Este documento refleja únicamente cantidades de créditos Vision One. <strong>El precio final del licenciamiento será proporcionado por Nextcom Systems</strong> en una cotización formal, considerando volumen, soporte adicional y términos comerciales.
     </div>
   </div>
 
@@ -1811,7 +1951,10 @@ function downloadEstimate(data) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `Estimado_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.html`;
+  const filename = hasComparative
+    ? `Analisis_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.html`
+    : `Estimado_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.html`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1832,58 +1975,220 @@ function ClientApp() {
 
   // --- Consumo actual (Mi Drawdown) ---
   const [usageOpen, setUsageOpen] = useState(false);     // panel expandido?
-  const [usageItems, setUsageItems] = useState([]);      // [{name, monthly, prodId, confidence}]
+  const [usageItems, setUsageItems] = useState([]);      // [{name, monthly, prodId, confidence, sourceFiles:[name]}]
   const [usageMonth, setUsageMonth] = useState("");      // "April 2026"
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState("");
+  const [usageFiles, setUsageFiles] = useState([]);      // [{name, productCount, monthlyTotal}]
   const usageFileRef = useRef(null);
 
-  const onUsageFile = async (file) => {
-    if (!file || !file.type.startsWith("image/")) {
-      setUsageError("Solo imágenes (PNG, JPG). Toma un screenshot del reporte.");
-      return;
+  // --- Propuesta anterior ---
+  const [proposalItems, setProposalItems] = useState([]);     // [{name, qty, prodId, confidence, creditsPerUnit, totalCredits, sourceFile, startDate, endDate}]
+  const [proposalTotalPool, setProposalTotalPool] = useState(0);
+  const [proposalDate, setProposalDate] = useState("");
+  const [proposalPeriod, setProposalPeriod] = useState("");
+  const [proposalLoading, setProposalLoading] = useState(false);
+  const [proposalError, setProposalError] = useState("");
+  const [proposalFiles, setProposalFiles] = useState([]);     // [{name, productCount, poolCredits, period, startDate, endDate}]
+  const proposalFileRef = useRef(null);
+
+  // --- Unificación de fechas (cuando hay multiples contratos) ---
+  const [unifyOpen, setUnifyOpen] = useState(false);
+  const [unifyTargetDate, setUnifyTargetDate] = useState("");
+  const [unifyStartDate, setUnifyStartDate] = useState(""); // empty = use today
+
+  // Helper: process one usage file and return parsed items
+  const processOneUsageFile = async (file) => {
+    if (!file.type.startsWith("image/")) {
+      throw new Error(`"${file.name}": solo imágenes`);
     }
+    const reader = new FileReader();
+    const b64 = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = () => reject(new Error("Error leyendo archivo"));
+      reader.readAsDataURL(file);
+    });
+    const resp = await fetch("/api/parse-usage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileData: b64, fileType: file.type }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Error procesando " + file.name);
+    if (!data.products || data.products.length === 0) {
+      throw new Error(`"${file.name}": no detecté productos Vision One`);
+    }
+    return { products: data.products, monthLabel: data.month_label || "" };
+  };
+
+  const onUsageFile = async (files) => {
+    const fileList = Array.from(files || []);
+    if (fileList.length === 0) return;
+
     setUsageLoading(true);
     setUsageError("");
-    try {
-      // Read file as base64
-      const reader = new FileReader();
-      const b64 = await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = () => reject(new Error("Error leyendo archivo"));
-        reader.readAsDataURL(file);
-      });
-      const resp = await fetch("/api/parse-usage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileData: b64, fileType: file.type }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        setUsageError(data.error || "Error procesando imagen");
-        setUsageLoading(false);
-        return;
+    const errors = [];
+    const newFileEntries = [];
+    const newItems = [];
+    let earliestMonth = usageMonth;
+
+    for (const file of fileList) {
+      try {
+        const { products, monthLabel } = await processOneUsageFile(file);
+        let monthlyTotal = 0;
+        products.forEach(p => {
+          const monthly = Number(p.monthly_credits) || 0;
+          monthlyTotal += monthly;
+          // KEEP EACH DETECTION AS A SEPARATE LINE
+          newItems.push({
+            rowId: `u${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+            nameInScreenshot: p.name_in_screenshot || "",
+            monthly: monthly,
+            prodId: p.matched_id || null,
+            confidence: p.match_confidence || "low",
+            sourceFile: file.name,
+          });
+        });
+        newFileEntries.push({
+          name: file.name,
+          productCount: products.length,
+          monthlyTotal,
+          monthLabel,
+        });
+        if (monthLabel && !earliestMonth) earliestMonth = monthLabel;
+      } catch (e) {
+        errors.push(e.message);
       }
-      if (!data.products || data.products.length === 0) {
-        setUsageError("No detecté productos Vision One en la imagen. Revisa que sea un reporte de consumo.");
-        setUsageLoading(false);
-        return;
-      }
-      // Map detected items to internal structure
-      const items = data.products.map((p, idx) => ({
-        rowId: `u${idx}`,
-        nameInScreenshot: p.name_in_screenshot || "",
-        monthly: Number(p.monthly_credits) || 0,
-        prodId: p.matched_id || null,
-        confidence: p.match_confidence || "low",
-      }));
-      setUsageItems(items);
-      setUsageMonth(data.month_label || "");
-      setUsageOpen(true);
-    } catch (e) {
-      setUsageError("Error de red: " + e.message);
     }
+
+    setUsageItems(prev => [...prev, ...newItems]);
+    setUsageFiles(prev => [...prev, ...newFileEntries]);
+    if (earliestMonth) setUsageMonth(earliestMonth);
+    if (newFileEntries.length > 0) setUsageOpen(true);
+    if (errors.length > 0) setUsageError(errors.join(" · "));
     setUsageLoading(false);
+    if (usageFileRef.current) usageFileRef.current.value = "";
+  };
+
+  // Helper: process one proposal file
+  const processOneProposalFile = async (file) => {
+    const okTypes = ["application/pdf", "text/plain"];
+    if (!file.type.startsWith("image/") && !okTypes.includes(file.type)) {
+      throw new Error(`"${file.name}": formato no soportado`);
+    }
+    const reader = new FileReader();
+    const b64 = await new Promise((resolve, reject) => {
+      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onerror = () => reject(new Error("Error leyendo archivo"));
+      reader.readAsDataURL(file);
+    });
+    const resp = await fetch("/api/parse-proposal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileData: b64, fileType: file.type || "application/octet-stream" }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || "Error procesando " + file.name);
+    return data;
+  };
+
+  const onProposalFile = async (files) => {
+    const fileList = Array.from(files || []);
+    if (fileList.length === 0) return;
+
+    setProposalLoading(true);
+    setProposalError("");
+    const errors = [];
+    const newFileEntries = [];
+    const newItems = [];
+    let totalPoolDelta = 0;
+    let lastDate = proposalDate;
+    let lastPeriod = proposalPeriod;
+
+    for (const file of fileList) {
+      try {
+        const data = await processOneProposalFile(file);
+        const products = data.products || [];
+        const filePool = Number(data.total_credits_purchased) || 0;
+        const sourceType = data.source_type || "informal";
+        let computedFromProducts = 0;
+
+        // For source dates: use what the AI found, or empty if unknown
+        const fileGlobalStart = data.proposal_start_date || "";
+        const fileGlobalEnd = data.proposal_end_date || "";
+
+        products.forEach(p => {
+          const qty = Number(p.quantity) || 0;
+          const cpu = Number(p.credits_per_unit) || 0;
+          const tc = Number(p.total_credits) || (qty * cpu);
+          computedFromProducts += tc;
+
+          // Date confidence per product
+          const datesConf = p.dates_confidence || "unknown";
+          // If AI said dates are unknown, leave EMPTY (per user's choice — must confirm)
+          let pStart = "";
+          let pEnd = "";
+          if (datesConf === "explicit") {
+            pStart = p.start_date || "";
+            pEnd = p.end_date || "";
+          } else if (datesConf === "inferred") {
+            pStart = p.start_date || fileGlobalStart || "";
+            pEnd = p.end_date || fileGlobalEnd || "";
+          }
+          // datesConf === "unknown" → leave empty
+
+          newItems.push({
+            rowId: `p${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+            nameInProposal: p.name_in_proposal || "",
+            sku: p.sku || "",
+            qty: qty,
+            prodId: p.matched_id || null,
+            confidence: p.match_confidence || "low",
+            creditsPerUnit: cpu,
+            totalCredits: tc,
+            sourceFile: file.name,
+            sourceType: sourceType,
+            datesConfidence: datesConf,
+            startDate: pStart,
+            endDate: pEnd,
+          });
+        });
+
+        const effectivePool = Math.max(filePool, computedFromProducts);
+        totalPoolDelta += effectivePool;
+
+        newFileEntries.push({
+          name: file.name,
+          productCount: products.length,
+          poolCredits: effectivePool,
+          period: data.proposal_period || "",
+          date: data.proposal_date || "",
+          sourceType: sourceType,
+          startDate: fileGlobalStart,
+          endDate: fileGlobalEnd,
+          customerNo: data.customer_no || "",
+        });
+
+        if (data.client_name && !clientName) setClientName(data.client_name);
+        if (data.proposal_date) lastDate = data.proposal_date;
+        if (data.proposal_period) lastPeriod = data.proposal_period;
+
+        if (products.length === 0 && filePool === 0) {
+          errors.push(`"${file.name}": no se detectó información Vision One`);
+        }
+      } catch (e) {
+        errors.push(e.message);
+      }
+    }
+
+    setProposalItems(prev => [...prev, ...newItems]);
+    setProposalTotalPool(prev => prev + totalPoolDelta);
+    setProposalFiles(prev => [...prev, ...newFileEntries]);
+    if (lastDate) setProposalDate(lastDate);
+    if (lastPeriod) setProposalPeriod(lastPeriod);
+    if (errors.length > 0) setProposalError(errors.join(" · "));
+    setProposalLoading(false);
+    if (proposalFileRef.current) proposalFileRef.current.value = "";
   };
 
   const updateUsageItem = (rowId, field, value) => {
@@ -1893,11 +2198,43 @@ function ClientApp() {
     setUsageItems(prev => prev.filter(it => it.rowId !== rowId));
   };
   const clearUsage = () => {
-    if (confirm("¿Borrar el análisis de consumo?")) {
+    if (confirm("¿Borrar todos los archivos y el análisis de consumo?")) {
       setUsageItems([]);
       setUsageMonth("");
       setUsageError("");
+      setUsageFiles([]);
       setUsageOpen(false);
+    }
+  };
+
+  const updateProposalItem = (rowId, field, value) => {
+    setProposalItems(prev => prev.map(it => {
+      if (it.rowId !== rowId) return it;
+      const updated = { ...it, [field]: value };
+      // Recalc total when qty or creditsPerUnit changes
+      if (field === "qty" || field === "creditsPerUnit") {
+        updated.totalCredits = (Number(updated.qty) || 0) * (Number(updated.creditsPerUnit) || 0);
+      }
+      // When user manually edits dates, mark as confirmed by user
+      if (field === "startDate" || field === "endDate") {
+        if (value && it.datesConfidence === "unknown") {
+          updated.datesConfidence = "user_confirmed";
+        }
+      }
+      return updated;
+    }));
+  };
+  const deleteProposalItem = (rowId) => {
+    setProposalItems(prev => prev.filter(it => it.rowId !== rowId));
+  };
+  const clearProposal = () => {
+    if (confirm("¿Borrar todos los archivos y la propuesta anterior?")) {
+      setProposalItems([]);
+      setProposalTotalPool(0);
+      setProposalDate("");
+      setProposalPeriod("");
+      setProposalError("");
+      setProposalFiles([]);
     }
   };
 
@@ -1908,6 +2245,32 @@ function ClientApp() {
     usageMonthlyTotal += Number(it.monthly) || 0;
     usageAnnualTotal += (Number(it.monthly) || 0) * 12;
   });
+
+  // Compute proposal computed total (from line items)
+  let proposalComputedTotal = 0;
+  proposalItems.forEach(it => {
+    proposalComputedTotal += Number(it.totalCredits) || 0;
+  });
+  // Use whichever is larger between declared pool and computed (often pool > sum due to extra credits)
+  const proposalEffectiveTotal = Math.max(proposalTotalPool, proposalComputedTotal);
+
+  // Count items that need date confirmation
+  const itemsNeedingDates = proposalItems.filter(it =>
+    !it.startDate || !it.endDate || it.datesConfidence === "unknown"
+  );
+  const allDatesExplicit = proposalItems.length > 0 && proposalItems.every(it =>
+    it.datesConfidence === "explicit" && it.startDate && it.endDate
+  );
+
+  // ANALYSIS: do we have enough data for comparative?
+  const hasUsage = usageItems.length > 0 && usageAnnualTotal > 0;
+  const hasProposal = proposalEffectiveTotal > 0;
+  const hasComparative = hasUsage && hasProposal;
+  const efficiency = hasComparative ? (usageAnnualTotal / proposalEffectiveTotal) * 100 : 0;
+  const surplus = hasComparative ? proposalEffectiveTotal - usageAnnualTotal : 0;
+  const deficit = hasComparative ? usageAnnualTotal - proposalEffectiveTotal : 0;
+  // Recommendation: usage + 10% buffer, rounded to nearest 10k
+  const recommendedAnnual = hasUsage ? Math.ceil((usageAnnualTotal * 1.1) / 10000) * 10000 : 0;
 
   let totalCredits = 0;
   lines.forEach(l => {
@@ -2050,35 +2413,63 @@ function ClientApp() {
             )}
           </div>
 
-          {/* Upload area (only show if no items yet) */}
-          {usageItems.length === 0 && (
-            <div style={{ marginTop:14 }}>
-              <input type="file" ref={usageFileRef} accept="image/*" style={{ display:"none" }}
-                onChange={e => onUsageFile(e.target.files[0])} />
-              <button onClick={() => usageFileRef.current?.click()} disabled={usageLoading}
-                style={{
-                  width:"100%", padding:"12px 16px",
-                  background: usageLoading ? C.text3 : C.blue,
-                  color:"#fff", border:"none", borderRadius:9,
-                  fontSize:14, fontWeight:700, cursor: usageLoading ? "wait" : "pointer",
-                  display:"flex", alignItems:"center", justifyContent:"center", gap:8
-                }}>
-                {usageLoading ? (
-                  <>⏳ Analizando con IA...</>
-                ) : (
-                  <>📎 Subir imagen del reporte de consumo</>
-                )}
-              </button>
-              {usageError && (
-                <div style={{ marginTop:10, padding:"10px 12px", background:"#FEE2E2", border:"1px solid #FCA5A5", borderRadius:7, fontSize:12, color:"#991B1B" }}>
-                  ⚠ {usageError}
+          {/* Upload area + file list */}
+          <div style={{ marginTop:14 }}>
+            <input type="file" ref={usageFileRef} accept="image/*" multiple style={{ display:"none" }}
+              onChange={e => onUsageFile(e.target.files)} />
+
+            {/* Files list (if any uploaded) */}
+            {usageFiles.length > 0 && (
+              <div style={{ marginBottom:10 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>
+                  Archivos cargados ({usageFiles.length})
                 </div>
-              )}
-              <div style={{ marginTop:10, fontSize:11, color:C.text3, lineHeight:1.5 }}>
-                💡 Funciona con screenshots del reporte oficial de Vision One. La imagen se procesa con IA para detectar productos y créditos consumidos.
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {usageFiles.map((f, idx) => (
+                    <div key={idx} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:7, fontSize:12 }}>
+                      <span style={{ fontSize:14 }}>✅</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:12, fontWeight:600, color:C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</div>
+                        <div style={{ fontSize:10, color:C.text3, marginTop:1 }}>
+                          {f.productCount} producto{f.productCount !== 1 ? "s" : ""} · {fmt(f.monthlyTotal)} cr/mes{f.monthLabel ? ` · ${f.monthLabel}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Upload button (always visible, label changes) */}
+            <button onClick={() => usageFileRef.current?.click()} disabled={usageLoading}
+              style={{
+                width:"100%", padding:"12px 16px",
+                background: usageLoading ? C.text3 : (usageFiles.length > 0 ? C.surface : C.blue),
+                color: usageLoading ? "#fff" : (usageFiles.length > 0 ? C.blue : "#fff"),
+                border: usageFiles.length > 0 ? `2px dashed ${C.blue}` : "none",
+                borderRadius:9,
+                fontSize:14, fontWeight:700, cursor: usageLoading ? "wait" : "pointer",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:8
+              }}>
+              {usageLoading ? (
+                <>⏳ Analizando con IA...</>
+              ) : usageFiles.length > 0 ? (
+                <>＋ Agregar otro reporte de consumo</>
+              ) : (
+                <>📎 Subir imagen(es) del reporte de consumo</>
+              )}
+            </button>
+            {usageError && (
+              <div style={{ marginTop:10, padding:"10px 12px", background:"#FEE2E2", border:"1px solid #FCA5A5", borderRadius:7, fontSize:12, color:"#991B1B" }}>
+                ⚠ {usageError}
+              </div>
+            )}
+            {usageFiles.length === 0 && (
+              <div style={{ marginTop:10, fontSize:11, color:C.text3, lineHeight:1.5 }}>
+                💡 Puedes subir uno o varios screenshots a la vez. Si tienes múltiples cuentas Vision One, los productos duplicados se sumarán automáticamente.
+              </div>
+            )}
+          </div>
 
           {/* Detected usage table */}
           {usageItems.length > 0 && (
@@ -2215,6 +2606,416 @@ function ClientApp() {
           )}
         </div>
 
+        {/* ═══════════════════════════════════════════════════════════════
+             PANEL: Subir propuesta anterior
+        ═══════════════════════════════════════════════════════════════ */}
+        <div style={{
+          background: hasProposal ? "#FFF7ED" : C.surface,
+          border: `1.5px ${hasProposal ? "solid" : "dashed"} ${hasProposal ? "#F59E0B" : C.border}`,
+          borderRadius:12, padding: isMobile ? 16 : 20, marginBottom:18, transition:"all .2s"
+        }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom: hasProposal ? 14 : 0 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize: isMobile ? 14 : 16, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:20 }}>📄</span>
+                ¿Tienes una propuesta o cotización anterior?
+              </div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color:C.text2, lineHeight:1.5 }}>
+                Sube tu propuesta del año pasado y te mostramos cuántos créditos compraste vs los que estás usando — para optimizar tu próxima renovación.
+              </div>
+            </div>
+            {hasProposal && (
+              <button onClick={clearProposal}
+                style={{ padding:"6px 10px", background:"transparent", border:`1px solid ${C.border}`, borderRadius:6, fontSize:11, color:C.text3, cursor:"pointer", fontWeight:600, whiteSpace:"nowrap" }}>
+                ✕ Limpiar
+              </button>
+            )}
+          </div>
+
+          {/* Upload area + file list */}
+          <div style={{ marginTop:14 }}>
+            <input type="file" ref={proposalFileRef} accept="application/pdf,image/*,text/plain" multiple style={{ display:"none" }}
+              onChange={e => onProposalFile(e.target.files)} />
+
+            {/* Files list (if any) */}
+            {proposalFiles.length > 0 && (
+              <div style={{ marginBottom:10 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>
+                  Propuestas cargadas ({proposalFiles.length})
+                </div>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {proposalFiles.map((f, idx) => (
+                    <div key={idx} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:7, fontSize:12 }}>
+                      <span style={{ fontSize:14 }}>✅</span>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontSize:12, fontWeight:600, color:C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</div>
+                        <div style={{ fontSize:10, color:C.text3, marginTop:1 }}>
+                          {f.poolCredits > 0 ? `${fmt(f.poolCredits)} cr` : "—"} · {f.productCount} producto{f.productCount !== 1 ? "s" : ""}{f.period ? ` · ${f.period}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button onClick={() => proposalFileRef.current?.click()} disabled={proposalLoading}
+              style={{
+                width:"100%", padding:"12px 16px",
+                background: proposalLoading ? C.text3 : (proposalFiles.length > 0 ? C.surface : "#F59E0B"),
+                color: proposalLoading ? "#fff" : (proposalFiles.length > 0 ? "#B45309" : "#fff"),
+                border: proposalFiles.length > 0 ? `2px dashed #F59E0B` : "none",
+                borderRadius:9,
+                fontSize:14, fontWeight:700, cursor: proposalLoading ? "wait" : "pointer",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:8
+              }}>
+              {proposalLoading ? (
+                <>⏳ Analizando con IA...</>
+              ) : proposalFiles.length > 0 ? (
+                <>＋ Agregar otra propuesta</>
+              ) : (
+                <>📎 Subir propuesta(s) (PDF, imagen o texto)</>
+              )}
+            </button>
+            {proposalError && (
+              <div style={{ marginTop:10, padding:"10px 12px", background:"#FEE2E2", border:"1px solid #FCA5A5", borderRadius:7, fontSize:12, color:"#991B1B" }}>
+                ⚠ {proposalError}
+              </div>
+            )}
+            {proposalFiles.length === 0 && (
+              <div style={{ marginTop:10, fontSize:11, color:C.text3, lineHeight:1.5 }}>
+                💡 <strong>Mejor opción</strong>: Entitlement Certificates oficiales de Trend Micro (con SKU, Customer No., Start/End Date). También acepta cotizaciones de partners, screenshots o emails. Sube varios archivos a la vez si tienes contratos múltiples.
+              </div>
+            )}
+          </div>
+
+          {hasProposal && (
+            <>
+              {/* Summary bar */}
+              <div style={{ display:"flex", flexWrap:"wrap", gap:isMobile?10:14, marginBottom:14, padding:"12px 14px", background:C.surface, borderRadius:8, border:`1px solid ${C.border}` }}>
+                <div>
+                  <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Pool comprado</div>
+                  <div style={{ ...mono, fontSize:isMobile?16:18, fontWeight:800, color:"#B45309" }}>{fmt(proposalEffectiveTotal)} cr</div>
+                </div>
+                {proposalPeriod && (
+                  <div>
+                    <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Periodo</div>
+                    <div style={{ fontSize:isMobile?13:14, fontWeight:600, color:C.text }}>{proposalPeriod}</div>
+                  </div>
+                )}
+                {proposalDate && (
+                  <div>
+                    <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Fecha</div>
+                    <div style={{ fontSize:isMobile?13:14, fontWeight:600, color:C.text }}>{proposalDate}</div>
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Productos detallados</div>
+                  <div style={{ fontSize:isMobile?13:14, fontWeight:600, color:C.text }}>{proposalItems.length}</div>
+                </div>
+              </div>
+
+              {/* Editable pool input */}
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
+                  Total de créditos del pool (editable)
+                </div>
+                <input type="number" min="0" value={proposalTotalPool}
+                  onChange={e => setProposalTotalPool(Math.max(0, Number(e.target.value) || 0))}
+                  style={{ ...mono, fontSize:16, fontWeight:700, padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:8, background:C.surface, outline:"none", width: isMobile ? "100%" : 240, boxSizing:"border-box" }} />
+              </div>
+
+              {/* Banner: success — all dates explicit */}
+              {allDatesExplicit && (
+                <div style={{ marginBottom:14, padding:"12px 14px", background:"#ECFDF5", border:"1px solid #6EE7B7", borderRadius:8, display:"flex", alignItems:"center", gap:10 }}>
+                  <span style={{ fontSize:18 }}>✅</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#047857", marginBottom:2 }}>
+                      Fechas confiables detectadas
+                    </div>
+                    <div style={{ fontSize:11, color:"#065F46", lineHeight:1.4 }}>
+                      Todos los productos provienen de documentos con fechas explícitas (Entitlement Certificates u otros oficiales).
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Banner: warning — items need date confirmation */}
+              {itemsNeedingDates.length > 0 && (
+                <div style={{ marginBottom:14, padding:"12px 14px", background:"#FEF2F2", border:"1.5px solid #FCA5A5", borderRadius:8, display:"flex", alignItems:"flex-start", gap:10 }}>
+                  <span style={{ fontSize:20 }}>⚠️</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#991B1B", marginBottom:3 }}>
+                      {itemsNeedingDates.length} producto{itemsNeedingDates.length !== 1 ? "s requieren" : " requiere"} confirmación de fechas
+                    </div>
+                    <div style={{ fontSize:11, color:"#7F1D1D", lineHeight:1.5 }}>
+                      Algunos archivos no incluyen fechas explícitas. <strong>Confírmalas manualmente</strong> con el cliente antes de unificar o generar el PDF. Las líneas marcadas en rojo en la tabla.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Products table - desktop */}
+              {proposalItems.length > 0 && !isMobile && (
+                <div style={{ background:C.surface, borderRadius:8, overflow:"hidden", border:`1px solid ${C.border}` }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <thead>
+                      <tr style={{ background:C.panel, borderBottom:`1px solid ${C.border}` }}>
+                        <th style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em" }}>Producto</th>
+                        <th style={{ padding:"10px 12px", textAlign:"right", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:110 }}>Comprado</th>
+                        <th style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:135 }}>Inicio</th>
+                        <th style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:135 }}>Vencimiento</th>
+                        <th style={{ padding:"10px 12px", textAlign:"right", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:120 }}>Créditos</th>
+                        <th style={{ width:40 }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {proposalItems.map(it => {
+                        const prod = it.prodId ? CATALOG.find(c => c.id === it.prodId) : null;
+                        const unit = prod ? prod.unit : (it.unit || "");
+                        const needsDates = !it.startDate || !it.endDate || it.datesConfidence === "unknown";
+                        const dateInputBorderColor = needsDates ? "#FCA5A5" : C.border;
+                        const dateInputBg = needsDates ? "#FEF2F2" : C.surface;
+                        return (
+                          <tr key={it.rowId} style={{ borderBottom:`1px solid ${C.border}`, background: needsDates ? "#FFFBFB" : "transparent" }}>
+                            <td style={{ padding:"10px 12px" }}>
+                              <div style={{ fontSize:13, fontWeight:600, color:C.text }}>
+                                {prod ? prod.name : it.nameInProposal}
+                              </div>
+                              {it.sku && (
+                                <div style={{ fontSize:10, color:C.blue, fontWeight:600, marginTop:2, ...mono }}>
+                                  {it.sku}
+                                </div>
+                              )}
+                              {it.sourceFile && (
+                                <div style={{ fontSize:10, color:C.text3, marginTop:2, display:"flex", alignItems:"center", gap:4 }}>
+                                  <span>📄</span><span style={{ fontStyle:"italic", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:200 }}>{it.sourceFile}</span>
+                                  {it.sourceType === "entitlement_certificate" && (
+                                    <span style={{ background:"#D1FAE5", color:"#065F46", padding:"1px 5px", borderRadius:3, fontSize:9, fontWeight:700 }}>Certificate</span>
+                                  )}
+                                  {it.datesConfidence === "explicit" && (
+                                    <span style={{ color:"#047857", fontSize:11 }} title="Fechas explícitas en documento">✓</span>
+                                  )}
+                                </div>
+                              )}
+                              {!prod && (
+                                <div style={{ fontSize:11, color:"#B45309", marginTop:2 }}>⚠ No matcheado con catálogo actual</div>
+                              )}
+                              {needsDates && (
+                                <div style={{ fontSize:11, color:"#DC2626", marginTop:3, fontWeight:600 }}>⚠ Confirma las fechas →</div>
+                              )}
+                            </td>
+                            <td style={{ padding:"6px 12px", textAlign:"right" }}>
+                              <input type="number" min="0" value={it.qty}
+                                onChange={e => updateProposalItem(it.rowId, "qty", Math.max(0, Number(e.target.value) || 0))}
+                                style={{ ...mono, width:80, textAlign:"right", padding:"7px 9px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.surface, outline:"none", boxSizing:"border-box" }} />
+                              <div style={{ fontSize:10, color:C.text3, marginTop:2 }}>{unit}{it.qty !== 1 ? "s" : ""}</div>
+                            </td>
+                            <td style={{ padding:"6px 8px" }}>
+                              <input type="date" value={it.startDate || ""}
+                                onChange={e => updateProposalItem(it.rowId, "startDate", e.target.value)}
+                                style={{ width:120, padding:"7px 8px", border:`1.5px solid ${dateInputBorderColor}`, borderRadius:6, fontSize:11, background:dateInputBg, outline:"none", boxSizing:"border-box", ...mono }} />
+                            </td>
+                            <td style={{ padding:"6px 8px" }}>
+                              <input type="date" value={it.endDate || ""}
+                                onChange={e => updateProposalItem(it.rowId, "endDate", e.target.value)}
+                                style={{ width:120, padding:"7px 8px", border:`1.5px solid ${dateInputBorderColor}`, borderRadius:6, fontSize:11, background:dateInputBg, outline:"none", boxSizing:"border-box", ...mono }} />
+                            </td>
+                            <td style={{ padding:"10px 12px", textAlign:"right", ...mono, fontSize:14, fontWeight:700, color:"#B45309" }}>
+                              {fmt(it.totalCredits)}
+                            </td>
+                            <td style={{ padding:"10px 8px", textAlign:"center" }}>
+                              <button onClick={() => deleteProposalItem(it.rowId)} title="Eliminar"
+                                style={{ width:24, height:24, border:"none", background:"transparent", cursor:"pointer", color:C.text3, fontSize:14 }}>✕</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Products mobile cards */}
+              {proposalItems.length > 0 && isMobile && (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {proposalItems.map(it => {
+                    const prod = it.prodId ? CATALOG.find(c => c.id === it.prodId) : null;
+                    const unit = prod ? prod.unit : (it.unit || "");
+                    const needsDates = !it.startDate || !it.endDate || it.datesConfidence === "unknown";
+                    const dateInputBorderColor = needsDates ? "#FCA5A5" : C.border;
+                    const dateInputBg = needsDates ? "#FEF2F2" : C.surface;
+                    return (
+                      <div key={it.rowId} style={{ background: needsDates ? "#FFFBFB" : C.surface, border: `${needsDates ? "1.5px solid #FCA5A5" : `1px solid ${C.border}`}`, borderRadius:8, padding:12 }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:8 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontSize:13, fontWeight:700, color:C.text, lineHeight:1.3 }}>
+                              {prod ? prod.name : it.nameInProposal}
+                            </div>
+                            {it.sku && (
+                              <div style={{ fontSize:10, color:C.blue, fontWeight:600, marginTop:2, ...mono }}>{it.sku}</div>
+                            )}
+                            {it.sourceFile && (
+                              <div style={{ fontSize:10, color:C.text3, marginTop:3, display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+                                <span>📄</span>
+                                <span style={{ fontStyle:"italic", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", maxWidth:140 }}>{it.sourceFile}</span>
+                                {it.sourceType === "entitlement_certificate" && (
+                                  <span style={{ background:"#D1FAE5", color:"#065F46", padding:"1px 5px", borderRadius:3, fontSize:9, fontWeight:700 }}>Certificate</span>
+                                )}
+                              </div>
+                            )}
+                            {needsDates && (
+                              <div style={{ fontSize:11, color:"#DC2626", marginTop:4, fontWeight:600 }}>⚠ Confirma las fechas</div>
+                            )}
+                          </div>
+                          <button onClick={() => deleteProposalItem(it.rowId)}
+                            style={{ width:24, height:24, border:"none", background:"transparent", cursor:"pointer", color:C.text3, fontSize:14 }}>✕</button>
+                        </div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+                          <div>
+                            <div style={{ fontSize:10, color:C.text3, fontWeight:600, marginBottom:3 }}>Comprado ({unit})</div>
+                            <input type="number" min="0" value={it.qty}
+                              onChange={e => updateProposalItem(it.rowId, "qty", Math.max(0, Number(e.target.value) || 0))}
+                              style={{ ...mono, width:"100%", textAlign:"right", padding:"8px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.surface, outline:"none", boxSizing:"border-box" }} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize:10, color:C.text3, fontWeight:600, marginBottom:3 }}>Créditos</div>
+                            <div style={{ ...mono, fontSize:14, fontWeight:700, color:"#B45309", padding:"8px 0" }}>{fmt(it.totalCredits)}</div>
+                          </div>
+                        </div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                          <div>
+                            <div style={{ fontSize:10, color: needsDates ? "#DC2626" : C.text3, fontWeight:600, marginBottom:3 }}>Inicio {needsDates && "⚠"}</div>
+                            <input type="date" value={it.startDate || ""}
+                              onChange={e => updateProposalItem(it.rowId, "startDate", e.target.value)}
+                              style={{ width:"100%", padding:"8px", border:`1.5px solid ${dateInputBorderColor}`, borderRadius:6, fontSize:11, background:dateInputBg, outline:"none", boxSizing:"border-box", ...mono }} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize:10, color: needsDates ? "#DC2626" : C.text3, fontWeight:600, marginBottom:3 }}>Vencimiento {needsDates && "⚠"}</div>
+                            <input type="date" value={it.endDate || ""}
+                              onChange={e => updateProposalItem(it.rowId, "endDate", e.target.value)}
+                              style={{ width:"100%", padding:"8px", border:`1.5px solid ${dateInputBorderColor}`, borderRadius:6, fontSize:11, background:dateInputBg, outline:"none", boxSizing:"border-box", ...mono }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ═══════════════════════════════════════════════════════
+                   UNIFICACIÓN DE FECHAS — visible si hay 2+ líneas
+              ═══════════════════════════════════════════════════════ */}
+              {proposalItems.length >= 2 && (
+                <UnifyDatesPanel
+                  items={proposalItems}
+                  isMobile={isMobile}
+                  open={unifyOpen}
+                  setOpen={setUnifyOpen}
+                  targetDate={unifyTargetDate}
+                  setTargetDate={setUnifyTargetDate}
+                  startDate={unifyStartDate}
+                  setStartDate={setUnifyStartDate}
+                  onApplyToProposal={(targetEnd, sourceStart) => {
+                    setProposalItems(prev => prev.map(it => ({
+                      ...it,
+                      endDate: targetEnd,
+                      startDate: sourceStart || it.startDate,
+                    })));
+                  }}
+                  onLoadIntoQuote={(prorated) => {
+                    // Add prorated items to the quote (lines)
+                    if (!confirm(`¿Cargar ${prorated.length} producto(s) prorrateados en la cotización deseada?\n\nEsto agregará las líneas a tu cotización con las fechas unificadas.`)) return;
+                    const newLines = prorated.map((p, idx) => ({
+                      rowId: rc + idx,
+                      prodId: p.prodId,
+                      qty: p.qty,
+                      date: p.endDate,
+                      startDate: p.startDate,
+                    }));
+                    setLines(prev => {
+                      // Remove empty initial line if exists
+                      const filtered = prev.filter(l => l.prodId && l.qty > 0);
+                      return [...filtered, ...newLines];
+                    });
+                    setRc(c => c + prorated.length);
+                    setUnifyOpen(false);
+                  }}
+                />
+              )}
+
+              <div style={{ marginTop:12, padding:"10px 12px", background:"#FFFBEB", border:"1px solid #FDE68A", borderRadius:7, fontSize:11, color:"#78350F", lineHeight:1.5 }}>
+                💡 <strong>Nota:</strong> cada línea tiene su propia fecha de vencimiento. Las líneas marcadas en rojo tienen fechas vacías que <strong>debes confirmar</strong> manualmente. Los Entitlement Certificates oficiales de Trend Micro siempre traen las fechas explícitas — son la fuente más confiable.
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+             ANÁLISIS COMPARATIVO (auto, solo si hay ambos)
+        ═══════════════════════════════════════════════════════════════ */}
+        {hasComparative && (
+          <div style={{
+            backgroundColor: C.blue,
+            background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
+            color:"#FFFFFF",
+            borderRadius:14, padding: isMobile ? 18 : 24, marginBottom:18,
+            boxShadow:"0 10px 30px rgba(30,64,175,.25)"
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:isMobile?14:18 }}>
+              <span style={{ fontSize:isMobile?22:26 }}>📈</span>
+              <div>
+                <div style={{ fontSize:isMobile?16:20, fontWeight:800, letterSpacing:"-.02em", color:"#FFFFFF" }}>Análisis comparativo</div>
+                <div style={{ fontSize:isMobile?11:12, color:"#DBEAFE", fontWeight:500 }}>Lo comprado vs lo consumido</div>
+              </div>
+            </div>
+
+            {/* Big numbers */}
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: isMobile?10:14, marginBottom:isMobile?14:18 }}>
+              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
+                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>Comprado</div>
+                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color:"#FFFFFF", lineHeight:1 }}>{fmt(proposalEffectiveTotal)}</div>
+                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>créditos</div>
+              </div>
+              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
+                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>Consumido (×12)</div>
+                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color:"#FFFFFF", lineHeight:1 }}>{fmt(usageAnnualTotal)}</div>
+                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>créditos/año</div>
+              </div>
+              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
+                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>Eficiencia</div>
+                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color: efficiency > 100 ? "#FCA5A5" : "#FFFFFF", lineHeight:1 }}>{efficiency.toFixed(1)}%</div>
+                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>de tu pool</div>
+              </div>
+              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
+                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>{efficiency > 100 ? "Déficit" : "Sobrante"}</div>
+                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color: efficiency > 100 ? "#FCA5A5" : "#86EFAC", lineHeight:1 }}>
+                  {efficiency > 100 ? `+${fmt(deficit)}` : fmt(surplus)}
+                </div>
+                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>créditos</div>
+              </div>
+            </div>
+
+            {/* Recommendation */}
+            <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:10, padding:isMobile?12:14 }}>
+              <div style={{ fontSize:11, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>💡 Recomendación</div>
+              {efficiency > 100 ? (
+                <div style={{ fontSize:isMobile?12:13, lineHeight:1.55, color:"#FFFFFF" }}>
+                  <strong>Tu consumo supera lo comprado.</strong> Estás usando {fmt(deficit)} créditos más al año de lo que tu propuesta cubre. Podrías necesitar un upgrade a <strong style={{ color:"#FEF3C7" }}>{fmt(recommendedAnnual)} créditos</strong> para tu próxima renovación (incluye 10% de buffer para crecimiento).
+                </div>
+              ) : efficiency < 70 ? (
+                <div style={{ fontSize:isMobile?12:13, lineHeight:1.55, color:"#FFFFFF" }}>
+                  <strong>Estás muy por debajo de tu pool comprado.</strong> Solo usas el {efficiency.toFixed(1)}% de tus créditos. Para tu próxima renovación podrías considerar <strong style={{ color:"#FEF3C7" }}>{fmt(recommendedAnnual)} créditos</strong> (basado en tu consumo + 10% de buffer) y ahorrar significativamente.
+                </div>
+              ) : (
+                <div style={{ fontSize:isMobile?12:13, lineHeight:1.55, color:"#FFFFFF" }}>
+                  <strong>Tu pool está bien dimensionado</strong> con un sobrante saludable de {fmt(surplus)} créditos. Para tu próxima renovación, basado en tu consumo proyectado podrías mantener algo similar o considerar <strong style={{ color:"#FEF3C7" }}>{fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer).
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div style={{ marginBottom:20 }}>
           <div style={{ fontSize:13, fontWeight:700, color:C.text2, marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
             <span>Productos seleccionados</span>
@@ -2232,7 +3033,7 @@ function ClientApp() {
           </button>
         </div>
 
-        {!isMobile && totalCredits > 0 && (
+        {!isMobile && (totalCredits > 0 || hasUsage || hasProposal) && (
           <div style={{
             backgroundColor:C.blue,
             background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
@@ -2241,14 +3042,25 @@ function ClientApp() {
             boxShadow:"0 10px 30px rgba(30,64,175,.25)", marginBottom:18
           }}>
             <div>
-              <div style={{ fontSize:12, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700, marginBottom:4 }}>Total estimado</div>
+              <div style={{ fontSize:12, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700, marginBottom:4 }}>
+                {totalCredits > 0 ? "Total cotización" : hasComparative ? "Análisis listo" : hasUsage ? "Consumo proyectado" : "Pool comprado"}
+              </div>
               <div style={{ display:"flex", alignItems:"baseline", gap:10 }}>
-                <span style={{ ...mono, fontSize:38, fontWeight:800, letterSpacing:"-.02em", color:"#FFFFFF" }}>{fmt(totalCredits)}</span>
-                <span style={{ fontSize:14, color:"#DBEAFE", fontWeight:500 }}>créditos Vision One</span>
+                <span style={{ ...mono, fontSize:38, fontWeight:800, letterSpacing:"-.02em", color:"#FFFFFF" }}>
+                  {totalCredits > 0 ? fmt(totalCredits) : hasUsage ? fmt(usageAnnualTotal) : fmt(proposalEffectiveTotal)}
+                </span>
+                <span style={{ fontSize:14, color:"#DBEAFE", fontWeight:500 }}>
+                  créditos Vision One{totalCredits === 0 && hasUsage ? "/año" : ""}
+                </span>
               </div>
             </div>
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => downloadEstimate({ lines, totalCredits, clientName, contactName, contactEmail, contactPhone })}
+              <button onClick={() => downloadEstimate({
+                lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
+                usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
+                proposalItems, proposalEffectiveTotal, proposalDate, proposalPeriod,
+                hasComparative, efficiency, surplus, deficit, recommendedAnnual
+              })}
                 style={{ padding:"12px 18px", background:"#fff", color:C.blue, border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
                 ⬇ Descargar PDF
               </button>
@@ -2265,7 +3077,7 @@ function ClientApp() {
         </div>
       </main>
 
-      {isMobile && totalCredits > 0 && (
+      {isMobile && (totalCredits > 0 || hasUsage || hasProposal) && (
         <div style={{
           position:"fixed", bottom:0, left:0, right:0,
           backgroundColor:C.blue,
@@ -2275,13 +3087,22 @@ function ClientApp() {
         }}>
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:10 }}>
             <div>
-              <div style={{ fontSize:10, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700 }}>Total estimado</div>
-              <div style={{ ...mono, fontSize:24, fontWeight:800, letterSpacing:"-.01em", color:"#FFFFFF" }}>{fmt(totalCredits)}</div>
+              <div style={{ fontSize:10, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700 }}>
+                {totalCredits > 0 ? "Total cotización" : hasComparative ? "Análisis" : hasUsage ? "Consumo anual" : "Pool comprado"}
+              </div>
+              <div style={{ ...mono, fontSize:24, fontWeight:800, letterSpacing:"-.01em", color:"#FFFFFF" }}>
+                {totalCredits > 0 ? fmt(totalCredits) : hasUsage ? fmt(usageAnnualTotal) : fmt(proposalEffectiveTotal)}
+              </div>
             </div>
             <div style={{ fontSize:10, color:"#DBEAFE", textAlign:"right", fontWeight:600 }}>créditos<br/>Vision One</div>
           </div>
           <div style={{ display:"flex", gap:8 }}>
-            <button onClick={() => downloadEstimate({ lines, totalCredits, clientName, contactName, contactEmail, contactPhone })}
+            <button onClick={() => downloadEstimate({
+              lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
+              usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
+              proposalItems, proposalEffectiveTotal, proposalDate, proposalPeriod,
+              hasComparative, efficiency, surplus, deficit, recommendedAnnual
+            })}
               style={{ flex:1, padding:"11px", background:"#fff", color:C.blue, border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
               ⬇ PDF
             </button>
@@ -2292,6 +3113,204 @@ function ClientApp() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// UNIFY DATES PANEL — para unificar fechas de vencimiento de propuestas
+// ════════════════════════════════════════════════════════════════════════
+
+function UnifyDatesPanel({ items, isMobile, open, setOpen, targetDate, setTargetDate, startDate, setStartDate, onApplyToProposal, onLoadIntoQuote }) {
+  // Compute earliest and latest end dates from items
+  const dates = items.map(it => it.endDate).filter(d => d);
+  const startDates = items.map(it => it.startDate).filter(d => d);
+  const earliest = dates.length > 0 ? dates.sort()[0] : "";
+  const latest = dates.length > 0 ? dates.sort().reverse()[0] : "";
+  const earliestStart = startDates.length > 0 ? startDates.sort()[0] : "";
+
+  // Default target date: latest end date detected
+  const effectiveTarget = targetDate || latest;
+  const effectiveStart = startDate || new Date().toISOString().split("T")[0];
+
+  // Compute prorated values for preview
+  const prorated = items.map(it => {
+    const start = effectiveStart;
+    const end = effectiveTarget;
+    const months = monthsBetween(start, end);
+    const proratedQty = it.qty; // we keep qty same, prorate the credits
+    const proratedCredits = Math.round(it.qty * (it.creditsPerUnit || 0) * (months / 12));
+    return {
+      ...it,
+      months,
+      proratedCredits,
+      startDate: start,
+      endDate: end,
+      qty: it.qty,
+    };
+  });
+
+  const totalProratedCredits = prorated.reduce((s, p) => s + p.proratedCredits, 0);
+  const months = effectiveStart && effectiveTarget ? monthsBetween(effectiveStart, effectiveTarget) : 0;
+
+  if (!open) {
+    return (
+      <div style={{ marginTop:14 }}>
+        <button onClick={() => setOpen(true)}
+          style={{
+            width:"100%", padding:"12px 16px",
+            background: "linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%)",
+            backgroundColor: "#1E40AF",
+            color:"#fff", border:"none", borderRadius:9,
+            fontSize:14, fontWeight:700, cursor:"pointer",
+            display:"flex", alignItems:"center", justifyContent:"center", gap:8
+          }}>
+          🔄 Unificar fechas de vencimiento
+        </button>
+        <div style={{ marginTop:6, fontSize:11, color:"#57534E", textAlign:"center", lineHeight:1.4 }}>
+          Tienes <strong>{items.length} líneas</strong> con fechas distintas. Unifícalas a una sola fecha de vencimiento y ve los créditos prorrateados.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      marginTop:14, background:"#EFF6FF", border:"2px solid #1E40AF", borderRadius:12, padding: isMobile ? 14 : 18
+    }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+        <div style={{ fontSize:isMobile?14:15, fontWeight:800, color:"#1E40AF", display:"flex", alignItems:"center", gap:8 }}>
+          🔄 Unificación de fechas de vencimiento
+        </div>
+        <button onClick={() => setOpen(false)}
+          style={{ width:28, height:28, borderRadius:6, border:"1px solid #BFDBFE", background:"#fff", fontSize:12, cursor:"pointer", color:"#1E40AF" }}>
+          ✕
+        </button>
+      </div>
+
+      {/* Date inputs */}
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap:12, marginBottom:14 }}>
+        <div>
+          <div style={{ fontSize:11, fontWeight:700, color:"#1E40AF", marginBottom:6, textTransform:"uppercase", letterSpacing:".05em" }}>
+            Inicio del prorrateo
+          </div>
+          <input type="date" value={effectiveStart}
+            onChange={e => setStartDate(e.target.value)}
+            style={{ ...mono, width:"100%", padding:"10px 12px", border:"1.5px solid #BFDBFE", borderRadius:7, fontSize:13, background:"#fff", outline:"none", boxSizing:"border-box" }} />
+          <div style={{ fontSize:10, color:"#57534E", marginTop:4 }}>Por defecto: hoy</div>
+        </div>
+        <div>
+          <div style={{ fontSize:11, fontWeight:700, color:"#1E40AF", marginBottom:6, textTransform:"uppercase", letterSpacing:".05em" }}>
+            Fecha objetivo (vencimiento unificado)
+          </div>
+          <input type="date" value={effectiveTarget}
+            onChange={e => setTargetDate(e.target.value)}
+            style={{ ...mono, width:"100%", padding:"10px 12px", border:"1.5px solid #BFDBFE", borderRadius:7, fontSize:13, background:"#fff", outline:"none", boxSizing:"border-box" }} />
+          <div style={{ display:"flex", gap:6, marginTop:6, flexWrap:"wrap" }}>
+            <button onClick={() => setTargetDate(latest)}
+              style={{ padding:"4px 10px", fontSize:10, background:"#fff", color:"#1E40AF", border:"1px solid #BFDBFE", borderRadius:5, cursor:"pointer", fontWeight:600 }}>
+              📅 Más lejana ({latest || "—"})
+            </button>
+            <button onClick={() => setTargetDate(earliest)}
+              style={{ padding:"4px 10px", fontSize:10, background:"#fff", color:"#1E40AF", border:"1px solid #BFDBFE", borderRadius:5, cursor:"pointer", fontWeight:600 }}>
+              📅 Más cercana ({earliest || "—"})
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview */}
+      {months > 0 && (
+        <div style={{ background:"#fff", borderRadius:8, padding: isMobile ? 12 : 14, marginBottom:12, border:"1px solid #BFDBFE" }}>
+          <div style={{ fontSize:11, fontWeight:700, color:"#1E40AF", marginBottom:8, textTransform:"uppercase", letterSpacing:".05em" }}>
+            Vista previa: prorrateo a {months.toFixed(1)} meses
+          </div>
+          {!isMobile && (
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+              <thead>
+                <tr style={{ borderBottom:"1px solid #E7E5E4" }}>
+                  <th style={{ padding:"6px 8px", textAlign:"left", fontSize:10, fontWeight:700, color:"#57534E", textTransform:"uppercase" }}>Producto</th>
+                  <th style={{ padding:"6px 8px", textAlign:"right", fontSize:10, fontWeight:700, color:"#57534E", textTransform:"uppercase" }}>Cantidad</th>
+                  <th style={{ padding:"6px 8px", textAlign:"right", fontSize:10, fontWeight:700, color:"#57534E", textTransform:"uppercase" }}>Cr/unidad × meses</th>
+                  <th style={{ padding:"6px 8px", textAlign:"right", fontSize:10, fontWeight:700, color:"#57534E", textTransform:"uppercase" }}>Cr prorrateados</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prorated.map(p => {
+                  const prod = p.prodId ? CATALOG.find(c => c.id === p.prodId) : null;
+                  return (
+                    <tr key={p.rowId} style={{ borderBottom:"1px solid #F5F5F4" }}>
+                      <td style={{ padding:"6px 8px", fontSize:11 }}>{prod ? prod.name : (p.nameInProposal || "—")}</td>
+                      <td style={{ padding:"6px 8px", textAlign:"right", ...mono, fontSize:11 }}>{fmt(p.qty)}</td>
+                      <td style={{ padding:"6px 8px", textAlign:"right", ...mono, fontSize:10, color:"#57534E" }}>
+                        {fmt(p.creditsPerUnit || 0)} × {(p.months/12).toFixed(2)} año
+                      </td>
+                      <td style={{ padding:"6px 8px", textAlign:"right", ...mono, fontSize:13, fontWeight:700, color:"#1E40AF" }}>{fmt(p.proratedCredits)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr style={{ background:"#EFF6FF" }}>
+                  <td colSpan={3} style={{ padding:"8px", fontSize:11, fontWeight:700, color:"#1E40AF", textTransform:"uppercase" }}>Total prorrateado</td>
+                  <td style={{ padding:"8px", textAlign:"right", ...mono, fontSize:16, fontWeight:800, color:"#1E40AF" }}>{fmt(totalProratedCredits)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+          {isMobile && (
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {prorated.map(p => {
+                const prod = p.prodId ? CATALOG.find(c => c.id === p.prodId) : null;
+                return (
+                  <div key={p.rowId} style={{ borderBottom:"1px solid #F5F5F4", paddingBottom:6 }}>
+                    <div style={{ fontSize:11, fontWeight:600 }}>{prod ? prod.name : (p.nameInProposal || "—")}</div>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:3 }}>
+                      <span style={{ fontSize:10, color:"#57534E" }}>{fmt(p.qty)} × {fmt(p.creditsPerUnit || 0)} × {(p.months/12).toFixed(2)} año</span>
+                      <span style={{ ...mono, fontSize:13, fontWeight:700, color:"#1E40AF" }}>{fmt(p.proratedCredits)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderTop:"2px solid #1E40AF", marginTop:4 }}>
+                <span style={{ fontSize:11, fontWeight:700, color:"#1E40AF", textTransform:"uppercase" }}>Total prorrateado</span>
+                <span style={{ ...mono, fontSize:16, fontWeight:800, color:"#1E40AF" }}>{fmt(totalProratedCredits)}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div style={{ display:"flex", flexDirection: isMobile ? "column" : "row", gap:8 }}>
+        <button onClick={() => onLoadIntoQuote(prorated)}
+          disabled={!effectiveTarget || months <= 0}
+          style={{
+            flex:1, padding:"11px 14px",
+            background: (!effectiveTarget || months <= 0) ? "#A8A29E" : "#047857",
+            color:"#fff", border:"none", borderRadius:8,
+            fontSize:13, fontWeight:700, cursor: (!effectiveTarget || months <= 0) ? "not-allowed" : "pointer"
+          }}>
+          ✓ Cargar prorrateo en cotización deseada
+        </button>
+        <button onClick={() => {
+          if (confirm("¿Aplicar la fecha objetivo a TODAS las líneas de la propuesta? (esto modifica las fechas pero no cambia las cantidades)")) {
+            onApplyToProposal(effectiveTarget, effectiveStart);
+          }
+        }}
+          disabled={!effectiveTarget}
+          style={{
+            flex:1, padding:"11px 14px",
+            background: "#fff", color:"#1E40AF", border:"1.5px solid #1E40AF",
+            borderRadius:8, fontSize:13, fontWeight:700, cursor: effectiveTarget ? "pointer" : "not-allowed"
+          }}>
+          🔄 Solo actualizar fechas en tabla
+        </button>
+      </div>
+
+      <div style={{ marginTop:10, padding:"8px 12px", background:"rgba(255,255,255,0.6)", borderRadius:6, fontSize:11, color:"#1E3A8A", lineHeight:1.5 }}>
+        💡 <strong>Cargar en cotización</strong>: copia los productos prorrateados a tu nueva cotización para que se conviertan en tu próxima compra unificada. <strong>Solo actualizar fechas</strong>: cambia las fechas en la tabla de propuestas sin tocar la cotización.
+      </div>
     </div>
   );
 }
