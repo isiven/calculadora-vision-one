@@ -1830,6 +1830,85 @@ function ClientApp() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
 
+  // --- Consumo actual (Mi Drawdown) ---
+  const [usageOpen, setUsageOpen] = useState(false);     // panel expandido?
+  const [usageItems, setUsageItems] = useState([]);      // [{name, monthly, prodId, confidence}]
+  const [usageMonth, setUsageMonth] = useState("");      // "April 2026"
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState("");
+  const usageFileRef = useRef(null);
+
+  const onUsageFile = async (file) => {
+    if (!file || !file.type.startsWith("image/")) {
+      setUsageError("Solo imágenes (PNG, JPG). Toma un screenshot del reporte.");
+      return;
+    }
+    setUsageLoading(true);
+    setUsageError("");
+    try {
+      // Read file as base64
+      const reader = new FileReader();
+      const b64 = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = () => reject(new Error("Error leyendo archivo"));
+        reader.readAsDataURL(file);
+      });
+      const resp = await fetch("/api/parse-usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileData: b64, fileType: file.type }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setUsageError(data.error || "Error procesando imagen");
+        setUsageLoading(false);
+        return;
+      }
+      if (!data.products || data.products.length === 0) {
+        setUsageError("No detecté productos Vision One en la imagen. Revisa que sea un reporte de consumo.");
+        setUsageLoading(false);
+        return;
+      }
+      // Map detected items to internal structure
+      const items = data.products.map((p, idx) => ({
+        rowId: `u${idx}`,
+        nameInScreenshot: p.name_in_screenshot || "",
+        monthly: Number(p.monthly_credits) || 0,
+        prodId: p.matched_id || null,
+        confidence: p.match_confidence || "low",
+      }));
+      setUsageItems(items);
+      setUsageMonth(data.month_label || "");
+      setUsageOpen(true);
+    } catch (e) {
+      setUsageError("Error de red: " + e.message);
+    }
+    setUsageLoading(false);
+  };
+
+  const updateUsageItem = (rowId, field, value) => {
+    setUsageItems(prev => prev.map(it => it.rowId === rowId ? { ...it, [field]: value } : it));
+  };
+  const deleteUsageItem = (rowId) => {
+    setUsageItems(prev => prev.filter(it => it.rowId !== rowId));
+  };
+  const clearUsage = () => {
+    if (confirm("¿Borrar el análisis de consumo?")) {
+      setUsageItems([]);
+      setUsageMonth("");
+      setUsageError("");
+      setUsageOpen(false);
+    }
+  };
+
+  // Compute usage totals
+  let usageMonthlyTotal = 0;
+  let usageAnnualTotal = 0;
+  usageItems.forEach(it => {
+    usageMonthlyTotal += Number(it.monthly) || 0;
+    usageAnnualTotal += (Number(it.monthly) || 0) * 12;
+  });
+
   let totalCredits = 0;
   lines.forEach(l => {
     if (l.prodId && l.qty > 0) {
@@ -1942,6 +2021,198 @@ function ClientApp() {
             <input type="tel" placeholder="Teléfono" value={contactPhone} onChange={e=>setContactPhone(e.target.value)}
               style={{ fontSize:14, padding:"10px 12px", border:`1px solid ${C.border}`, borderRadius:7, background:C.surface, outline:"none", boxSizing:"border-box" }} />
           </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+             PANEL: ¿Ya eres cliente Trend Micro? Sube tu consumo actual
+        ═══════════════════════════════════════════════════════════════ */}
+        <div style={{
+          background: usageItems.length > 0 ? C.blueBg : C.surface,
+          border: `1.5px ${usageItems.length > 0 ? "solid" : "dashed"} ${usageItems.length > 0 ? C.blue : C.border}`,
+          borderRadius:12, padding: isMobile ? 16 : 20, marginBottom:18, transition:"all .2s"
+        }}>
+          {/* Header */}
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize: isMobile ? 14 : 16, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:20 }}>📊</span>
+                ¿Ya eres cliente Trend Micro Vision One?
+              </div>
+              <div style={{ fontSize: isMobile ? 12 : 13, color:C.text2, lineHeight:1.5 }}>
+                Sube un screenshot de tu reporte de consumo mensual y te calculamos automáticamente tu drawdown anual + cuántas licencias estás usando.
+              </div>
+            </div>
+            {usageItems.length > 0 && (
+              <button onClick={clearUsage}
+                style={{ padding:"6px 10px", background:"transparent", border:`1px solid ${C.border}`, borderRadius:6, fontSize:11, color:C.text3, cursor:"pointer", fontWeight:600, whiteSpace:"nowrap" }}>
+                ✕ Limpiar
+              </button>
+            )}
+          </div>
+
+          {/* Upload area (only show if no items yet) */}
+          {usageItems.length === 0 && (
+            <div style={{ marginTop:14 }}>
+              <input type="file" ref={usageFileRef} accept="image/*" style={{ display:"none" }}
+                onChange={e => onUsageFile(e.target.files[0])} />
+              <button onClick={() => usageFileRef.current?.click()} disabled={usageLoading}
+                style={{
+                  width:"100%", padding:"12px 16px",
+                  background: usageLoading ? C.text3 : C.blue,
+                  color:"#fff", border:"none", borderRadius:9,
+                  fontSize:14, fontWeight:700, cursor: usageLoading ? "wait" : "pointer",
+                  display:"flex", alignItems:"center", justifyContent:"center", gap:8
+                }}>
+                {usageLoading ? (
+                  <>⏳ Analizando con IA...</>
+                ) : (
+                  <>📎 Subir imagen del reporte de consumo</>
+                )}
+              </button>
+              {usageError && (
+                <div style={{ marginTop:10, padding:"10px 12px", background:"#FEE2E2", border:"1px solid #FCA5A5", borderRadius:7, fontSize:12, color:"#991B1B" }}>
+                  ⚠ {usageError}
+                </div>
+              )}
+              <div style={{ marginTop:10, fontSize:11, color:C.text3, lineHeight:1.5 }}>
+                💡 Funciona con screenshots del reporte oficial de Vision One. La imagen se procesa con IA para detectar productos y créditos consumidos.
+              </div>
+            </div>
+          )}
+
+          {/* Detected usage table */}
+          {usageItems.length > 0 && (
+            <>
+              <div style={{ fontSize:12, color:C.text2, marginBottom:10, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                <span>✅ Detectamos <strong style={{ color:C.text }}>{usageItems.length} productos</strong></span>
+                {usageMonth && <><span>·</span><span>Mes: <strong style={{ color:C.text }}>{usageMonth}</strong></span></>}
+                <span>·</span>
+                <span style={{ color:C.text3, fontSize:11 }}>Edita las cantidades si necesitas</span>
+              </div>
+
+              {/* Items table - desktop */}
+              {!isMobile && (
+                <div style={{ background:C.surface, borderRadius:8, overflow:"hidden", border:`1px solid ${C.border}` }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                    <thead>
+                      <tr style={{ background:C.panel, borderBottom:`1px solid ${C.border}` }}>
+                        <th style={{ padding:"10px 12px", textAlign:"left", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em" }}>Producto</th>
+                        <th style={{ padding:"10px 12px", textAlign:"right", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:120 }}>Mensual</th>
+                        <th style={{ padding:"10px 12px", textAlign:"right", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:120 }}>Anual (×12)</th>
+                        <th style={{ padding:"10px 12px", textAlign:"right", fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", width:140 }}>≈ Licencias</th>
+                        <th style={{ width:40 }}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usageItems.map(it => {
+                        const prod = it.prodId ? CATALOG.find(c => c.id === it.prodId) : null;
+                        const annual = (Number(it.monthly) || 0) * 12;
+                        const licenses = prod && prod.credits > 0 ? Math.round(annual / prod.credits) : null;
+                        const unit = prod ? prod.unit : "";
+                        return (
+                          <tr key={it.rowId} style={{ borderBottom:`1px solid ${C.border}` }}>
+                            <td style={{ padding:"10px 12px" }}>
+                              <div style={{ fontSize:13, fontWeight:600, color:C.text }}>
+                                {prod ? prod.name : it.nameInScreenshot}
+                              </div>
+                              {!prod && (
+                                <div style={{ fontSize:11, color:"#B45309", marginTop:2 }}>⚠ No matcheado con catálogo</div>
+                              )}
+                              {prod && it.confidence === "low" && (
+                                <div style={{ fontSize:10, color:C.text3, marginTop:2 }}>Detectado: "{it.nameInScreenshot}"</div>
+                              )}
+                            </td>
+                            <td style={{ padding:"6px 12px", textAlign:"right" }}>
+                              <input type="number" min="0" value={it.monthly}
+                                onChange={e => updateUsageItem(it.rowId, "monthly", Math.max(0, Number(e.target.value) || 0))}
+                                style={{ ...mono, width:100, textAlign:"right", padding:"7px 9px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.surface, outline:"none", boxSizing:"border-box" }} />
+                            </td>
+                            <td style={{ padding:"10px 12px", textAlign:"right", ...mono, fontSize:13, color:C.text, fontWeight:700 }}>
+                              {fmt(annual)}
+                            </td>
+                            <td style={{ padding:"10px 12px", textAlign:"right" }}>
+                              {licenses !== null ? (
+                                <div>
+                                  <div style={{ ...mono, fontSize:14, fontWeight:800, color:C.blue }}>≈ {fmt(licenses)}</div>
+                                  <div style={{ fontSize:10, color:C.text3 }}>{unit}{licenses !== 1 ? "s" : ""}</div>
+                                </div>
+                              ) : (
+                                <div style={{ fontSize:11, color:C.text3 }}>—</div>
+                              )}
+                            </td>
+                            <td style={{ padding:"10px 8px", textAlign:"center" }}>
+                              <button onClick={() => deleteUsageItem(it.rowId)} title="Eliminar"
+                                style={{ width:24, height:24, border:"none", background:"transparent", cursor:"pointer", color:C.text3, fontSize:14 }}>✕</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background:C.panel }}>
+                        <td style={{ padding:"12px", fontSize:12, fontWeight:700, color:C.text, textTransform:"uppercase", letterSpacing:".05em" }}>Totales</td>
+                        <td style={{ padding:"12px", textAlign:"right", ...mono, fontSize:14, fontWeight:800, color:C.text }}>{fmt(usageMonthlyTotal)}</td>
+                        <td style={{ padding:"12px", textAlign:"right", ...mono, fontSize:16, fontWeight:800, color:C.blue }}>{fmt(usageAnnualTotal)}</td>
+                        <td colSpan={2} style={{ padding:"12px", fontSize:11, color:C.text3 }}>cr/año estimados</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
+
+              {/* Items - mobile cards */}
+              {isMobile && (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {usageItems.map(it => {
+                    const prod = it.prodId ? CATALOG.find(c => c.id === it.prodId) : null;
+                    const annual = (Number(it.monthly) || 0) * 12;
+                    const licenses = prod && prod.credits > 0 ? Math.round(annual / prod.credits) : null;
+                    const unit = prod ? prod.unit : "";
+                    return (
+                      <div key={it.rowId} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, padding:12 }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:8 }}>
+                          <div style={{ flex:1, fontSize:13, fontWeight:700, color:C.text, lineHeight:1.3 }}>
+                            {prod ? prod.name : it.nameInScreenshot}
+                          </div>
+                          <button onClick={() => deleteUsageItem(it.rowId)}
+                            style={{ width:24, height:24, border:"none", background:"transparent", cursor:"pointer", color:C.text3, fontSize:14 }}>✕</button>
+                        </div>
+                        {!prod && (
+                          <div style={{ fontSize:11, color:"#B45309", marginBottom:8 }}>⚠ No matcheado con catálogo</div>
+                        )}
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+                          <div>
+                            <div style={{ fontSize:10, color:C.text3, fontWeight:600, marginBottom:3 }}>Mensual</div>
+                            <input type="number" min="0" value={it.monthly}
+                              onChange={e => updateUsageItem(it.rowId, "monthly", Math.max(0, Number(e.target.value) || 0))}
+                              style={{ ...mono, width:"100%", textAlign:"right", padding:"8px", border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, background:C.surface, outline:"none", boxSizing:"border-box" }} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize:10, color:C.text3, fontWeight:600, marginBottom:3 }}>Anual (×12)</div>
+                            <div style={{ ...mono, fontSize:14, fontWeight:700, color:C.text, padding:"8px 0" }}>{fmt(annual)}</div>
+                          </div>
+                        </div>
+                        {licenses !== null && (
+                          <div style={{ background:C.blueBg, borderRadius:6, padding:"8px 10px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                            <span style={{ fontSize:11, color:C.text2, fontWeight:600 }}>Licencias estimadas:</span>
+                            <span style={{ ...mono, fontSize:14, fontWeight:800, color:C.blue }}>≈ {fmt(licenses)} {unit}{licenses !== 1 ? "s" : ""}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div style={{ background:C.blue, color:"#fff", borderRadius:8, padding:"12px 14px", display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:4 }}>
+                    <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em", color:"#DBEAFE" }}>Total anual estimado</div>
+                    <div style={{ ...mono, fontSize:18, fontWeight:800 }}>{fmt(usageAnnualTotal)} cr</div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop:12, padding:"10px 12px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:7, fontSize:11, color:C.text2, lineHeight:1.5 }}>
+                💡 <strong>Importante:</strong> esta proyección asume que tu consumo mensual se mantiene constante durante 12 meses. Las licencias estimadas son aproximadas según los créditos del catálogo Vision One.
+              </div>
+            </>
+          )}
         </div>
 
         <div style={{ marginBottom:20 }}>
