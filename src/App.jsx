@@ -184,6 +184,225 @@ function defaultDates() {
   return { startDate: fmt(today), date: fmt(nextYear) };
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// AUDIT ENGINE — compara consumo real vs propuesta comprada
+// Detecta saltos de tier (ej. compraste Core, usas Pro), productos no
+// contemplados, productos no usados, y oportunidades de optimización.
+// Basado en documentación oficial de Trend Vision One Credit Allocation.
+// ════════════════════════════════════════════════════════════════════════
+
+// Familias de productos donde existe escalamiento de tier (Core → Essentials → Pro)
+const PRODUCT_FAMILIES = {
+  endpoint: {
+    name: "Endpoint Security",
+    tiers: [
+      { id: "r", name: "Core",       credits: 45 },
+      { id: "s", name: "Essentials", credits: 65 },
+      { id: "t", name: "Pro",        credits: 300 },
+    ],
+  },
+  email: {
+    name: "Email & Collaboration Security",
+    tiers: [
+      { id: "x", name: "Core",       credits: 25 },
+      { id: "y", name: "Essentials", credits: 50 },
+      { id: "z", name: "Pro",        credits: 105 },
+    ],
+  },
+  crem: {
+    name: "Cyber Risk Exposure Management",
+    tiers: [
+      { id: "A", name: "Core",       credits: 20 },
+      { id: "B", name: "Essentials", credits: 50 },
+      { id: "C", name: "Pro",        credits: 100 },
+    ],
+  },
+};
+
+// Reverse lookup: prodId → family info
+function findFamily(prodId) {
+  for (const [key, fam] of Object.entries(PRODUCT_FAMILIES)) {
+    const tier = fam.tiers.find(t => t.id === prodId);
+    if (tier) return { familyKey: key, family: fam, tier, tierIdx: fam.tiers.indexOf(tier) };
+  }
+  return null;
+}
+
+/**
+ * Compara propuesta (lo comprado) vs consumo (lo usado).
+ *
+ * Args:
+ *   proposalItems: [{ prodId, qty, totalCredits, sourceFile, ... }]
+ *   usageItems: [{ prodId, monthly, sourceFile, ... }]
+ *   proposalTotalPool: número (pool total comprado)
+ *
+ * Returns:
+ *   {
+ *     tierEscalations: [{family, boughtTier, usedTier, qtyImpacted, extraCreditsAnnual}],
+ *     unplannedProducts: [{prodId, monthlyUsage, annualUsage, prod}],
+ *     unusedProducts: [{prodId, qtyBought, prod}],
+ *     totalUnallocated: número,
+ *     totalAnnualUsage: número,
+ *     totalProposalEffective: número,
+ *     hasFindings: bool
+ *   }
+ */
+function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
+  const result = {
+    tierEscalations: [],
+    unplannedProducts: [],
+    unusedProducts: [],
+    totalUnallocated: 0,
+    totalAnnualUsage: 0,
+    totalProposalEffective: 0,
+    hasFindings: false,
+  };
+
+  // Calcular totales
+  let usageAnnual = 0;
+  usageItems.forEach(it => { usageAnnual += (Number(it.monthly) || 0) * 12; });
+  let proposalSum = 0;
+  proposalItems.forEach(it => { proposalSum += Number(it.totalCredits) || 0; });
+  // Pool standalone es ADITIVO con productos individuales
+  const proposalEffective = (proposalTotalPool || 0) + proposalSum;
+
+  result.totalAnnualUsage = usageAnnual;
+  result.totalProposalEffective = proposalEffective;
+  result.totalUnallocated = Math.max(0, proposalEffective - usageAnnual);
+
+  // ═══ Detección 1: Saltos de tier ═══
+  // Para cada familia, ver qué tier compró vs qué tier consume
+  Object.entries(PRODUCT_FAMILIES).forEach(([famKey, fam]) => {
+    const familyTierIds = fam.tiers.map(t => t.id);
+
+    // Comprado en esta familia (sumar cantidades de cada tier)
+    const bought = {};
+    proposalItems.forEach(it => {
+      if (familyTierIds.includes(it.prodId)) {
+        bought[it.prodId] = (bought[it.prodId] || 0) + (Number(it.qty) || 0);
+      }
+    });
+
+    // Usado en esta familia (calcular qty equivalente desde monthly credits)
+    const used = {};
+    usageItems.forEach(it => {
+      if (familyTierIds.includes(it.prodId)) {
+        const tier = fam.tiers.find(t => t.id === it.prodId);
+        if (tier && tier.credits > 0) {
+          // qty equivalente = créditos anuales / créditos por unidad
+          const annualCredits = (Number(it.monthly) || 0) * 12;
+          const qtyEquiv = annualCredits / tier.credits;
+          used[it.prodId] = (used[it.prodId] || 0) + qtyEquiv;
+        }
+      }
+    });
+
+    // Encontrar el tier MÁS ALTO comprado y el tier MÁS ALTO usado
+    let highestBoughtIdx = -1;
+    let highestUsedIdx = -1;
+    fam.tiers.forEach((t, idx) => {
+      if ((bought[t.id] || 0) > 0) highestBoughtIdx = Math.max(highestBoughtIdx, idx);
+      if ((used[t.id] || 0) > 0.5) highestUsedIdx = Math.max(highestUsedIdx, idx); // 0.5 threshold para evitar ruido
+    });
+
+    // ¿Hay salto de tier?
+    if (highestBoughtIdx >= 0 && highestUsedIdx > highestBoughtIdx) {
+      const boughtTier = fam.tiers[highestBoughtIdx];
+      const usedTier = fam.tiers[highestUsedIdx];
+      const qtyImpacted = Math.round(used[usedTier.id] || 0);
+      const extraPerUnit = usedTier.credits - boughtTier.credits;
+      const extraAnnual = qtyImpacted * extraPerUnit;
+      const totalAtBoughtTier = qtyImpacted * boughtTier.credits;
+      const totalAtUsedTier = qtyImpacted * usedTier.credits;
+      const multiplier = boughtTier.credits > 0 ? (usedTier.credits / boughtTier.credits) : 0;
+
+      result.tierEscalations.push({
+        familyKey: famKey,
+        familyName: fam.name,
+        boughtTier,
+        usedTier,
+        qtyImpacted,
+        extraPerUnit,
+        extraAnnual,
+        totalAtBoughtTier,
+        totalAtUsedTier,
+        multiplier,
+      });
+    }
+  });
+
+  // ═══ Detección 2: Productos en consumo NO contemplados en propuesta ═══
+  const proposalProdIds = new Set(proposalItems.map(it => it.prodId).filter(Boolean));
+  const usageGrouped = {}; // prodId → total monthly
+  usageItems.forEach(it => {
+    if (it.prodId) {
+      usageGrouped[it.prodId] = (usageGrouped[it.prodId] || 0) + (Number(it.monthly) || 0);
+    }
+  });
+
+  Object.entries(usageGrouped).forEach(([prodId, monthly]) => {
+    if (monthly <= 0) return;
+    if (proposalProdIds.has(prodId)) return; // ya está contemplado
+
+    // No contemplado: ver si es del mismo "family" que algo comprado (en cuyo caso es escalamiento, ya cubierto arriba)
+    const fam = findFamily(prodId);
+    if (fam) {
+      const familyIds = fam.family.tiers.map(t => t.id);
+      const familyInProposal = proposalItems.some(it => familyIds.includes(it.prodId));
+      if (familyInProposal) return; // es escalamiento, ya está en tierEscalations
+    }
+
+    const prod = (typeof CATALOG !== "undefined" ? CATALOG : []).find(c => c.id === prodId);
+    if (prod) {
+      result.unplannedProducts.push({
+        prodId,
+        prod,
+        monthlyUsage: monthly,
+        annualUsage: monthly * 12,
+      });
+    }
+  });
+
+  // ═══ Detección 3: Productos comprados pero NO usados ═══
+  const usageProdIds = new Set(Object.keys(usageGrouped));
+  const proposalGrouped = {}; // prodId → total qty
+  proposalItems.forEach(it => {
+    if (it.prodId) {
+      proposalGrouped[it.prodId] = (proposalGrouped[it.prodId] || 0) + (Number(it.qty) || 0);
+    }
+  });
+
+  Object.entries(proposalGrouped).forEach(([prodId, qty]) => {
+    if (qty <= 0) return;
+    if (usageProdIds.has(prodId)) return; // sí se está usando
+
+    // Verificar si la familia se está usando (en otro tier por escalamiento) — si sí, no marcar como "no usado"
+    const fam = findFamily(prodId);
+    if (fam) {
+      const familyIds = fam.family.tiers.map(t => t.id);
+      const familyInUsage = familyIds.some(id => (usageGrouped[id] || 0) > 0);
+      if (familyInUsage) return; // se usa la familia, solo cambió de tier
+    }
+
+    const prod = (typeof CATALOG !== "undefined" ? CATALOG : []).find(c => c.id === prodId);
+    if (prod) {
+      result.unusedProducts.push({
+        prodId,
+        prod,
+        qtyBought: qty,
+      });
+    }
+  });
+
+  result.hasFindings =
+    result.tierEscalations.length > 0 ||
+    result.unplannedProducts.length > 0 ||
+    result.unusedProducts.length > 0 ||
+    result.totalUnallocated > 0;
+
+  return result;
+}
+
 const C = {
   bg:"#FAFAF9", surface:"#FFFFFF", panel:"#F5F5F4", border:"#E7E5E4",
   text:"#0C0A09", text2:"#57534E", text3:"#A8A29E",
@@ -2108,14 +2327,36 @@ function ClientApp() {
     for (const file of fileList) {
       try {
         const data = await processOneProposalFile(file);
-        const products = data.products || [];
+        const rawProducts = data.products || [];
         const filePool = Number(data.total_credits_purchased) || 0;
         const sourceType = data.source_type || "informal";
-        let computedFromProducts = 0;
 
         // For source dates: use what the AI found, or empty if unknown
         const fileGlobalStart = data.proposal_start_date || "";
         const fileGlobalEnd = data.proposal_end_date || "";
+
+        // ════════════════════════════════════════════════════════════
+        // FILTRO ANTI DOBLE-CONTEO:
+        // Si la IA detectó el "Vision One Credits Pool" dentro de products[],
+        // lo movemos a "standalonePool" para no procesarlo como producto regular.
+        // El pool es ADITIVO con los productos individuales (cada certificado
+        // de Trend es independiente).
+        // ════════════════════════════════════════════════════════════
+        let standalonePool = filePool;
+        const products = [];
+        rawProducts.forEach(p => {
+          const isPoolRow = p.matched_id === "AK" ||
+                            (p.name_in_proposal || "").toLowerCase().includes("vision one credits");
+          if (isPoolRow) {
+            // Mover créditos del "producto pool" a standalonePool
+            const credits = Number(p.total_credits) || (Number(p.quantity) || 0) * (Number(p.credits_per_unit) || 1);
+            standalonePool += credits;
+          } else {
+            products.push(p);
+          }
+        });
+
+        let computedFromProducts = 0;
 
         products.forEach(p => {
           const qty = Number(p.quantity) || 0;
@@ -2125,7 +2366,6 @@ function ClientApp() {
 
           // Date confidence per product
           const datesConf = p.dates_confidence || "unknown";
-          // If AI said dates are unknown, leave EMPTY (per user's choice — must confirm)
           let pStart = "";
           let pEnd = "";
           if (datesConf === "explicit") {
@@ -2135,7 +2375,6 @@ function ClientApp() {
             pStart = p.start_date || fileGlobalStart || "";
             pEnd = p.end_date || fileGlobalEnd || "";
           }
-          // datesConf === "unknown" → leave empty
 
           newItems.push({
             rowId: `p${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
@@ -2154,13 +2393,16 @@ function ClientApp() {
           });
         });
 
-        const effectivePool = Math.max(filePool, computedFromProducts);
-        totalPoolDelta += effectivePool;
+        // Total de archivo = pool standalone + productos individuales (suma)
+        totalPoolDelta += standalonePool;
+        const fileTotalCredits = standalonePool + computedFromProducts;
 
         newFileEntries.push({
           name: file.name,
           productCount: products.length,
-          poolCredits: effectivePool,
+          poolCredits: fileTotalCredits,           // total del archivo (pool + productos)
+          poolStandalone: standalonePool,
+          productsTotal: computedFromProducts,
           period: data.proposal_period || "",
           date: data.proposal_date || "",
           sourceType: sourceType,
@@ -2251,8 +2493,10 @@ function ClientApp() {
   proposalItems.forEach(it => {
     proposalComputedTotal += Number(it.totalCredits) || 0;
   });
-  // Use whichever is larger between declared pool and computed (often pool > sum due to extra credits)
-  const proposalEffectiveTotal = Math.max(proposalTotalPool, proposalComputedTotal);
+  // POOL ES ADITIVO con los productos: total = pool standalone + suma de productos
+  // proposalTotalPool ya viene calculado correctamente desde onProposalFile
+  // (que distingue pool standalone de pool dentro de products para no doble-contar)
+  const proposalEffectiveTotal = proposalTotalPool + proposalComputedTotal;
 
   // Count items that need date confirmation
   const itemsNeedingDates = proposalItems.filter(it =>
@@ -2693,9 +2937,14 @@ function ClientApp() {
             <>
               {/* Summary bar */}
               <div style={{ display:"flex", flexWrap:"wrap", gap:isMobile?10:14, marginBottom:14, padding:"12px 14px", background:C.surface, borderRadius:8, border:`1px solid ${C.border}` }}>
-                <div>
-                  <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Pool comprado</div>
-                  <div style={{ ...mono, fontSize:isMobile?16:18, fontWeight:800, color:"#B45309" }}>{fmt(proposalEffectiveTotal)} cr</div>
+                <div style={{ flex:isMobile?"1 1 100%":"none" }}>
+                  <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Total comprado</div>
+                  <div style={{ ...mono, fontSize:isMobile?20:22, fontWeight:800, color:"#B45309" }}>{fmt(proposalEffectiveTotal)} cr</div>
+                  {proposalTotalPool > 0 && proposalComputedTotal > 0 && (
+                    <div style={{ fontSize:10, color:C.text3, marginTop:2, ...mono }}>
+                      = {fmt(proposalTotalPool)} pool + {fmt(proposalComputedTotal)} productos
+                    </div>
+                  )}
                 </div>
                 {proposalPeriod && (
                   <div>
@@ -2710,7 +2959,7 @@ function ClientApp() {
                   </div>
                 )}
                 <div>
-                  <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Productos detallados</div>
+                  <div style={{ fontSize:10, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".05em" }}>Productos</div>
                   <div style={{ fontSize:isMobile?13:14, fontWeight:600, color:C.text }}>{proposalItems.length}</div>
                 </div>
               </div>
@@ -2718,11 +2967,14 @@ function ClientApp() {
               {/* Editable pool input */}
               <div style={{ marginBottom:14 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".05em", marginBottom:6 }}>
-                  Total de créditos del pool (editable)
+                  Pool de créditos sueltos (editable)
                 </div>
                 <input type="number" min="0" value={proposalTotalPool}
                   onChange={e => setProposalTotalPool(Math.max(0, Number(e.target.value) || 0))}
                   style={{ ...mono, fontSize:16, fontWeight:700, padding:"10px 14px", border:`1.5px solid ${C.border}`, borderRadius:8, background:C.surface, outline:"none", width: isMobile ? "100%" : 240, boxSizing:"border-box" }} />
+                <div style={{ fontSize:11, color:C.text3, marginTop:4, lineHeight:1.4 }}>
+                  Solo créditos sueltos del Pool (SKU VONN0000, VORN0232, etc). Los productos individuales se muestran abajo.
+                </div>
               </div>
 
               {/* Banner: success — all dates explicit */}
@@ -3015,6 +3267,17 @@ function ClientApp() {
             </div>
           </div>
         )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+             AUDITORÍA INTELIGENTE — modo cliente (alertas neutras)
+             Solo aparece si hay propuesta + consumo
+        ═══════════════════════════════════════════════════════════════ */}
+        {hasComparative && (() => {
+          const audit = auditUsageVsProposal(proposalItems, usageItems, proposalEffectiveTotal);
+          return audit.hasFindings ? (
+            <AuditPanel audit={audit} isMobile={isMobile} mode="client" />
+          ) : null;
+        })()}
 
         <div style={{ marginBottom:20 }}>
           <div style={{ fontSize:13, fontWeight:700, color:C.text2, marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
@@ -3316,8 +3579,251 @@ function UnifyDatesPanel({ items, isMobile, open, setOpen, targetDate, setTarget
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// WELCOME SCREEN + PIN GATE
+// AUDIT PANEL — Auditoría inteligente de consumo vs propuesta
+// Modo "client": alertas neutras y educativas
+// Modo "internal": análisis comercial con impacto financiero
 // ════════════════════════════════════════════════════════════════════════
+
+function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, costPricePerCredit = 0 }) {
+  if (!audit || !audit.hasFindings) return null;
+
+  const isInternal = mode === "internal";
+
+  // Style tokens
+  const headerColor = isInternal ? "#7C3AED" : "#1E40AF";
+  const headerBg = isInternal ? "#FAF5FF" : "#EFF6FF";
+  const headerBorder = isInternal ? "#C4B5FD" : "#BFDBFE";
+
+  return (
+    <div style={{
+      background: headerBg,
+      border: `2px solid ${headerBorder}`,
+      borderRadius: 14,
+      padding: isMobile ? 16 : 20,
+      marginBottom: 18,
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        <span style={{ fontSize: isMobile ? 22 : 26 }}>🔍</span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: headerColor, letterSpacing: "-.02em" }}>
+            {isInternal ? "Auditoría comercial" : "Auditoría de tu consumo"}
+          </div>
+          <div style={{ fontSize: isMobile ? 11 : 12, color: "#57534E", fontWeight: 500, marginTop: 2 }}>
+            {isInternal
+              ? "Análisis del cliente vs lo contratado · oportunidades comerciales"
+              : "Detectamos diferencias entre tu propuesta y tu consumo real"}
+          </div>
+        </div>
+        {isInternal && (
+          <span style={{ background: "#7C3AED", color: "#fff", fontSize: 9, fontWeight: 800, padding: "4px 10px", borderRadius: 5, letterSpacing: ".06em" }}>
+            INTERNO · NEXTCOM
+          </span>
+        )}
+      </div>
+
+      {/* Findings */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+        {/* ═══ TIER ESCALATIONS ═══ */}
+        {audit.tierEscalations.map((esc, idx) => {
+          const extraCost = isInternal ? esc.extraAnnual * costPricePerCredit : 0;
+          const extraSale = isInternal ? esc.extraAnnual * salePricePerCredit : 0;
+          const extraMargin = extraSale - extraCost;
+          return (
+            <div key={`tier-${idx}`} style={{
+              background: "#FEF3C7", border: "1.5px solid #FCD34D", borderRadius: 10, padding: isMobile ? 12 : 14,
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
+                <span style={{ fontSize: 18 }}>⚠️</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#92400E" }}>
+                    Salto de tier en {esc.familyName}
+                  </div>
+                  <div style={{ fontSize: isMobile ? 11 : 12, color: "#78350F", marginTop: 3, lineHeight: 1.5 }}>
+                    {isInternal
+                      ? `Compró: ${esc.boughtTier.name} · Consumiendo: ${esc.usedTier.name} · ${esc.qtyImpacted} unidades afectadas`
+                      : `Tu propuesta incluye ${esc.boughtTier.name}, pero estás consumiendo ${esc.usedTier.name} en aproximadamente ${esc.qtyImpacted} unidades.`}
+                  </div>
+                </div>
+              </div>
+              {/* Numbers */}
+              <div style={{
+                background: "#fff", borderRadius: 7, padding: 10, display: "grid",
+                gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, fontSize: 11,
+              }}>
+                <div>
+                  <div style={{ fontSize: 9, color: "#78350F", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>Si fuera {esc.boughtTier.name}</div>
+                  <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "#0C0A09" }}>{fmt(esc.totalAtBoughtTier)} cr</div>
+                  <div style={{ fontSize: 9, color: "#A8A29E" }}>{esc.boughtTier.credits} cr × {esc.qtyImpacted}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, color: "#92400E", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>Como {esc.usedTier.name}</div>
+                  <div style={{ ...mono, fontSize: 14, fontWeight: 800, color: "#92400E" }}>{fmt(esc.totalAtUsedTier)} cr</div>
+                  <div style={{ fontSize: 9, color: "#A8A29E" }}>{esc.usedTier.credits} cr × {esc.qtyImpacted}</div>
+                </div>
+                <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
+                  <div style={{ fontSize: 9, color: "#DC2626", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>Diferencia anual</div>
+                  <div style={{ ...mono, fontSize: 14, fontWeight: 800, color: "#DC2626" }}>+{fmt(esc.extraAnnual)} cr</div>
+                  <div style={{ fontSize: 9, color: "#A8A29E" }}>{esc.multiplier.toFixed(1)}x más caro</div>
+                </div>
+              </div>
+              {/* Internal-only financial impact */}
+              {isInternal && salePricePerCredit > 0 && (
+                <div style={{ marginTop: 10, background: "#FAF5FF", border: "1px solid #C4B5FD", borderRadius: 7, padding: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>
+                    💰 Impacto comercial anual
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, fontSize: 11 }}>
+                    <div>
+                      <div style={{ fontSize: 9, color: "#57534E", fontWeight: 600 }}>Revenue extra</div>
+                      <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: "#047857" }}>{fmtU(extraSale)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 9, color: "#57534E", fontWeight: 600 }}>Costo extra</div>
+                      <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "#0C0A09" }}>{fmtU(extraCost)}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 9, color: "#57534E", fontWeight: 600 }}>Margen extra</div>
+                      <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: "#7C3AED" }}>{fmtU(extraMargin)}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div style={{ marginTop: 8, fontSize: 11, color: "#78350F", fontStyle: "italic", lineHeight: 1.5 }}>
+                💡 {isInternal
+                  ? "Cliente probablemente no sabe del escalamiento automático. Próxima renovación correcta debería ser " + esc.usedTier.name + ". Oportunidad para upsell formal."
+                  : "Esto puede ser intencional (necesitas features de " + esc.usedTier.name + ") o accidental (alguna feature avanzada fue activada). Revisa con tu administrador qué features están habilitadas."}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* ═══ UNPLANNED PRODUCTS ═══ */}
+        {audit.unplannedProducts.length > 0 && (
+          <div style={{ background: "#DBEAFE", border: "1.5px solid #93C5FD", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 18 }}>📊</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#1E3A8A" }}>
+                  Productos en uso NO contemplados en propuesta
+                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, color: "#1E40AF", marginTop: 3, lineHeight: 1.5 }}>
+                  {isInternal
+                    ? "Cliente está usando estos productos del pool sobrante sin haberlos cotizado formalmente. Oportunidad para incluirlos en próxima renovación."
+                    : "Estos productos están consumiendo créditos pero no aparecen en tu propuesta original."}
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 7, overflow: "hidden", border: "1px solid #BFDBFE" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#EFF6FF" }}>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#1E40AF", textTransform: "uppercase" }}>Producto</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#1E40AF", textTransform: "uppercase" }}>Mensual</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#1E40AF", textTransform: "uppercase" }}>Anual</th>
+                    {isInternal && salePricePerCredit > 0 && (
+                      <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase" }}>Revenue</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {audit.unplannedProducts.map((up, idx) => (
+                    <tr key={`unp-${idx}`} style={{ borderTop: "1px solid #F5F5F4" }}>
+                      <td style={{ padding: "8px 10px", fontSize: 11, fontWeight: 600, color: "#0C0A09" }}>{up.prod.name}</td>
+                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 11 }}>{fmt(up.monthlyUsage)}</td>
+                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#1E40AF" }}>{fmt(up.annualUsage)}</td>
+                      {isInternal && salePricePerCredit > 0 && (
+                        <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#047857" }}>{fmtU(up.annualUsage * salePricePerCredit)}</td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ UNUSED PRODUCTS ═══ */}
+        {audit.unusedProducts.length > 0 && (
+          <div style={{ background: "#F5F5F4", border: "1.5px solid #D6D3D1", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 18 }}>📦</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#44403C" }}>
+                  Productos contratados pero NO usados
+                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, color: "#57534E", marginTop: 3, lineHeight: 1.5 }}>
+                  {isInternal
+                    ? "Cliente compró estos productos pero no los está consumiendo. Considera retirarlos en próxima renovación o evaluar por qué no se activaron."
+                    : "Estos productos están en tu propuesta pero no detectamos consumo de ellos."}
+                </div>
+              </div>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 7, overflow: "hidden", border: "1px solid #E7E5E4" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: "#FAFAF9" }}>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Producto</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Comprado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {audit.unusedProducts.map((un, idx) => (
+                    <tr key={`unu-${idx}`} style={{ borderTop: "1px solid #F5F5F4" }}>
+                      <td style={{ padding: "8px 10px", fontSize: 11, fontWeight: 600, color: "#0C0A09" }}>{un.prod.name}</td>
+                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, color: "#57534E" }}>{fmt(un.qtyBought)} {un.prod.unit}{un.qtyBought !== 1 ? "s" : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ UNALLOCATED POOL ═══ */}
+        {audit.totalUnallocated > 0 && (
+          <div style={{ background: "#ECFDF5", border: "1.5px solid #6EE7B7", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 18 }}>💰</span>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#065F46" }}>
+                  Créditos sin asignar en tu pool
+                </div>
+                <div style={{ fontSize: isMobile ? 11 : 12, color: "#047857", marginTop: 2, lineHeight: 1.5 }}>
+                  {isInternal
+                    ? "Cliente tiene capacidad sobrante. Espacio para upsell de servicios adicionales."
+                    : "Tienes créditos comprados que no estás usando. Podrías activar nuevos servicios."}
+                </div>
+              </div>
+              <div style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#047857" }}>
+                {fmt(audit.totalUnallocated)} cr
+              </div>
+            </div>
+            <div style={{ background: "#fff", borderRadius: 7, padding: 10, fontSize: 11, color: "#065F46", lineHeight: 1.5 }}>
+              💡 <strong>Posibles servicios para activar:</strong> Container Security, File Storage Security, Threat Intelligence, Data Security Posture Management, AI Security. {isInternal ? "Considera proponer estos servicios en una conversación comercial." : "Habla con tu partner Trend Micro para evaluar opciones."}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Footer summary */}
+      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${headerBorder}`, display: "flex", flexWrap: "wrap", gap: 14, fontSize: 11, color: "#57534E" }}>
+        <div>
+          <span style={{ fontWeight: 700, color: headerColor }}>Pool comprado:</span>{" "}
+          <span style={{ ...mono, fontWeight: 700 }}>{fmt(audit.totalProposalEffective)}</span>
+        </div>
+        <div>
+          <span style={{ fontWeight: 700, color: headerColor }}>Consumo proyectado:</span>{" "}
+          <span style={{ ...mono, fontWeight: 700 }}>{fmt(audit.totalAnnualUsage)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 const NEXTCOM_PIN = "Nextcomvzlapty2026";
 const PIN_STORAGE_KEY = "nextcom_pin_remembered";
