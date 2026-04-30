@@ -1,0 +1,14 @@
+  "rewrites": [
+    { "source": "/cliente", "destination": "/index.html" },
+    { "source": "/cliente/", "destination": "/index.html" },
+    { "source": "/estimador", "destination": "/index.html" },
+    { "source": "/estimador/", "destination": "/index.html" },
+    { "source": "/clientes", "destination": "/index.html" },
+    { "source": "/clientes/", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/parse-proposal.js": { "maxDuration": 60 },
+    "api/parse-usage.js": { "maxDuration": 60 },
+    "api/parse-quote.js": { "maxDuration": 60 }
+  }
+}
