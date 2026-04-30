@@ -255,7 +255,7 @@ Devuelve SOLO un JSON válido (sin markdown, sin explicación) con esta estructu
   "proposal_period": "2025-2026",
   "proposal_start_date": "2025-09-30",
   "proposal_end_date": "2026-09-29",
-  "total_credits_purchased": 300,
+  "total_credits_purchased": 0,
   "products": [
     {
       "name_in_proposal": "Cyber Risk Exposure Management - Core (Normal 1-100)",
@@ -271,15 +271,80 @@ Devuelve SOLO un JSON válido (sin markdown, sin explicación) con esta estructu
       "match_confidence": "high"
     }
   ],
-  "notes": "Entitlement Certificate oficial de Trend Micro"
+  "notes": "Entitlement Certificate oficial de Trend Micro. total_credits_purchased=0 porque no hay certificado de pool standalone en este documento; solo hay un producto regular (CREM Core)."
 }
+
+⚠️⚠️⚠️ REGLA #2 CRÍTICA — total_credits_purchased ⚠️⚠️⚠️
+
+EL CAMPO "total_credits_purchased" SOLO se llena cuando hay UN CERTIFICADO ESPECÍFICO DE "Vision One Credits Pool" (SKU VONN0000, VORN0232, VORN0309, VONN0309, VONN0358).
+
+JAMÁS calcules total_credits_purchased sumando los productos. Los productos individuales tienen sus propios totales en el campo "total_credits" dentro del array "products".
+
+EJEMPLOS DE CUÁNDO USAR CADA CAMPO:
+
+✅ CASO 1: PDF con 5 productos regulares (Endpoint, Email, etc.) y NINGÚN certificado de pool standalone:
+{
+  "total_credits_purchased": 0,   ← CERO porque NO hay certificado de pool puro
+  "products": [
+    { "name_in_proposal": "Endpoint Core", "quantity": 230, "total_credits": 10350 },
+    { "name_in_proposal": "Endpoint Pro", "quantity": 65, "total_credits": 19500 },
+    { "name_in_proposal": "Email Core", "quantity": 460, "total_credits": 11500 }
+  ]
+}
+
+✅ CASO 2: PDF con 1 certificado de "Vision One Credits Pool" (VONN0000, Volume: 2135) y NADA más:
+{
+  "total_credits_purchased": 2135,   ← El volumen del certificado de pool
+  "products": []
+}
+
+✅ CASO 3: PDF con 1 certificado de pool (VONN0000, Volume: 2135) Y 5 productos regulares:
+{
+  "total_credits_purchased": 2135,   ← SOLO el volumen del pool standalone
+  "products": [
+    { "name_in_proposal": "Email Core", "quantity": 200, "total_credits": 5000 },
+    { "name_in_proposal": "Cloud Risk Mgmt", "quantity": 2, "total_credits": 6000 },
+    { "name_in_proposal": "Endpoint Core", "quantity": 25, "total_credits": 1125 },
+    { "name_in_proposal": "Endpoint Pro", "quantity": 15, "total_credits": 4500 },
+    { "name_in_proposal": "CREM Core", "quantity": 40, "total_credits": 800 }
+  ]
+}
+
+✅ CASO 4: PDF con 2 certificados de pool (VONN0000=2135 y VORN0232=5540) Y 3 productos regulares:
+{
+  "total_credits_purchased": 7675,   ← 2135 + 5540 (suma SOLO los pool standalone)
+  "products": [
+    { "name_in_proposal": "Endpoint Core", "quantity": 230, "total_credits": 10350 },
+    { "name_in_proposal": "CREM Core", "quantity": 295, "total_credits": 5900 },
+    { "name_in_proposal": "Email Core", "quantity": 460, "total_credits": 11500 }
+  ]
+}
+
+❌ CASO INCORRECTO (NUNCA HAGAS ESTO):
+{
+  "total_credits_purchased": 41350,   ← MAL: estás sumando los productos en el campo del pool
+  "products": [
+    { "total_credits": 10350 },
+    { "total_credits": 19500 },
+    { "total_credits": 11500 }
+  ]
+}
+Eso causa DOBLE CONTEO porque el cliente sumará el campo total_credits_purchased + cada producto.
+
+REGLA SIMPLE A MEMORIZAR:
+- ¿Veo el SKU VONN0000, VORN0232, VORN0309, VONN0309 o VONN0358? → Su Volume va a total_credits_purchased
+- ¿Veo cualquier OTRO SKU (VONN0033, VORN0051, VONN0186, etc.)? → Va al array products con su quantity
+- Si NO hay ningún SKU de pool en el documento → total_credits_purchased = 0
+
+`;
 
 REGLAS IMPORTANTES:
 - source_type: usa los criterios arriba
 - Para CADA producto, dates_confidence es OBLIGATORIO
 - Si dates_confidence es "unknown", start_date y end_date deben ser "" (cadena vacía)
 - NUNCA inventes fechas. Si dudas → "unknown"
-- total_credits_purchased: pool comprado (suma todos los certificados si hay varios en el mismo PDF)
+- total_credits_purchased: SOLO el volumen de certificados de pool standalone (VONN0000/VORN0232/VORN0309/VONN0309/VONN0358). Si no hay ningún certificado de pool standalone, debe ser 0.
+- NUNCA pongas en total_credits_purchased la suma de los productos individuales — eso causa doble conteo
 - Si el documento tiene VARIOS certificados/líneas (como un PDF con múltiples páginas de Entitlement), cada uno es un producto separado con sus propias fechas
 - match_confidence: "high" (match exacto), "medium" (similar), "low" (ambiguo)
 - Si NO es un documento Vision One, devuelve products: [] y total_credits_purchased: 0
