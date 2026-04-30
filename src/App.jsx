@@ -2607,20 +2607,33 @@ function ClientApp() {
         const fileGlobalEnd = data.proposal_end_date || "";
 
         // ════════════════════════════════════════════════════════════
-        // FILTRO ANTI DOBLE-CONTEO #1:
-        // Si la IA detectó el "Vision One Credits Pool" dentro de products[],
-        // lo movemos a "standalonePool" para no procesarlo como producto regular.
-        // El pool es ADITIVO con los productos individuales (cada certificado
-        // de Trend es independiente).
+        // DETECCIÓN DE POOLS:
+        // El backend NO debe llenar total_credits_purchased — todo viene
+        // en products[]. El frontend identifica cuáles son pools y los mueve
+        // a "standalonePool" (créditos sueltos) vs productos individuales.
+        //
+        // Un item es POOL si:
+        //   - matched_id === "AK"
+        //   - O su SKU está en la lista de pool SKUs
+        //   - O su nombre contiene "Vision One Credits" / "Pool de créditos"
         // ════════════════════════════════════════════════════════════
-        let standalonePool = filePool;
+        const POOL_SKUS = ["VONN0000", "VORN0232", "VORN0309", "VONN0309", "VONN0358"];
+        let standalonePool = filePool;  // por si el backend insiste en llenarlo
         const products = [];
         rawProducts.forEach(p => {
-          const isPoolRow = p.matched_id === "AK" ||
-                            (p.name_in_proposal || "").toLowerCase().includes("vision one credits");
+          const sku = (p.sku || "").toUpperCase().trim();
+          const nameMatch = (p.name_in_proposal || "").toLowerCase();
+          const isPoolBySku = POOL_SKUS.includes(sku);
+          const isPoolByName = nameMatch.includes("vision one credits") ||
+                               nameMatch.includes("pool de créditos") ||
+                               nameMatch.includes("pool de creditos");
+          const isPoolById = p.matched_id === "AK";
+          const isPoolRow = isPoolBySku || isPoolByName || isPoolById;
+
           if (isPoolRow) {
-            // Mover créditos del "producto pool" a standalonePool
-            const credits = Number(p.total_credits) || (Number(p.quantity) || 0) * (Number(p.credits_per_unit) || 1);
+            // Para pools, el "Volume" (quantity) ES directamente la cantidad de créditos
+            // Trend Vision One Credits Normal 1+ Credits New, Volume: 2135 → 2,135 cr
+            const credits = Number(p.total_credits) || Number(p.quantity) || 0;
             standalonePool += credits;
           } else {
             products.push(p);
@@ -2628,17 +2641,15 @@ function ClientApp() {
         });
 
         // ════════════════════════════════════════════════════════════
-        // FILTRO ANTI DOBLE-CONTEO #2:
-        // Si la IA puso en total_credits_purchased un valor que coincide
-        // EXACTAMENTE con la suma de los productos, es señal de que la IA
-        // confundió "total comprado" con "pool standalone" → descartar
+        // FILTRO ANTI DOBLE-CONTEO:
+        // Si standalonePool coincide EXACTAMENTE con la suma de productos,
+        // la IA confundió campos → descartar el pool fantasma
         // ════════════════════════════════════════════════════════════
         const productsSum = products.reduce((s, p) => {
           const tc = Number(p.total_credits) || ((Number(p.quantity) || 0) * (Number(p.credits_per_unit) || 0));
           return s + tc;
         }, 0);
         if (standalonePool > 0 && productsSum > 0 && standalonePool === productsSum) {
-          // Mismo número exacto → la IA está duplicando los productos en el pool
           standalonePool = 0;
         }
 
