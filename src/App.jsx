@@ -2607,7 +2607,7 @@ function ClientApp() {
         const fileGlobalEnd = data.proposal_end_date || "";
 
         // ════════════════════════════════════════════════════════════
-        // FILTRO ANTI DOBLE-CONTEO:
+        // FILTRO ANTI DOBLE-CONTEO #1:
         // Si la IA detectó el "Vision One Credits Pool" dentro de products[],
         // lo movemos a "standalonePool" para no procesarlo como producto regular.
         // El pool es ADITIVO con los productos individuales (cada certificado
@@ -2626,6 +2626,21 @@ function ClientApp() {
             products.push(p);
           }
         });
+
+        // ════════════════════════════════════════════════════════════
+        // FILTRO ANTI DOBLE-CONTEO #2:
+        // Si la IA puso en total_credits_purchased un valor que coincide
+        // EXACTAMENTE con la suma de los productos, es señal de que la IA
+        // confundió "total comprado" con "pool standalone" → descartar
+        // ════════════════════════════════════════════════════════════
+        const productsSum = products.reduce((s, p) => {
+          const tc = Number(p.total_credits) || ((Number(p.quantity) || 0) * (Number(p.credits_per_unit) || 0));
+          return s + tc;
+        }, 0);
+        if (standalonePool > 0 && productsSum > 0 && standalonePool === productsSum) {
+          // Mismo número exacto → la IA está duplicando los productos en el pool
+          standalonePool = 0;
+        }
 
         let computedFromProducts = 0;
 
