@@ -3027,11 +3027,10 @@ function ClientApp() {
         </div>
 
         <div style={{
-          display:"grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-          gap: isMobile ? 12 : 14,
-          marginBottom: 24,
-          alignItems: "start"
+          display:"flex",
+          flexDirection: "column",
+          gap: 14,
+          marginBottom: 24
         }}>
 
         {/* ═══════════════════════════════════════════════════════════════
@@ -3040,7 +3039,7 @@ function ClientApp() {
         <div style={{
           background: usageItems.length > 0 ? C.blueBg : C.surface,
           border: `1.5px ${usageItems.length > 0 ? "solid" : "dashed"} ${usageItems.length > 0 ? C.blue : C.border}`,
-          borderRadius:12, padding: isMobile ? 16 : 18, transition:"all .2s"
+          borderRadius:12, padding: isMobile ? 16 : 20, transition:"all .2s"
         }}>
           {/* Header */}
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
@@ -3260,7 +3259,7 @@ function ClientApp() {
         <div style={{
           background: hasProposal ? "#FFF7ED" : C.surface,
           border: `1.5px ${hasProposal ? "solid" : "dashed"} ${hasProposal ? "#F59E0B" : C.border}`,
-          borderRadius:12, padding: isMobile ? 16 : 18, transition:"all .2s"
+          borderRadius:12, padding: isMobile ? 16 : 20, transition:"all .2s"
         }}>
           <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, marginBottom: hasProposal ? 14 : 0 }}>
             <div style={{ flex:1, minWidth:0 }}>
