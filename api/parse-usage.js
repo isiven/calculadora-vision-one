@@ -9,6 +9,7 @@ export const config = {
       sizeLimit: "32mb",
     },
   },
+  maxDuration: 60,  // Permitir hasta 60s (default de Vercel es 10s, no alcanza para procesar imagen con IA)
 };
 
 // Compact catalog for product matching (id + name + cr/unit + unit type)
