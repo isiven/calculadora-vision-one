@@ -2958,22 +2958,99 @@ function ClientApp() {
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════
+             SELECTOR MANUAL — héroe visual de la pantalla
+        ═══════════════════════════════════════════════════════════════ */}
+        <div style={{ marginBottom:24 }}>
+          {/* HEADER HÉROE */}
+          <div style={{
+            display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
+            marginBottom: 14, padding: isMobile ? "14px 16px" : "16px 20px",
+            background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
+            backgroundColor: C.blue,
+            borderRadius: 12, color:"#fff",
+            boxShadow:"0 4px 14px rgba(30,64,175,.18)"
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
+              <span style={{ fontSize: isMobile ? 24 : 30 }}>🧮</span>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize: isMobile ? 15 : 18, fontWeight:800, lineHeight:1.2, letterSpacing:"-.015em" }}>
+                  Construye tu cotización
+                </div>
+                <div style={{ fontSize: isMobile ? 12 : 13, color:"#DBEAFE", marginTop:3, lineHeight:1.4 }}>
+                  Selecciona productos y cantidades para calcular tus créditos
+                </div>
+              </div>
+            </div>
+            <div style={{
+              background:"rgba(255,255,255,.2)", padding: isMobile ? "6px 10px" : "8px 14px",
+              borderRadius:8, display:"flex", alignItems:"center", gap:7, whiteSpace:"nowrap",
+              border:"1px solid rgba(255,255,255,.15)"
+            }}>
+              <span style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight:800, color:"#fff", lineHeight:1 }}>{activeLines}</span>
+              <span style={{ fontSize:10, color:"#DBEAFE", fontWeight:600, textTransform:"uppercase", letterSpacing:".06em", lineHeight:1.1 }}>
+                {activeLines === 1 ? "producto" : "productos"}
+              </span>
+            </div>
+          </div>
+          {lines.map((line, idx) => (
+            <LineCard key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} isMobile={isMobile} />
+          ))}
+          <button onClick={addLine} style={{
+            width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+            padding:"14px", background:"#fff", border:`2px dashed ${C.blue}`,
+            borderRadius:10, cursor:"pointer", color:C.blue, fontSize:14, fontWeight:600
+          }}>
+            <span style={{ fontSize:18 }}>＋</span> Agregar otro producto
+          </button>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+             SECCIÓN: Atajos con IA (consumo + propuesta) — grid 2 columnas
+        ═══════════════════════════════════════════════════════════════ */}
+        <div style={{
+          marginBottom:14, padding: isMobile ? "12px 14px" : "14px 18px",
+          background: "linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)",
+          backgroundColor: "#FAF5FF",
+          border: "1px solid #E9D5FF",
+          borderRadius: 10,
+          display:"flex", alignItems:"center", gap:10, flexWrap:"wrap"
+        }}>
+          <span style={{ fontSize: isMobile ? 18 : 22 }}>✨</span>
+          <div style={{ flex:1, minWidth:160 }}>
+            <div style={{ fontSize: isMobile ? 13 : 14, fontWeight:700, color:"#6B21A8", letterSpacing:"-.01em" }}>
+              Atajos con IA
+            </div>
+            <div style={{ fontSize: isMobile ? 11 : 12, color:"#7C3AED", lineHeight:1.45, marginTop:1 }}>
+              ¿Tienes documentos? Súbelos y los analizamos por ti — ahorras tiempo y evitas errores.
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          display:"grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gap: isMobile ? 12 : 14,
+          marginBottom: 24,
+          alignItems: "start"
+        }}>
+
+        {/* ═══════════════════════════════════════════════════════════════
              PANEL: ¿Ya eres cliente Trend Micro? Sube tu consumo actual
         ═══════════════════════════════════════════════════════════════ */}
         <div style={{
           background: usageItems.length > 0 ? C.blueBg : C.surface,
           border: `1.5px ${usageItems.length > 0 ? "solid" : "dashed"} ${usageItems.length > 0 ? C.blue : C.border}`,
-          borderRadius:12, padding: isMobile ? 16 : 20, marginBottom:18, transition:"all .2s"
+          borderRadius:12, padding: isMobile ? 16 : 18, transition:"all .2s"
         }}>
           {/* Header */}
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize: isMobile ? 14 : 16, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize: isMobile ? 14 : 15, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8, lineHeight:1.25 }}>
                 <span style={{ fontSize:20 }}>📊</span>
-                ¿Ya eres cliente Trend Micro Vision One?
+                <span>Tu consumo actual</span>
               </div>
-              <div style={{ fontSize: isMobile ? 12 : 13, color:C.text2, lineHeight:1.5 }}>
-                Sube un screenshot de tu reporte de consumo mensual y te calculamos automáticamente tu drawdown anual + cuántas licencias estás usando.
+              <div style={{ fontSize: isMobile ? 12 : 12.5, color:C.text2, lineHeight:1.5 }}>
+                Sube un screenshot de tu drawdown mensual de Vision One y calculamos tu uso anual + licencias.
               </div>
             </div>
             {usageItems.length > 0 && (
@@ -3183,16 +3260,16 @@ function ClientApp() {
         <div style={{
           background: hasProposal ? "#FFF7ED" : C.surface,
           border: `1.5px ${hasProposal ? "solid" : "dashed"} ${hasProposal ? "#F59E0B" : C.border}`,
-          borderRadius:12, padding: isMobile ? 16 : 20, marginBottom:18, transition:"all .2s"
+          borderRadius:12, padding: isMobile ? 16 : 18, transition:"all .2s"
         }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12, marginBottom: hasProposal ? 14 : 0 }}>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize: isMobile ? 14 : 16, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, marginBottom: hasProposal ? 14 : 0 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize: isMobile ? 14 : 15, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8, lineHeight:1.25 }}>
                 <span style={{ fontSize:20 }}>📄</span>
-                ¿Tienes una propuesta o cotización anterior?
+                <span>Tu propuesta anterior</span>
               </div>
-              <div style={{ fontSize: isMobile ? 12 : 13, color:C.text2, lineHeight:1.5 }}>
-                Sube tu propuesta del año pasado y te mostramos cuántos créditos compraste vs los que estás usando — para optimizar tu próxima renovación.
+              <div style={{ fontSize: isMobile ? 12 : 12.5, color:C.text2, lineHeight:1.5 }}>
+                Sube tu propuesta o Entitlement Certificate y comparamos lo que compraste vs lo que usas.
               </div>
             </div>
             {hasProposal && (
@@ -3533,6 +3610,9 @@ function ClientApp() {
           )}
         </div>
 
+        </div>
+        {/* ═══ FIN del grid 2-col de AI panels ═══ */}
+
         {/* ═══════════════════════════════════════════════════════════════
              ANÁLISIS COMPARATIVO (auto, solo si hay ambos)
         ═══════════════════════════════════════════════════════════════ */}
@@ -3610,23 +3690,6 @@ function ClientApp() {
             <AuditPanel audit={audit} isMobile={isMobile} mode="client" />
           ) : null;
         })()}
-
-        <div style={{ marginBottom:20 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:C.text2, marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
-            <span>Productos seleccionados</span>
-            <span style={{ ...mono, fontSize:11, color:C.text3, background:C.panel, padding:"2px 8px", borderRadius:4 }}>{activeLines}</span>
-          </div>
-          {lines.map((line, idx) => (
-            <LineCard key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} isMobile={isMobile} />
-          ))}
-          <button onClick={addLine} style={{
-            width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            padding:"14px", background:"#fff", border:`2px dashed ${C.blue}`,
-            borderRadius:10, cursor:"pointer", color:C.blue, fontSize:14, fontWeight:600
-          }}>
-            <span style={{ fontSize:18 }}>＋</span> Agregar otro producto
-          </button>
-        </div>
 
         {!isMobile && (totalCredits > 0 || hasUsage || hasProposal) && (
           <div style={{
