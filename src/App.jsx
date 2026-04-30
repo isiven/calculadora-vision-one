@@ -2215,16 +2215,27 @@ function downloadEstimate(data) {
       <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
         <thead><tr style="background:#F5F5F4">
           <th style="padding:6px 9px;text-align:left;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Servicio</th>
+          <th style="padding:6px 9px;text-align:left;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Estimado</th>
           <th style="padding:6px 9px;text-align:right;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Mensual</th>
           <th style="padding:6px 9px;text-align:right;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Anual</th>
         </tr></thead>
         <tbody>
-          ${audit.unplannedProducts.map(up => `
-          <tr><td style="padding:6px 9px;border-top:1px solid #F5F5F4;font-size:11px;font-weight:600">${up.prod.name}</td>
-          <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px">${fmt(up.monthlyUsage)} cr</td>
-          <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:#1E40AF">${fmt(up.annualUsage)} cr</td></tr>`).join("")}
+          ${audit.unplannedProducts.map(up => {
+            const annualPerUnit = up.prod.credits;
+            const estimatedUnits = annualPerUnit > 0 ? Math.round(up.annualUsage / annualPerUnit) : 0;
+            const unitLabel = up.prod.unit || "unidad";
+            const showEstimate = estimatedUnits > 0 && annualPerUnit > 0;
+            return `
+            <tr><td style="padding:6px 9px;border-top:1px solid #F5F5F4;font-size:11px;font-weight:600">${up.prod.name}</td>
+            <td style="padding:6px 9px;border-top:1px solid #F5F5F4;font-size:11px;color:#57534E">${showEstimate ? `<strong style="color:#0C0A09">≈${fmt(estimatedUnits)}</strong> ${unitLabel}${estimatedUnits !== 1 ? "s" : ""}` : `<span style="color:#A8A29E;font-style:italic">—</span>`}</td>
+            <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px">${fmt(up.monthlyUsage)} cr</td>
+            <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:#1E40AF">${fmt(up.annualUsage)} cr</td></tr>`;
+          }).join("")}
         </tbody>
       </table>
+      <div style="margin-top:6px;font-size:9px;color:#57534E;line-height:1.5;font-style:italic">
+        💡 La columna "Estimado" muestra una aproximación de licencias, usuarios o recursos según la unidad de cada producto. Es referencial — el consumo real puede variar según features activas.
+      </div>
     </div>` : ""}
 
     ${audit && audit.unusedProducts.length > 0 ? `
@@ -4116,20 +4127,40 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
                 <thead>
                   <tr style={{ background: "#F5F5F4" }}>
                     <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Servicio</th>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Estimado</th>
                     <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Mensual</th>
                     <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Anual</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {audit.unplannedProducts.map((up, idx) => (
-                    <tr key={`unp-${idx}`} style={{ borderTop: "1px solid #F5F5F4" }}>
-                      <td style={{ padding: "8px 10px", fontSize: 11, fontWeight: 600, color: "#0C0A09" }}>{up.prod.name}</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 11 }}>{fmt(up.monthlyUsage)} cr</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#1E40AF" }}>{fmt(up.annualUsage)} cr</td>
-                    </tr>
-                  ))}
+                  {audit.unplannedProducts.map((up, idx) => {
+                    // Calcular estimado de licencias/usuarios/recursos
+                    const annualPerUnit = up.prod.credits;
+                    const estimatedUnits = annualPerUnit > 0
+                      ? Math.round(up.annualUsage / annualPerUnit)
+                      : 0;
+                    const unitLabel = up.prod.unit || "unidad";
+                    const showEstimate = estimatedUnits > 0 && annualPerUnit > 0;
+                    return (
+                      <tr key={`unp-${idx}`} style={{ borderTop: "1px solid #F5F5F4" }}>
+                        <td style={{ padding: "8px 10px", fontSize: 11, fontWeight: 600, color: "#0C0A09" }}>{up.prod.name}</td>
+                        <td style={{ padding: "8px 10px", fontSize: 11, color: "#57534E" }}>
+                          {showEstimate ? (
+                            <span><strong style={{ color: "#0C0A09" }}>≈{fmt(estimatedUnits)}</strong> {unitLabel}{estimatedUnits !== 1 ? "s" : ""}</span>
+                          ) : (
+                            <span style={{ color: "#A8A29E", fontStyle: "italic" }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 11 }}>{fmt(up.monthlyUsage)} cr</td>
+                        <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#1E40AF" }}>{fmt(up.annualUsage)} cr</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
+            </div>
+            <div style={{ marginTop: 8, fontSize: 10, color: "#57534E", lineHeight: 1.5, fontStyle: "italic" }}>
+              💡 La columna "Estimado" muestra una aproximación de licencias, usuarios o recursos según la unidad de cada producto. Es una referencia para entender el alcance — el consumo real puede variar según uso de features.
             </div>
           </div>
         )}
