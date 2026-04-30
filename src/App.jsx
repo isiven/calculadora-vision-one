@@ -249,10 +249,13 @@ function findFamily(prodId) {
  */
 function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
   const result = {
+    familyAnalysis: [],
     tierEscalations: [],
     unplannedProducts: [],
     unusedProducts: [],
     totalUnallocated: 0,
+    totalDeficit: 0,
+    isOverPool: false,
     totalAnnualUsage: 0,
     totalProposalEffective: 0,
     hasFindings: false,
@@ -275,66 +278,98 @@ function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
   result.totalDeficit = Math.max(0, usageAnnual - proposalEffective);
   result.isOverPool = usageAnnual > proposalEffective;
 
-  // ═══ Detección 1: Saltos de tier ═══
-  // Para cada familia, ver qué tier compró vs qué tier consume
+  // ═══ Detección 1: Análisis por familia (Endpoint, Email, CREM) ═══
+  // Para cada familia, calcular cuánto se compró/usó EN CADA TIER
+  result.familyAnalysis = [];
+
   Object.entries(PRODUCT_FAMILIES).forEach(([famKey, fam]) => {
     const familyTierIds = fam.tiers.map(t => t.id);
 
-    // Comprado en esta familia (sumar cantidades de cada tier)
-    const bought = {};
+    // Comprado por tier (cantidad de unidades + créditos)
+    const boughtByTier = {};
+    fam.tiers.forEach(t => {
+      boughtByTier[t.id] = { qty: 0, credits: 0, tier: t };
+    });
     proposalItems.forEach(it => {
       if (familyTierIds.includes(it.prodId)) {
-        bought[it.prodId] = (bought[it.prodId] || 0) + (Number(it.qty) || 0);
+        const qty = Number(it.qty) || 0;
+        boughtByTier[it.prodId].qty += qty;
+        boughtByTier[it.prodId].credits += qty * boughtByTier[it.prodId].tier.credits;
       }
     });
 
-    // Usado en esta familia (calcular qty equivalente desde monthly credits)
-    const used = {};
+    // Usado por tier (calcular qty equivalente desde créditos anuales)
+    const usedByTier = {};
+    fam.tiers.forEach(t => {
+      usedByTier[t.id] = { qty: 0, credits: 0, tier: t };
+    });
     usageItems.forEach(it => {
       if (familyTierIds.includes(it.prodId)) {
         const tier = fam.tiers.find(t => t.id === it.prodId);
         if (tier && tier.credits > 0) {
-          // qty equivalente = créditos anuales / créditos por unidad
           const annualCredits = (Number(it.monthly) || 0) * 12;
-          const qtyEquiv = annualCredits / tier.credits;
-          used[it.prodId] = (used[it.prodId] || 0) + qtyEquiv;
+          usedByTier[it.prodId].qty += annualCredits / tier.credits;
+          usedByTier[it.prodId].credits += annualCredits;
         }
       }
     });
 
-    // Encontrar el tier MÁS ALTO comprado y el tier MÁS ALTO usado
+    // Totales de la familia
+    const totalBoughtCredits = fam.tiers.reduce((s, t) => s + boughtByTier[t.id].credits, 0);
+    const totalBoughtQty = fam.tiers.reduce((s, t) => s + boughtByTier[t.id].qty, 0);
+    const totalUsedCredits = fam.tiers.reduce((s, t) => s + usedByTier[t.id].credits, 0);
+    const totalUsedQty = fam.tiers.reduce((s, t) => s + usedByTier[t.id].qty, 0);
+
+    // ¿Hay actividad en esta familia? (compra o uso)
+    const hasActivity = totalBoughtCredits > 0 || totalUsedCredits > 0;
+    if (!hasActivity) return;
+
+    // ¿Hay salto de tier? (uso en tier más alto del que se compró)
     let highestBoughtIdx = -1;
     let highestUsedIdx = -1;
     fam.tiers.forEach((t, idx) => {
-      if ((bought[t.id] || 0) > 0) highestBoughtIdx = Math.max(highestBoughtIdx, idx);
-      if ((used[t.id] || 0) > 0.5) highestUsedIdx = Math.max(highestUsedIdx, idx); // 0.5 threshold para evitar ruido
+      if (boughtByTier[t.id].qty > 0) highestBoughtIdx = Math.max(highestBoughtIdx, idx);
+      if (usedByTier[t.id].qty > 0.5) highestUsedIdx = Math.max(highestUsedIdx, idx);
     });
+    const hasTierEscalation = highestBoughtIdx >= 0 && highestUsedIdx > highestBoughtIdx;
 
-    // ¿Hay salto de tier?
-    if (highestBoughtIdx >= 0 && highestUsedIdx > highestBoughtIdx) {
-      const boughtTier = fam.tiers[highestBoughtIdx];
-      const usedTier = fam.tiers[highestUsedIdx];
-      const qtyImpacted = Math.round(used[usedTier.id] || 0);
-      const extraPerUnit = usedTier.credits - boughtTier.credits;
+    result.familyAnalysis.push({
+      familyKey: famKey,
+      familyName: fam.name,
+      tiers: fam.tiers,
+      boughtByTier,
+      usedByTier,
+      totalBoughtCredits,
+      totalBoughtQty,
+      totalUsedCredits,
+      totalUsedQty,
+      diffCredits: totalUsedCredits - totalBoughtCredits,
+      hasTierEscalation,
+      highestBoughtTier: highestBoughtIdx >= 0 ? fam.tiers[highestBoughtIdx] : null,
+      highestUsedTier: highestUsedIdx >= 0 ? fam.tiers[highestUsedIdx] : null,
+    });
+  });
+
+  // Mantener tierEscalations para compatibilidad
+  result.tierEscalations = result.familyAnalysis
+    .filter(fa => fa.hasTierEscalation)
+    .map(fa => {
+      const qtyImpacted = Math.round(fa.usedByTier[fa.highestUsedTier.id].qty);
+      const extraPerUnit = fa.highestUsedTier.credits - fa.highestBoughtTier.credits;
       const extraAnnual = qtyImpacted * extraPerUnit;
-      const totalAtBoughtTier = qtyImpacted * boughtTier.credits;
-      const totalAtUsedTier = qtyImpacted * usedTier.credits;
-      const multiplier = boughtTier.credits > 0 ? (usedTier.credits / boughtTier.credits) : 0;
-
-      result.tierEscalations.push({
-        familyKey: famKey,
-        familyName: fam.name,
-        boughtTier,
-        usedTier,
+      return {
+        familyKey: fa.familyKey,
+        familyName: fa.familyName,
+        boughtTier: fa.highestBoughtTier,
+        usedTier: fa.highestUsedTier,
         qtyImpacted,
         extraPerUnit,
         extraAnnual,
-        totalAtBoughtTier,
-        totalAtUsedTier,
-        multiplier,
-      });
-    }
-  });
+        totalAtBoughtTier: qtyImpacted * fa.highestBoughtTier.credits,
+        totalAtUsedTier: qtyImpacted * fa.highestUsedTier.credits,
+        multiplier: fa.highestBoughtTier.credits > 0 ? fa.highestUsedTier.credits / fa.highestBoughtTier.credits : 0,
+      };
+    });
 
   // ═══ Detección 2: Productos en consumo NO contemplados en propuesta ═══
   const proposalProdIds = new Set(proposalItems.map(it => it.prodId).filter(Boolean));
@@ -400,6 +435,7 @@ function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
   });
 
   result.hasFindings =
+    result.familyAnalysis.length > 0 ||
     result.tierEscalations.length > 0 ||
     result.unplannedProducts.length > 0 ||
     result.unusedProducts.length > 0 ||
@@ -1934,7 +1970,8 @@ function downloadEstimate(data) {
   const {
     lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
     usageItems = [], usageMonth = "", usageMonthlyTotal = 0, usageAnnualTotal = 0,
-    proposalItems = [], proposalEffectiveTotal = 0, proposalDate = "", proposalPeriod = "",
+    proposalItems = [], proposalEffectiveTotal = 0, proposalTotalPool = 0,
+    proposalDate = "", proposalPeriod = "",
     hasComparative = false, efficiency = 0, surplus = 0, deficit = 0, recommendedAnnual = 0
   } = data;
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
@@ -1948,6 +1985,11 @@ function downloadEstimate(data) {
   const hasUsage = usageItems.length > 0 && usageAnnualTotal > 0;
   const hasProposal = proposalEffectiveTotal > 0;
   const hasNewQuote = active.length > 0;
+
+  // Compute audit if we have both
+  const audit = hasComparative
+    ? auditUsageVsProposal(proposalItems, usageItems, proposalEffectiveTotal)
+    : null;
 
   // Helper to render usage section
   const usageSection = !hasUsage ? "" : `
@@ -2000,7 +2042,7 @@ function downloadEstimate(data) {
         <div style="font-family:'SF Mono',monospace;font-size:22px;font-weight:800;color:#B45309">${fmt(proposalEffectiveTotal)} cr</div>
       </div>
     </div>
-    ${proposalItems.length > 0 ? `
+    ${proposalItems.length > 0 || proposalTotalPool > 0 ? `
     <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
       <thead><tr style="background:#F5F5F4">
         <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">Producto</th>
@@ -2017,46 +2059,204 @@ function downloadEstimate(data) {
             <td style="padding:8px 10px;border-bottom:1px solid #E7E5E4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#B45309;font-weight:700">${fmt(it.totalCredits)}</td>
           </tr>`;
         }).join("")}
+        ${proposalTotalPool > 0 ? `
+        <tr style="background:#FFFBEB">
+          <td style="padding:10px;border-bottom:1px solid #FDE68A;font-size:11px;font-weight:700">
+            🪙 Vision One Credits — Pool de créditos sueltos
+            <div style="font-size:9px;color:#78350F;font-weight:500;margin-top:2px">SKU VONN0000 / VORN0232 / VORN0309 (créditos flexibles)</div>
+          </td>
+          <td style="padding:10px;border-bottom:1px solid #FDE68A;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#78350F">— créditos</td>
+          <td style="padding:10px;border-bottom:1px solid #FDE68A;text-align:right;font-family:'SF Mono',monospace;font-size:12px;color:#B45309;font-weight:800">${fmt(proposalTotalPool)}</td>
+        </tr>` : ""}
       </tbody>
+      <tfoot>
+        <tr style="background:#FEF3C7;border-top:2px solid #B45309">
+          <td colspan="2" style="padding:11px;font-size:12px;font-weight:800;color:#78350F;text-transform:uppercase;letter-spacing:.04em">Total propuesta anterior</td>
+          <td style="padding:11px;text-align:right;font-family:'SF Mono',monospace;font-size:15px;font-weight:800;color:#92400E">${fmt(proposalEffectiveTotal)}</td>
+        </tr>
+      </tfoot>
     </table>` : ""}
   </div>`;
 
-  // Helper to render comparative section
+  // Helper to render comparative section + family analysis
   const comparativeSection = !hasComparative ? "" : `
   <div style="margin-bottom:24px;page-break-inside:avoid">
     <div style="font-size:11px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:8px">
       <span style="background:#1E40AF;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px">📈 Sección 3</span>
-      <span>Análisis comparativo</span>
+      <span>Análisis comparativo · Lo comprado vs lo consumido</span>
     </div>
-    <div style="background:linear-gradient(135deg,#1E40AF 0%,#1E3A8A 100%);background-color:#1E40AF;border-radius:10px;padding:18px;color:#fff;margin-bottom:10px">
+
+    <!-- Hero: 4 cifras grandes -->
+    <div style="background:linear-gradient(135deg,#1E40AF 0%,#1E3A8A 100%);background-color:#1E40AF;border-radius:10px;padding:18px;color:#fff;margin-bottom:14px">
       <table style="width:100%;border-collapse:separate;border-spacing:8px">
         <tr>
           <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Comprado</div>
             <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800">${fmt(proposalEffectiveTotal)}</div>
+            <div style="font-size:9px;color:#DBEAFE;margin-top:3px">cr/año</div>
           </td>
           <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Consumido</div>
             <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800">${fmt(usageAnnualTotal)}</div>
+            <div style="font-size:9px;color:#DBEAFE;margin-top:3px">cr/año proyectado</div>
           </td>
           <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Eficiencia</div>
             <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800;color:${efficiency > 100 ? "#FCA5A5" : "#FFFFFF"}">${efficiency.toFixed(1)}%</div>
+            <div style="font-size:9px;color:#DBEAFE;margin-top:3px">de tu pool</div>
           </td>
           <td style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px;text-align:center">
             <div style="font-size:9px;color:#DBEAFE;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${efficiency > 100 ? "Déficit" : "Sobrante"}</div>
             <div style="font-family:'SF Mono',monospace;font-size:20px;font-weight:800;color:${efficiency > 100 ? "#FCA5A5" : "#86EFAC"}">${efficiency > 100 ? "+" + fmt(deficit) : fmt(surplus)}</div>
+            <div style="font-size:9px;color:#DBEAFE;margin-top:3px">cr/año</div>
           </td>
         </tr>
       </table>
     </div>
-    <div style="background:#FAFAF9;border-left:4px solid #1E40AF;padding:12px 16px;border-radius:0 8px 8px 0">
-      <div style="font-size:11px;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Recomendación</div>
+
+    <!-- Educational box -->
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:#0C0A09;line-height:1.55">
+      <div style="font-weight:700;color:#1E40AF;margin-bottom:4px">💡 Cómo leer esta auditoría</div>
+      Trend Vision One usa un sistema de <strong>créditos flexibles</strong>: cada producto cuesta una cantidad fija de créditos por usuario o dispositivo. Por ejemplo, Endpoint Core cuesta 45 cr/endpoint, Endpoint Pro cuesta 300 cr/endpoint. Comparamos lo que contrataste versus lo que estás consumiendo.
+    </div>
+
+    ${audit && audit.familyAnalysis.length > 0 ? `
+    <!-- Family-by-family analysis -->
+    ${audit.familyAnalysis.map(fa => {
+      const hasGrowth = fa.totalUsedCredits > fa.totalBoughtCredits;
+      const hasShrink = fa.totalUsedCredits < fa.totalBoughtCredits * 0.5 && fa.totalBoughtCredits > 0;
+      const diffAbs = Math.abs(fa.totalUsedCredits - fa.totalBoughtCredits);
+      const familyIcon = fa.familyKey === "endpoint" ? "💻" : fa.familyKey === "email" ? "📧" : "🔐";
+      return `
+      <div style="background:#fff;border:1px solid #E7E5E4;border-radius:10px;padding:14px;margin-bottom:10px;page-break-inside:avoid">
+        <!-- Family header -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:18px">${familyIcon}</span>
+          <div style="flex:1;font-size:14px;font-weight:800;color:#0C0A09">${fa.familyName}</div>
+          ${fa.hasTierEscalation ? `<span style="background:#FEF3C7;color:#92400E;font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px">⚠ Tier superior detectado</span>` : ""}
+        </div>
+
+        <!-- Comprado vs Usado -->
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="width:50%;background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;padding:10px;vertical-align:top">
+              <div style="font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📦 Lo que compraste</div>
+              ${fa.totalBoughtQty > 0 ? fa.tiers.map(t => {
+                const b = fa.boughtByTier[t.id];
+                if (b.qty <= 0) return "";
+                return `
+                <div style="margin-bottom:5px">
+                  <div style="display:flex;justify-content:space-between;font-size:11px">
+                    <span><strong>${Math.round(b.qty).toLocaleString()}</strong> como ${t.name}</span>
+                    <span style="font-family:'SF Mono',monospace;font-weight:700;color:#B45309">${fmt(b.credits)} cr</span>
+                  </div>
+                  <div style="font-size:9px;color:#A8A29E;font-family:'SF Mono',monospace">${Math.round(b.qty).toLocaleString()} × ${t.credits} cr</div>
+                </div>`;
+              }).join("") : `<div style="font-size:11px;color:#A8A29E;font-style:italic">Nada en esta familia</div>`}
+              ${fa.totalBoughtCredits > 0 ? `
+              <div style="border-top:1px solid #E7E5E4;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between">
+                <span style="font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Total</span>
+                <span style="font-family:'SF Mono',monospace;font-size:12px;font-weight:800;color:#B45309">${fmt(fa.totalBoughtCredits)} cr</span>
+              </div>` : ""}
+            </td>
+            <td style="width:8px"></td>
+            <td style="width:50%;background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;padding:10px;vertical-align:top">
+              <div style="font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">🔍 Lo que estás usando</div>
+              ${fa.totalUsedQty > 0 ? fa.tiers.map(t => {
+                const u = fa.usedByTier[t.id];
+                if (u.qty <= 0.5) return "";
+                const wasBought = fa.boughtByTier[t.id].qty > 0;
+                return `
+                <div style="margin-bottom:5px">
+                  <div style="display:flex;justify-content:space-between;font-size:11px">
+                    <span><strong>${Math.round(u.qty).toLocaleString()}</strong> como ${t.name}${!wasBought ? ` <span style="color:#DC2626" title="No comprado en este tier">⚠</span>` : ""}</span>
+                    <span style="font-family:'SF Mono',monospace;font-weight:700;color:#1E40AF">${fmt(u.credits)} cr</span>
+                  </div>
+                  <div style="font-size:9px;color:#A8A29E;font-family:'SF Mono',monospace">${Math.round(u.qty).toLocaleString()} × ${t.credits} cr</div>
+                </div>`;
+              }).join("") : `<div style="font-size:11px;color:#A8A29E;font-style:italic">Sin consumo detectado</div>`}
+              ${fa.totalUsedCredits > 0 ? `
+              <div style="border-top:1px solid #E7E5E4;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between">
+                <span style="font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Total</span>
+                <span style="font-family:'SF Mono',monospace;font-size:12px;font-weight:800;color:#1E40AF">${fmt(fa.totalUsedCredits)} cr</span>
+              </div>` : ""}
+            </td>
+          </tr>
+        </table>
+
+        <!-- Diferencia + explicación -->
+        ${fa.totalBoughtCredits > 0 && fa.totalUsedCredits > 0 && diffAbs > 100 ? `
+        <div style="margin-top:10px;background:${hasGrowth ? "#FEF2F2" : (hasShrink ? "#F5F5F4" : "#ECFDF5")};border:1px solid ${hasGrowth ? "#FCA5A5" : (hasShrink ? "#D6D3D1" : "#6EE7B7")};border-radius:7px;padding:10px;font-size:11px;line-height:1.55">
+          <div style="font-weight:700;margin-bottom:4px;color:${hasGrowth ? "#991B1B" : (hasShrink ? "#44403C" : "#065F46")}">
+            ${hasGrowth ? "📈" : hasShrink ? "📉" : "✅"} ${hasGrowth ? `Estás usando ${fmt(diffAbs)} cr más de lo comprado` : hasShrink ? `Solo usas el ${Math.round((fa.totalUsedCredits / fa.totalBoughtCredits) * 100)}% de lo comprado` : "Tu uso es similar a lo comprado"}
+          </div>
+          <div style="color:${hasGrowth ? "#7F1D1D" : (hasShrink ? "#57534E" : "#065F46")}">
+            ${fa.hasTierEscalation && hasGrowth
+              ? `Compraste licencias <strong>${fa.highestBoughtTier.name}</strong> pero detectamos uso en tier <strong>${fa.highestUsedTier.name}</strong>. En Vision One, si activas alguna feature avanzada en una licencia básica, esa licencia automáticamente cuenta como tier superior. <strong>Te recomendamos revisar con tu administrador qué configuración tienen activa.</strong>`
+              : hasGrowth
+              ? `Tu consumo de ${fa.familyName} excede lo contratado. Puede deberse a crecimiento o activación de funciones adicionales.`
+              : hasShrink
+              ? `Tienes capacidad disponible. Podrías ajustar este licenciamiento en tu próxima renovación.`
+              : ""}
+          </div>
+        </div>` : ""}
+      </div>`;
+    }).join("")}
+
+    ${audit && audit.unplannedProducts.length > 0 ? `
+    <div style="background:#fff;border:1px solid #E7E5E4;border-radius:10px;padding:14px;margin-bottom:10px;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:18px">🆕</span>
+        <div style="flex:1;font-size:13px;font-weight:800;color:#0C0A09">Productos en uso que no están en tu propuesta</div>
+      </div>
+      <div style="font-size:11px;color:#57534E;margin-bottom:8px;line-height:1.5">
+        Estás usando estos servicios desde tu pool de créditos sueltos. Pueden ser activaciones recientes o features que se habilitaron sin contratación específica.
+      </div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
+        <thead><tr style="background:#F5F5F4">
+          <th style="padding:6px 9px;text-align:left;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Servicio</th>
+          <th style="padding:6px 9px;text-align:right;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Mensual</th>
+          <th style="padding:6px 9px;text-align:right;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Anual</th>
+        </tr></thead>
+        <tbody>
+          ${audit.unplannedProducts.map(up => `
+          <tr><td style="padding:6px 9px;border-top:1px solid #F5F5F4;font-size:11px;font-weight:600">${up.prod.name}</td>
+          <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px">${fmt(up.monthlyUsage)} cr</td>
+          <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:#1E40AF">${fmt(up.annualUsage)} cr</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>` : ""}
+
+    ${audit && audit.unusedProducts.length > 0 ? `
+    <div style="background:#fff;border:1px solid #E7E5E4;border-radius:10px;padding:14px;margin-bottom:10px;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:18px">📦</span>
+        <div style="flex:1;font-size:13px;font-weight:800;color:#0C0A09">Productos contratados sin uso detectado</div>
+      </div>
+      <div style="font-size:11px;color:#57534E;margin-bottom:8px;line-height:1.5">
+        Tienes estas licencias contratadas pero no detectamos consumo. Pueden estar pendientes de activación o ya no usarse.
+      </div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4;font-size:11px">
+        <thead><tr style="background:#F5F5F4">
+          <th style="padding:6px 9px;text-align:left;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Producto</th>
+          <th style="padding:6px 9px;text-align:right;font-size:9px;font-weight:700;color:#57534E;text-transform:uppercase">Comprado</th>
+        </tr></thead>
+        <tbody>
+          ${audit.unusedProducts.map(un => `
+          <tr><td style="padding:6px 9px;border-top:1px solid #F5F5F4;font-size:11px;font-weight:600">${un.prod.name}</td>
+          <td style="padding:6px 9px;border-top:1px solid #F5F5F4;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#57534E">${fmt(un.qtyBought)} ${un.prod.unit}${un.qtyBought !== 1 ? "s" : ""}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>` : ""}` : ""}
+
+    <!-- Recomendación final -->
+    <div style="background:#FAFAF9;border-left:4px solid #1E40AF;padding:12px 16px;border-radius:0 8px 8px 0;margin-top:14px">
+      <div style="font-size:11px;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Recomendación general</div>
       <div style="font-size:11px;color:#0C0A09;line-height:1.55">
         ${efficiency > 100
-          ? `<strong>Tu consumo supera lo comprado.</strong> Estás usando ${fmt(deficit)} créditos más al año. Para tu próxima renovación, considera <strong>${fmt(recommendedAnnual)} créditos</strong> (incluye 10% buffer para crecimiento).`
+          ? `<strong>Tu consumo supera lo comprado por ${fmt(deficit)} créditos al año.</strong> Cuando tu uso excede el pool contratado, Trend Micro factura el excedente como cargos adicionales sobre tu contrato anual (modelo "pay-as-you-go"). Para tu próxima renovación, te recomendamos contratar un pool de aproximadamente <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo actual + 10% de margen). <strong>Conversa con tu partner Trend Micro</strong> para revisar opciones.`
           : efficiency < 70
-          ? `<strong>Estás muy por debajo de tu pool comprado.</strong> Solo usas el ${efficiency.toFixed(1)}% de tus créditos. Para optimizar, considera <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer) y ahorra significativamente.`
+          ? `<strong>Estás muy por debajo de tu pool comprado.</strong> Solo usas el ${efficiency.toFixed(1)}% de tus créditos. Para optimizar, considera un pool de <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer) y aprovecha el sobrante en otros servicios.`
           : `<strong>Tu pool está bien dimensionado</strong> con sobrante saludable de ${fmt(surplus)} créditos. Para próxima renovación podrías mantener algo similar o considerar <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer).`
         }
       </div>
@@ -2203,6 +2403,7 @@ function ClientApp() {
   const [usageItems, setUsageItems] = useState([]);      // [{name, monthly, prodId, confidence, sourceFiles:[name]}]
   const [usageMonth, setUsageMonth] = useState("");      // "April 2026"
   const [usageLoading, setUsageLoading] = useState(false);
+  const [usageProgress, setUsageProgress] = useState(""); // "Procesando 1 de 3..."
   const [usageError, setUsageError] = useState("");
   const [usageFiles, setUsageFiles] = useState([]);      // [{name, productCount, monthlyTotal}]
   const usageFileRef = useRef(null);
@@ -2213,6 +2414,7 @@ function ClientApp() {
   const [proposalDate, setProposalDate] = useState("");
   const [proposalPeriod, setProposalPeriod] = useState("");
   const [proposalLoading, setProposalLoading] = useState(false);
+  const [proposalProgress, setProposalProgress] = useState(""); // "Procesando 1 de 3..."
   const [proposalError, setProposalError] = useState("");
   const [proposalFiles, setProposalFiles] = useState([]);     // [{name, productCount, poolCredits, period, startDate, endDate}]
   const proposalFileRef = useRef(null);
@@ -2223,7 +2425,7 @@ function ClientApp() {
   const [unifyStartDate, setUnifyStartDate] = useState(""); // empty = use today
 
   // Helper: process one usage file and return parsed items
-  const processOneUsageFile = async (file) => {
+  const processOneUsageFile = async (file, attempt = 1) => {
     if (!file.type.startsWith("image/")) {
       throw new Error(`"${file.name}": solo imágenes`);
     }
@@ -2238,7 +2440,34 @@ function ClientApp() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fileData: b64, fileType: file.type }),
     });
-    const data = await resp.json();
+
+    // Defensive: server may return HTML (404 page, 500 error) instead of JSON
+    const respText = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(respText);
+    } catch (e) {
+      // Detect Vercel timeout (504 or "A server error" page)
+      const isTimeout = resp.status === 504 ||
+                        respText.includes("FUNCTION_INVOCATION_TIMEOUT") ||
+                        respText.includes("A server error") ||
+                        respText.includes("server error has occurred");
+      if (isTimeout && attempt < 2) {
+        // Retry once after a short delay
+        await new Promise(r => setTimeout(r, 1500));
+        return processOneUsageFile(file, attempt + 1);
+      }
+      if (resp.status === 404) {
+        throw new Error(`El servicio /api/parse-usage no está disponible. Verifica que el archivo parse-usage.js esté en la carpeta api/ del repo y que Vercel haya redeployado.`);
+      } else if (isTimeout) {
+        throw new Error(`"${file.name}": el análisis tardó demasiado y Vercel canceló la operación. Habilita Fluid Compute en Vercel Settings → Functions para resolver esto.`);
+      } else if (resp.status === 500 || resp.status === 502 || resp.status === 503) {
+        throw new Error(`El servicio falló (HTTP ${resp.status}). Verifica que ANTHROPIC_API_KEY esté configurada en Vercel y que el deploy esté completo.`);
+      } else {
+        throw new Error(`Respuesta inesperada del servidor (HTTP ${resp.status}). Reintenta o contacta soporte.`);
+      }
+    }
+
     if (!resp.ok) throw new Error(data.error || "Error procesando " + file.name);
     if (!data.products || data.products.length === 0) {
       throw new Error(`"${file.name}": no detecté productos Vision One`);
@@ -2252,12 +2481,17 @@ function ClientApp() {
 
     setUsageLoading(true);
     setUsageError("");
+    setUsageProgress(fileList.length > 1 ? `Iniciando análisis de ${fileList.length} archivo(s)...` : "");
     const errors = [];
     const newFileEntries = [];
     const newItems = [];
     let earliestMonth = usageMonth;
 
-    for (const file of fileList) {
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      if (fileList.length > 1) {
+        setUsageProgress(`Procesando ${i + 1} de ${fileList.length}: ${file.name.length > 30 ? file.name.slice(0, 27) + "..." : file.name}`);
+      }
       try {
         const { products, monthLabel } = await processOneUsageFile(file);
         let monthlyTotal = 0;
@@ -2292,11 +2526,12 @@ function ClientApp() {
     if (newFileEntries.length > 0) setUsageOpen(true);
     if (errors.length > 0) setUsageError(errors.join(" · "));
     setUsageLoading(false);
+    setUsageProgress("");
     if (usageFileRef.current) usageFileRef.current.value = "";
   };
 
   // Helper: process one proposal file
-  const processOneProposalFile = async (file) => {
+  const processOneProposalFile = async (file, attempt = 1) => {
     const okTypes = ["application/pdf", "text/plain"];
     if (!file.type.startsWith("image/") && !okTypes.includes(file.type)) {
       throw new Error(`"${file.name}": formato no soportado`);
@@ -2312,7 +2547,32 @@ function ClientApp() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fileData: b64, fileType: file.type || "application/octet-stream" }),
     });
-    const data = await resp.json();
+
+    // Defensive: server may return HTML (404 page, 500 error) instead of JSON
+    const respText = await resp.text();
+    let data;
+    try {
+      data = JSON.parse(respText);
+    } catch (e) {
+      const isTimeout = resp.status === 504 ||
+                        respText.includes("FUNCTION_INVOCATION_TIMEOUT") ||
+                        respText.includes("A server error") ||
+                        respText.includes("server error has occurred");
+      if (isTimeout && attempt < 2) {
+        await new Promise(r => setTimeout(r, 1500));
+        return processOneProposalFile(file, attempt + 1);
+      }
+      if (resp.status === 404) {
+        throw new Error(`El servicio /api/parse-proposal no está disponible. Verifica que el archivo parse-proposal.js esté en la carpeta api/ del repo y que Vercel haya redeployado.`);
+      } else if (isTimeout) {
+        throw new Error(`"${file.name}": el análisis tardó demasiado y Vercel canceló la operación. Habilita Fluid Compute en Vercel Settings → Functions para resolver esto.`);
+      } else if (resp.status === 500 || resp.status === 502 || resp.status === 503) {
+        throw new Error(`El servicio falló (HTTP ${resp.status}). Verifica que ANTHROPIC_API_KEY esté configurada en Vercel y que el deploy esté completo.`);
+      } else {
+        throw new Error(`Respuesta inesperada del servidor (HTTP ${resp.status}). Reintenta o contacta soporte.`);
+      }
+    }
+
     if (!resp.ok) throw new Error(data.error || "Error procesando " + file.name);
     return data;
   };
@@ -2323,6 +2583,7 @@ function ClientApp() {
 
     setProposalLoading(true);
     setProposalError("");
+    setProposalProgress(fileList.length > 1 ? `Iniciando análisis de ${fileList.length} archivo(s)...` : "");
     const errors = [];
     const newFileEntries = [];
     const newItems = [];
@@ -2330,7 +2591,11 @@ function ClientApp() {
     let lastDate = proposalDate;
     let lastPeriod = proposalPeriod;
 
-    for (const file of fileList) {
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      if (fileList.length > 1) {
+        setProposalProgress(`Procesando ${i + 1} de ${fileList.length}: ${file.name.length > 30 ? file.name.slice(0, 27) + "..." : file.name}`);
+      }
       try {
         const data = await processOneProposalFile(file);
         const rawProducts = data.products || [];
@@ -2452,6 +2717,7 @@ function ClientApp() {
     if (lastPeriod) setProposalPeriod(lastPeriod);
     if (errors.length > 0) setProposalError(errors.join(" · "));
     setProposalLoading(false);
+    setProposalProgress("");
     if (proposalFileRef.current) proposalFileRef.current.value = "";
   };
 
@@ -2720,7 +2986,7 @@ function ClientApp() {
                 display:"flex", alignItems:"center", justifyContent:"center", gap:8
               }}>
               {usageLoading ? (
-                <>⏳ Analizando con IA...</>
+                <>⏳ {usageProgress || "Analizando con IA..."}</>
               ) : usageFiles.length > 0 ? (
                 <>＋ Agregar otro reporte de consumo</>
               ) : (
@@ -2938,7 +3204,7 @@ function ClientApp() {
                 display:"flex", alignItems:"center", justifyContent:"center", gap:8
               }}>
               {proposalLoading ? (
-                <>⏳ Analizando con IA...</>
+                <>⏳ {proposalProgress || "Analizando con IA..."}</>
               ) : proposalFiles.length > 0 ? (
                 <>＋ Agregar otra propuesta</>
               ) : (
@@ -3350,7 +3616,7 @@ function ClientApp() {
               <button onClick={() => downloadEstimate({
                 lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
                 usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
-                proposalItems, proposalEffectiveTotal, proposalDate, proposalPeriod,
+                proposalItems, proposalEffectiveTotal, proposalTotalPool, proposalDate, proposalPeriod,
                 hasComparative, efficiency, surplus, deficit, recommendedAnnual
               })}
                 style={{ padding:"12px 18px", background:"#fff", color:C.blue, border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
@@ -3392,7 +3658,7 @@ function ClientApp() {
             <button onClick={() => downloadEstimate({
               lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
               usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
-              proposalItems, proposalEffectiveTotal, proposalDate, proposalPeriod,
+              proposalItems, proposalEffectiveTotal, proposalTotalPool, proposalDate, proposalPeriod,
               hasComparative, efficiency, surplus, deficit, recommendedAnnual
             })}
               style={{ flex:1, padding:"11px", background:"#fff", color:C.blue, border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
@@ -3609,16 +3875,16 @@ function UnifyDatesPanel({ items, isMobile, open, setOpen, targetDate, setTarget
 
 // ════════════════════════════════════════════════════════════════════════
 // AUDIT PANEL — Auditoría inteligente de consumo vs propuesta
-// Modo "client": alertas neutras y educativas
-// Modo "internal": análisis comercial con impacto financiero
+// Diseñada para que un cliente NO técnico entienda fácilmente:
+//   - Cuántos créditos compró por familia (Endpoint, Email, etc.)
+//   - Cuántos está usando realmente
+//   - Por qué hay diferencias (sin recomendaciones técnicas)
 // ════════════════════════════════════════════════════════════════════════
 
 function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, costPricePerCredit = 0 }) {
   if (!audit || !audit.hasFindings) return null;
 
   const isInternal = mode === "internal";
-
-  // Style tokens
   const headerColor = isInternal ? "#7C3AED" : "#1E40AF";
   const headerBg = isInternal ? "#FAF5FF" : "#EFF6FF";
   const headerBorder = isInternal ? "#C4B5FD" : "#BFDBFE";
@@ -3628,20 +3894,20 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
       background: headerBg,
       border: `2px solid ${headerBorder}`,
       borderRadius: 14,
-      padding: isMobile ? 16 : 20,
+      padding: isMobile ? 16 : 22,
       marginBottom: 18,
     }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-        <span style={{ fontSize: isMobile ? 22 : 26 }}>🔍</span>
+      {/* HEADER */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        <span style={{ fontSize: isMobile ? 24 : 28 }}>🔍</span>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 800, color: headerColor, letterSpacing: "-.02em" }}>
-            {isInternal ? "Auditoría comercial" : "Auditoría de tu consumo"}
+          <div style={{ fontSize: isMobile ? 17 : 19, fontWeight: 800, color: headerColor, letterSpacing: "-.02em" }}>
+            {isInternal ? "Auditoría comercial del cliente" : "¿En qué estás usando tus créditos?"}
           </div>
-          <div style={{ fontSize: isMobile ? 11 : 12, color: "#57534E", fontWeight: 500, marginTop: 2 }}>
+          <div style={{ fontSize: isMobile ? 11 : 13, color: "#57534E", fontWeight: 500, marginTop: 3, lineHeight: 1.4 }}>
             {isInternal
               ? "Análisis del cliente vs lo contratado · oportunidades comerciales"
-              : "Detectamos diferencias entre tu propuesta y tu consumo real"}
+              : "Comparamos lo que tienes contratado vs el consumo real que detectamos"}
           </div>
         </div>
         {isInternal && (
@@ -3651,120 +3917,189 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
         )}
       </div>
 
-      {/* Findings */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* INTRO EDUCATIVO — solo para cliente, primera vez */}
+      {!isInternal && (
+        <div style={{
+          background: "#fff", border: `1px solid ${headerBorder}`, borderRadius: 10,
+          padding: isMobile ? "12px 14px" : "14px 18px", marginBottom: 16, fontSize: isMobile ? 12 : 13, color: "#0C0A09", lineHeight: 1.55
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: 4, color: headerColor }}>💡 Cómo funcionan los créditos en Vision One</div>
+          <div>
+            Trend Vision One usa un sistema de <strong>créditos flexibles</strong>: cada producto cuesta una cantidad fija de créditos por usuario o dispositivo. Por ejemplo, <strong>Endpoint Core</strong> cuesta 45 créditos por endpoint, <strong>Endpoint Pro</strong> cuesta 300 créditos por endpoint. Tu pool total es la suma de todo lo que compraste.
+          </div>
+        </div>
+      )}
 
-        {/* ═══ TIER ESCALATIONS ═══ */}
-        {audit.tierEscalations.map((esc, idx) => {
-          const extraCost = isInternal ? esc.extraAnnual * costPricePerCredit : 0;
-          const extraSale = isInternal ? esc.extraAnnual * salePricePerCredit : 0;
-          const extraMargin = extraSale - extraCost;
+      {/* SECCIONES */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* ═══ ANÁLISIS POR FAMILIA ═══ */}
+        {audit.familyAnalysis.map((fa, idx) => {
+          const hasGrowth = fa.totalUsedCredits > fa.totalBoughtCredits;
+          const hasShrink = fa.totalUsedCredits < fa.totalBoughtCredits * 0.5 && fa.totalBoughtCredits > 0;
           return (
-            <div key={`tier-${idx}`} style={{
-              background: "#FEF3C7", border: "1.5px solid #FCD34D", borderRadius: 10, padding: isMobile ? 12 : 14,
+            <div key={`fam-${idx}`} style={{
+              background: "#fff", border: `1px solid ${headerBorder}`, borderRadius: 12,
+              padding: isMobile ? 14 : 18,
             }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                <span style={{ fontSize: 18 }}>⚠️</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#92400E" }}>
-                    Salto de tier en {esc.familyName}
+              {/* Family header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 20 }}>
+                  {fa.familyKey === "endpoint" ? "💻" : fa.familyKey === "email" ? "📧" : "🔐"}
+                </span>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: "#0C0A09" }}>{fa.familyName}</div>
+                </div>
+                {fa.hasTierEscalation && (
+                  <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 5 }}>
+                    ⚠ Detectamos uso de un tier superior
+                  </span>
+                )}
+              </div>
+
+              {/* GRID: Comprado / Usado */}
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 10 : 14 }}>
+                {/* COMPRADO */}
+                <div style={{ background: "#FAFAF9", border: "1px solid #E7E5E4", borderRadius: 9, padding: isMobile ? 12 : 14 }}>
+                  <div style={{ fontSize: 10, color: "#57534E", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
+                    📦 Lo que compraste
                   </div>
-                  <div style={{ fontSize: isMobile ? 11 : 12, color: "#78350F", marginTop: 3, lineHeight: 1.5 }}>
-                    {isInternal
-                      ? `Compró: ${esc.boughtTier.name} · Consumiendo: ${esc.usedTier.name} · ${esc.qtyImpacted} unidades afectadas`
-                      : `Tu propuesta incluye ${esc.boughtTier.name}, pero estás consumiendo ${esc.usedTier.name} en aproximadamente ${esc.qtyImpacted} unidades.`}
+                  {fa.totalBoughtQty > 0 ? (
+                    <>
+                      {fa.tiers.map(t => {
+                        const b = fa.boughtByTier[t.id];
+                        if (b.qty <= 0) return null;
+                        return (
+                          <div key={t.id} style={{ marginBottom: 6, fontSize: 12, color: "#0C0A09" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                              <span><strong>{Math.round(b.qty).toLocaleString()}</strong> como {t.name}</span>
+                              <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "#B45309" }}>{fmt(b.credits)} cr</span>
+                            </div>
+                            <div style={{ fontSize: 10, color: "#A8A29E", ...mono, marginTop: 1 }}>
+                              {Math.round(b.qty).toLocaleString()} × {t.credits} cr
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div style={{ borderTop: "1px solid #E7E5E4", marginTop: 8, paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#57534E", textTransform: "uppercase", letterSpacing: ".05em" }}>Total comprado</span>
+                        <span style={{ ...mono, fontSize: 14, fontWeight: 800, color: "#B45309" }}>{fmt(fa.totalBoughtCredits)} cr</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#A8A29E", fontStyle: "italic" }}>No se compró nada en esta familia</div>
+                  )}
+                </div>
+
+                {/* USADO */}
+                <div style={{ background: "#FAFAF9", border: "1px solid #E7E5E4", borderRadius: 9, padding: isMobile ? 12 : 14 }}>
+                  <div style={{ fontSize: 10, color: "#57534E", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
+                    🔍 Lo que estás usando
                   </div>
+                  {fa.totalUsedQty > 0 ? (
+                    <>
+                      {fa.tiers.map(t => {
+                        const u = fa.usedByTier[t.id];
+                        if (u.qty <= 0.5) return null; // umbral pequeño para evitar ruido
+                        const wasBoughtAtThisTier = fa.boughtByTier[t.id].qty > 0;
+                        return (
+                          <div key={t.id} style={{ marginBottom: 6, fontSize: 12, color: "#0C0A09" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                              <span>
+                                <strong>{Math.round(u.qty).toLocaleString()}</strong> como {t.name}
+                                {!wasBoughtAtThisTier && <span style={{ marginLeft: 5, fontSize: 10, color: "#DC2626" }} title="No se compró en este tier">⚠</span>}
+                              </span>
+                              <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "#1E40AF" }}>{fmt(u.credits)} cr</span>
+                            </div>
+                            <div style={{ fontSize: 10, color: "#A8A29E", ...mono, marginTop: 1 }}>
+                              {Math.round(u.qty).toLocaleString()} × {t.credits} cr
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div style={{ borderTop: "1px solid #E7E5E4", marginTop: 8, paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#57534E", textTransform: "uppercase", letterSpacing: ".05em" }}>Total usando</span>
+                        <span style={{ ...mono, fontSize: 14, fontWeight: 800, color: "#1E40AF" }}>{fmt(fa.totalUsedCredits)} cr</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 12, color: "#A8A29E", fontStyle: "italic" }}>No detectamos consumo en esta familia</div>
+                  )}
                 </div>
               </div>
-              {/* Numbers */}
-              <div style={{
-                background: "#fff", borderRadius: 7, padding: 10, display: "grid",
-                gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 8, fontSize: 11,
-              }}>
-                <div>
-                  <div style={{ fontSize: 9, color: "#78350F", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>Si fuera {esc.boughtTier.name}</div>
-                  <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "#0C0A09" }}>{fmt(esc.totalAtBoughtTier)} cr</div>
-                  <div style={{ fontSize: 9, color: "#A8A29E" }}>{esc.boughtTier.credits} cr × {esc.qtyImpacted}</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 9, color: "#92400E", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>Como {esc.usedTier.name}</div>
-                  <div style={{ ...mono, fontSize: 14, fontWeight: 800, color: "#92400E" }}>{fmt(esc.totalAtUsedTier)} cr</div>
-                  <div style={{ fontSize: 9, color: "#A8A29E" }}>{esc.usedTier.credits} cr × {esc.qtyImpacted}</div>
-                </div>
-                <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
-                  <div style={{ fontSize: 9, color: "#DC2626", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em" }}>Diferencia anual</div>
-                  <div style={{ ...mono, fontSize: 14, fontWeight: 800, color: "#DC2626" }}>+{fmt(esc.extraAnnual)} cr</div>
-                  <div style={{ fontSize: 9, color: "#A8A29E" }}>{esc.multiplier.toFixed(1)}x más caro</div>
-                </div>
-              </div>
-              {/* Internal-only financial impact */}
-              {isInternal && salePricePerCredit > 0 && (
-                <div style={{ marginTop: 10, background: "#FAF5FF", border: "1px solid #C4B5FD", borderRadius: 7, padding: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>
-                    💰 Impacto comercial anual
+
+              {/* DIFERENCIA + EXPLICACIÓN */}
+              {fa.totalBoughtCredits > 0 && fa.totalUsedCredits > 0 && Math.abs(fa.diffCredits) > 100 && (
+                <div style={{
+                  marginTop: 12,
+                  background: hasGrowth ? "#FEF2F2" : (hasShrink ? "#F5F5F4" : "#ECFDF5"),
+                  border: `1.5px solid ${hasGrowth ? "#FCA5A5" : (hasShrink ? "#D6D3D1" : "#6EE7B7")}`,
+                  borderRadius: 9, padding: isMobile ? 12 : 14
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 16 }}>{hasGrowth ? "📈" : hasShrink ? "📉" : "✅"}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: hasGrowth ? "#991B1B" : (hasShrink ? "#44403C" : "#065F46") }}>
+                      {hasGrowth
+                        ? `Estás usando ${fmt(fa.diffCredits)} créditos más de lo comprado`
+                        : hasShrink
+                        ? `Estás usando solo ${Math.round((fa.totalUsedCredits / fa.totalBoughtCredits) * 100)}% de lo comprado`
+                        : `Tu uso es similar a lo comprado`}
+                    </span>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, fontSize: 11 }}>
-                    <div>
-                      <div style={{ fontSize: 9, color: "#57534E", fontWeight: 600 }}>Revenue extra</div>
-                      <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: "#047857" }}>{fmtU(extraSale)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 9, color: "#57534E", fontWeight: 600 }}>Costo extra</div>
-                      <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "#0C0A09" }}>{fmtU(extraCost)}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 9, color: "#57534E", fontWeight: 600 }}>Margen extra</div>
-                      <div style={{ ...mono, fontSize: 13, fontWeight: 800, color: "#7C3AED" }}>{fmtU(extraMargin)}</div>
-                    </div>
+                  <div style={{ fontSize: 12, color: hasGrowth ? "#7F1D1D" : (hasShrink ? "#57534E" : "#065F46"), lineHeight: 1.6 }}>
+                    {fa.hasTierEscalation && hasGrowth ? (
+                      <>
+                        Compraste licencias <strong>{fa.highestBoughtTier.name}</strong> ({fa.highestBoughtTier.credits} cr) pero detectamos uso en tier <strong>{fa.highestUsedTier.name}</strong> ({fa.highestUsedTier.credits} cr).
+                        {" "}En Vision One, si activas alguna feature avanzada en una licencia básica, esa licencia automáticamente cuenta como tier superior.{" "}
+                        <strong>Te recomendamos revisar con tu administrador qué configuración tienen activa.</strong>
+                      </>
+                    ) : hasGrowth ? (
+                      <>
+                        Tu consumo de {fa.familyName} excede lo que contrataste. Esto puede deberse a crecimiento de tu organización o activación de funciones adicionales que consumen más créditos.
+                      </>
+                    ) : hasShrink ? (
+                      <>
+                        Tienes capacidad disponible en {fa.familyName}. Si tu organización no creció como esperabas o activaste menos funciones, podrías ajustar este licenciamiento en tu próxima renovación.
+                      </>
+                    ) : null}
                   </div>
                 </div>
               )}
-              <div style={{ marginTop: 8, fontSize: 11, color: "#78350F", fontStyle: "italic", lineHeight: 1.5 }}>
-                💡 {isInternal
-                  ? "Cliente probablemente no sabe del escalamiento automático. Próxima renovación correcta debería ser " + esc.usedTier.name + ". Oportunidad para upsell formal."
-                  : "Esto puede ser intencional (necesitas features de " + esc.usedTier.name + ") o accidental (alguna feature avanzada fue activada). Revisa con tu administrador qué features están habilitadas."}
-              </div>
             </div>
           );
         })}
 
-        {/* ═══ UNPLANNED PRODUCTS ═══ */}
+        {/* ═══ PRODUCTOS NO CONTEMPLADOS ═══ */}
         {audit.unplannedProducts.length > 0 && (
-          <div style={{ background: "#DBEAFE", border: "1.5px solid #93C5FD", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-              <span style={{ fontSize: 18 }}>📊</span>
+          <div style={{ background: "#fff", border: `1px solid ${headerBorder}`, borderRadius: 12, padding: isMobile ? 14 : 18 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 20 }}>🆕</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#1E3A8A" }}>
-                  Productos en uso NO contemplados en propuesta
+                <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: "#0C0A09" }}>
+                  Productos en uso que no están en tu propuesta
                 </div>
-                <div style={{ fontSize: isMobile ? 11 : 12, color: "#1E40AF", marginTop: 3, lineHeight: 1.5 }}>
+                <div style={{ fontSize: isMobile ? 11 : 12, color: "#57534E", marginTop: 3, lineHeight: 1.5 }}>
                   {isInternal
-                    ? "Cliente está usando estos productos del pool sobrante sin haberlos cotizado formalmente. Oportunidad para incluirlos en próxima renovación."
-                    : "Estos productos están consumiendo créditos pero no aparecen en tu propuesta original."}
+                    ? "Cliente está consumiendo del pool sobrante. Oportunidad de incluirlos formalmente en próxima renovación."
+                    : "Estás usando estos servicios desde tu pool de créditos sueltos. Pueden ser activaciones recientes o features que se habilitaron sin contratación específica."}
                 </div>
               </div>
             </div>
-            <div style={{ background: "#fff", borderRadius: 7, overflow: "hidden", border: "1px solid #BFDBFE" }}>
+            <div style={{ background: "#FAFAF9", borderRadius: 8, overflow: "hidden", border: "1px solid #E7E5E4" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: "#EFF6FF" }}>
-                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#1E40AF", textTransform: "uppercase" }}>Producto</th>
-                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#1E40AF", textTransform: "uppercase" }}>Mensual</th>
-                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#1E40AF", textTransform: "uppercase" }}>Anual</th>
-                    {isInternal && salePricePerCredit > 0 && (
-                      <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#7C3AED", textTransform: "uppercase" }}>Revenue</th>
-                    )}
+                  <tr style={{ background: "#F5F5F4" }}>
+                    <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Servicio</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Mensual</th>
+                    <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Anual</th>
                   </tr>
                 </thead>
                 <tbody>
                   {audit.unplannedProducts.map((up, idx) => (
                     <tr key={`unp-${idx}`} style={{ borderTop: "1px solid #F5F5F4" }}>
                       <td style={{ padding: "8px 10px", fontSize: 11, fontWeight: 600, color: "#0C0A09" }}>{up.prod.name}</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 11 }}>{fmt(up.monthlyUsage)}</td>
-                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#1E40AF" }}>{fmt(up.annualUsage)}</td>
-                      {isInternal && salePricePerCredit > 0 && (
-                        <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#047857" }}>{fmtU(up.annualUsage * salePricePerCredit)}</td>
-                      )}
+                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 11 }}>{fmt(up.monthlyUsage)} cr</td>
+                      <td style={{ padding: "8px 10px", textAlign: "right", ...mono, fontSize: 12, fontWeight: 700, color: "#1E40AF" }}>{fmt(up.annualUsage)} cr</td>
                     </tr>
                   ))}
                 </tbody>
@@ -3773,26 +4108,26 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
           </div>
         )}
 
-        {/* ═══ UNUSED PRODUCTS ═══ */}
+        {/* ═══ PRODUCTOS NO USADOS ═══ */}
         {audit.unusedProducts.length > 0 && (
-          <div style={{ background: "#F5F5F4", border: "1.5px solid #D6D3D1", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-              <span style={{ fontSize: 18 }}>📦</span>
+          <div style={{ background: "#fff", border: `1px solid ${headerBorder}`, borderRadius: 12, padding: isMobile ? 14 : 18 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 20 }}>📦</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#44403C" }}>
-                  Productos contratados pero NO usados
+                <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: "#0C0A09" }}>
+                  Productos contratados sin uso detectado
                 </div>
                 <div style={{ fontSize: isMobile ? 11 : 12, color: "#57534E", marginTop: 3, lineHeight: 1.5 }}>
                   {isInternal
-                    ? "Cliente compró estos productos pero no los está consumiendo. Considera retirarlos en próxima renovación o evaluar por qué no se activaron."
-                    : "Estos productos están en tu propuesta pero no detectamos consumo de ellos."}
+                    ? "Cliente compró estos productos pero no los está consumiendo. Evaluar para próxima renovación."
+                    : "Tienes estas licencias contratadas pero no detectamos consumo. Pueden estar pendientes de activación o ya no usarse."}
                 </div>
               </div>
             </div>
-            <div style={{ background: "#fff", borderRadius: 7, overflow: "hidden", border: "1px solid #E7E5E4" }}>
+            <div style={{ background: "#FAFAF9", borderRadius: 8, overflow: "hidden", border: "1px solid #E7E5E4" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
-                  <tr style={{ background: "#FAFAF9" }}>
+                  <tr style={{ background: "#F5F5F4" }}>
                     <th style={{ padding: "8px 10px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Producto</th>
                     <th style={{ padding: "8px 10px", textAlign: "right", fontSize: 10, fontWeight: 700, color: "#57534E", textTransform: "uppercase" }}>Comprado</th>
                   </tr>
@@ -3810,72 +4145,71 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
           </div>
         )}
 
-        {/* ═══ DÉFICIT (consumo > pool) ═══ */}
+        {/* ═══ DÉFICIT ═══ */}
         {audit.totalDeficit > 0 && (
-          <div style={{ background: "#FEF2F2", border: "2px solid #F87171", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 18 }}>🚨</span>
+          <div style={{ background: "#FEF2F2", border: "2px solid #F87171", borderRadius: 12, padding: isMobile ? 14 : 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 22 }}>🚨</span>
               <div style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#991B1B" }}>
-                  Estás excediendo tu pool comprado
+                <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: "#991B1B" }}>
+                  Tu uso supera lo que tienes contratado
                 </div>
-                <div style={{ fontSize: isMobile ? 11 : 12, color: "#7F1D1D", marginTop: 2, lineHeight: 1.5 }}>
-                  {isInternal
-                    ? "Cliente está consumiendo más créditos de los que compró. Trend Micro le está cobrando overages PAYG sobre el contrato. Oportunidad CRÍTICA de upsell en próxima renovación."
-                    : "Tu consumo actual supera los créditos disponibles en tu contrato. Trend Micro factura el excedente como cargos adicionales (pay-as-you-go) sobre tu plan anual."}
+                <div style={{ fontSize: isMobile ? 11 : 12, color: "#7F1D1D", marginTop: 3, lineHeight: 1.55 }}>
+                  Detectamos que estás consumiendo más créditos de los disponibles en tu contrato anual.
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#DC2626" }}>
-                  +{fmt(audit.totalDeficit)} cr
-                </div>
-                <div style={{ fontSize: 10, color: "#991B1B", fontWeight: 600, marginTop: 2 }}>en exceso/año</div>
+                <div style={{ ...mono, fontSize: isMobile ? 18 : 24, fontWeight: 800, color: "#DC2626" }}>+{fmt(audit.totalDeficit)}</div>
+                <div style={{ fontSize: 10, color: "#991B1B", fontWeight: 600, marginTop: 2 }}>cr/año en exceso</div>
               </div>
             </div>
-            <div style={{ background: "#fff", borderRadius: 7, padding: 10, fontSize: 11, color: "#7F1D1D", lineHeight: 1.5 }}>
-              💡 <strong>{isInternal ? "Acción comercial:" : "Recomendación:"}</strong> {isInternal
-                ? `Cliente debería renovar con un pool ampliado de al menos ${fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos (consumo actual + 10% buffer) para evitar seguir pagando overages.`
-                : `Para tu próxima renovación, considera ampliar tu pool a al menos ${fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos (consumo actual + 10% de buffer para crecimiento) y dejar de pagar cargos PAYG sobre tu contrato.`}
+            <div style={{ background: "#fff", borderRadius: 8, padding: 12, fontSize: 12, color: "#0C0A09", lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 700, color: "#991B1B", marginBottom: 6 }}>💡 ¿Qué significa esto?</div>
+              {isInternal ? (
+                <>Cliente está pagando overages PAYG (pay-as-you-go) sobre el contrato anual. Trend factura el exceso de uso por hora/mes adicional al pool comprado. <strong>Oportunidad CRÍTICA</strong> de upsell para próxima renovación con un pool ampliado de al menos <strong>{fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos</strong> (consumo actual + 10% buffer).</>
+              ) : (
+                <>Cuando tu consumo supera el pool contratado, Trend Micro factura el excedente como cargos adicionales sobre tu contrato anual (modelo "pay-as-you-go"). Para la próxima renovación, te recomendamos contratar un pool de aproximadamente <strong>{fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos</strong> (tu consumo actual + 10% de margen). <strong>Conversa con tu partner Trend Micro</strong> para revisar opciones.</>
+              )}
             </div>
           </div>
         )}
 
-        {/* ═══ SOBRANTE (pool > consumo) — solo si NO hay déficit ═══ */}
+        {/* ═══ SOBRANTE (solo si NO hay déficit) ═══ */}
         {audit.totalUnallocated > 0 && audit.totalDeficit === 0 && (
-          <div style={{ background: "#ECFDF5", border: "1.5px solid #6EE7B7", borderRadius: 10, padding: isMobile ? 12 : 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 18 }}>💰</span>
+          <div style={{ background: "#ECFDF5", border: "1.5px solid #6EE7B7", borderRadius: 12, padding: isMobile ? 14 : 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 20 }}>💰</span>
               <div style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: isMobile ? 13 : 14, fontWeight: 800, color: "#065F46" }}>
-                  Créditos sin asignar en tu pool
+                <div style={{ fontSize: isMobile ? 14 : 15, fontWeight: 800, color: "#065F46" }}>
+                  Te sobran créditos en tu pool
                 </div>
                 <div style={{ fontSize: isMobile ? 11 : 12, color: "#047857", marginTop: 2, lineHeight: 1.5 }}>
-                  {isInternal
-                    ? "Cliente tiene capacidad sobrante. Espacio para upsell de servicios adicionales."
-                    : "Tienes créditos comprados que no estás usando. Podrías activar nuevos servicios."}
+                  Tienes capacidad sin usar que podrías aprovechar.
                 </div>
               </div>
-              <div style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#047857" }}>
-                {fmt(audit.totalUnallocated)} cr
-              </div>
+              <div style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#047857" }}>{fmt(audit.totalUnallocated)} cr</div>
             </div>
-            <div style={{ background: "#fff", borderRadius: 7, padding: 10, fontSize: 11, color: "#065F46", lineHeight: 1.5 }}>
-              💡 <strong>Posibles servicios para activar:</strong> Container Security, File Storage Security, Threat Intelligence, Data Security Posture Management, AI Security. {isInternal ? "Considera proponer estos servicios en una conversación comercial." : "Habla con tu partner Trend Micro para evaluar opciones."}
+            <div style={{ background: "#fff", borderRadius: 7, padding: 12, fontSize: 11, color: "#065F46", lineHeight: 1.55 }}>
+              💡 Con esos créditos podrías activar servicios adicionales como Container Security, File Storage Security, Threat Intelligence, Data Security Posture Management o AI Security. {isInternal ? "Considera proponer estos servicios en una conversación comercial." : "Habla con tu partner Trend Micro para evaluar qué te conviene."}
             </div>
           </div>
         )}
 
       </div>
 
-      {/* Footer summary */}
-      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${headerBorder}`, display: "flex", flexWrap: "wrap", gap: 14, fontSize: 11, color: "#57534E" }}>
+      {/* FOOTER SUMMARY */}
+      <div style={{
+        marginTop: 16, paddingTop: 14, borderTop: `1px solid ${headerBorder}`,
+        display: "flex", flexWrap: "wrap", gap: 16, fontSize: 12, color: "#57534E", alignItems: "center"
+      }}>
         <div>
           <span style={{ fontWeight: 700, color: headerColor }}>Pool comprado:</span>{" "}
-          <span style={{ ...mono, fontWeight: 700 }}>{fmt(audit.totalProposalEffective)}</span>
+          <span style={{ ...mono, fontWeight: 800 }}>{fmt(audit.totalProposalEffective)} cr</span>
         </div>
+        <div style={{ width: 1, height: 14, background: headerBorder }}></div>
         <div>
           <span style={{ fontWeight: 700, color: headerColor }}>Consumo proyectado:</span>{" "}
-          <span style={{ ...mono, fontWeight: 700 }}>{fmt(audit.totalAnnualUsage)}</span>
+          <span style={{ ...mono, fontWeight: 800 }}>{fmt(audit.totalAnnualUsage)} cr</span>
         </div>
       </div>
     </div>
