@@ -96,124 +96,28 @@ NOTAS SOBRE SKUs DE TREND MICRO:
   * VORN0150 / VONN0150 / VONN0159 / VONN0161 → Cyber Risk Exposure Management Core (A)
   * VORN0256 / VONN0256 / VONN0305 → Cloud Risk Management 1001-1500 (F) o el rango que aplique (D=1-500, E=501-1000, F=1001-1500, G=1501-2000, H=2001-2500, I=2501-3000)
 
-⚠️⚠️⚠️ REGLA #1 — LA MÁS IMPORTANTE — LEE CON CUIDADO ⚠️⚠️⚠️
+⚠️ REGLA CRÍTICA: El campo "Volume" del documento es la cantidad real. NUNCA uses los números del nombre del producto (ej. "Normal 51-250" es un rango de pricing tier, NO la cantidad). Si ves "Volume: 230", quantity = 230.
 
-EN LOS ENTITLEMENT CERTIFICATES DE TREND MICRO, EL CAMPO "Volume:" ES LA ÚNICA FUENTE DE VERDAD PARA LA CANTIDAD.
+REGLAS:
 
-NUNCA, JAMÁS, BAJO NINGUNA CIRCUNSTANCIA uses los números que aparecen en el NOMBRE del producto como cantidad. Los números en el nombre son RANGOS DE PRICING TIER, no cantidades.
+1. CRÉDITOS POR UNIDAD según producto:
+   - Email Core = 25 cr/usuario, Essentials = 50, Pro = 105
+   - Endpoint Core = 45 cr/dispositivo, Essentials = 65, Pro = 300
+   - CREM Core = 20 cr/dispositivo, Essentials = 50, Pro = 100
+   - Cloud Risk Mgmt: 1-500 = 1000 cr, 501-1000 = 2000, 1001-1500 = 3000, 1501-2000 = 4000
+   - Vision One Credits Pool (SKU VONN0000/VORN0232/VORN0309/VONN0309/VONN0358) = 1 cr/crédito
 
-Ejemplos PROHIBIDOS de mala interpretación:
+2. TODOS los certificados (incluido el pool) van al array "products" con su Volume como quantity. total_credits_purchased SIEMPRE = 0.
 
-❌ MAL: "Endpoint Security (Core) Normal 51-250 Devices, Volume: 230"
-   La IA NO debe leer "51-250" como rango y poner quantity=250 o promediarlo.
-   Tampoco debe tomar 51 ni 250.
+3. Para cada producto: total_credits = quantity × credits_per_unit
 
-✅ BIEN: quantity = 230 (del campo Volume)
-   El "Normal 51-250 Devices" significa: "este SKU aplica para clientes que compran entre 51 y 250 dispositivos"
-   Es solo el TIER comercial. La cantidad real comprada es 230.
+4. Si un PDF tiene múltiples páginas, cada página es un producto separado con sus propias fechas.
 
-❌ MAL: "Cyber Risk Exposure Management - Core Normal 251-500, Volume: 295"
-   La IA NO debe leer "251-500" como cantidad ni 500 ni 251.
-   Tampoco debe sumarlos.
+EJEMPLO CORRECTO:
+Documento: "Email Collaboration Core Normal 251-500 Users", SKU: VORN0174, Volume: 460
+Respuesta: { "name_in_proposal": "Email Collaboration Core", "sku": "VORN0174", "matched_id": "x", "quantity": 460, "unit": "usuarios", "credits_per_unit": 25, "total_credits": 11500 }
+(quantity = 460 del Volume, NO del rango "251-500")
 
-✅ BIEN: quantity = 295 (del campo Volume)
-
-❌ MAL: "Email and Collaboration Security - Core Normal 251-500 Users, Volume: 460"
-   La IA NO debe usar 500 como qty.
-
-✅ BIEN: quantity = 460 (del campo Volume)
-
-EJEMPLOS DE TIERS COMERCIALES TÍPICOS (estos son SIEMPRE rangos, NUNCA cantidades):
-- "Normal 1-100"
-- "Normal 1-250"
-- "Normal 1-500"
-- "Normal 51-250"
-- "Normal 251-500"
-- "Normal 501-1000"
-- "Normal 1001-1500"
-- "Normal 1501-2000"
-- "Normal 2001-2500"
-- "Normal 1+" (capacidad ilimitada)
-
-Cuando veas cualquier patrón "Normal X-Y" o "Normal X+" en el nombre del producto, IGNÓRALO para efectos de cantidad. Solo usa el campo "Volume:" del bloque del Entitlement Certificate.
-
-═══════════════════════════════════════════════════════════════════
-
-OTRAS REGLAS CRÍTICAS PARA ENTITLEMENT CERTIFICATES:
-
-1. CUANDO EL SKU ES VONN0000 / VORN0232 / VORN0309 / VONN0309 / VONN0358:
-   → Es un POOL puro de créditos, NO un producto regular.
-   → Debe ir en el campo "total_credits_purchased" del JSON raíz.
-   → NO ponerlo dentro del array "products".
-   → El "Volume" ES directamente el número de créditos comprados.
-   → matched_id NO se usa para el pool.
-
-2. PARA PRODUCTOS REGULARES (no pool):
-   → quantity = Volume (NUNCA del rango del nombre)
-   → credits_per_unit = los créditos del catálogo:
-     * Email & Collaboration Core = 25 cr/usuario
-     * Email & Collaboration Essentials = 50 cr/usuario
-     * Email & Collaboration Pro = 105 cr/usuario
-     * Endpoint Core = 45 cr/dispositivo
-     * Endpoint Essentials = 65 cr/dispositivo
-     * Endpoint Pro = 300 cr/dispositivo
-     * CREM Core = 20 cr/dispositivo
-     * CREM Essentials = 50 cr/dispositivo
-     * CREM Pro = 100 cr/dispositivo
-     * Cloud Risk Mgmt 1-500 = 1000 cr (la unidad ES la suscripción a ese rango)
-     * Cloud Risk Mgmt 501-1000 = 2000 cr
-     * Cloud Risk Mgmt 1001-1500 = 3000 cr
-     * Cloud Risk Mgmt 1501-2000 = 4000 cr
-   → total_credits = quantity × credits_per_unit
-   → unit: para todos los productos regulares la unidad es "seat" / "usuario" / "dispositivo" / "endpoint" según corresponda. SOLO Vision One Credits Pool usa "crédito" como unidad.
-
-3. EJEMPLO COMPLETO DE INTERPRETACIÓN CORRECTA:
-
-   Documento muestra:
-     "Trend Vision One Email and Collaboration Security - Core Normal 251-500 Users Renew"
-     SKU: VORN0174
-     Volume: 460
-     Start Date: 04/30/25
-     End Date: 04/29/26
-
-   Respuesta correcta:
-   {
-     "name_in_proposal": "Email and Collaboration Security - Core",
-     "sku": "VORN0174",
-     "matched_id": "x",
-     "quantity": 460,           ← del campo Volume, NO del rango "251-500"
-     "unit": "usuarios",
-     "credits_per_unit": 25,    ← Email Core son 25 cr/usuario
-     "total_credits": 11500,    ← 460 × 25 = 11,500
-     "start_date": "2025-04-30",
-     "end_date": "2026-04-29",
-     "dates_confidence": "explicit",
-     "match_confidence": "high"
-   }
-
-4. EJEMPLO PARA POOL:
-   Documento: "Trend Vision One Credits Normal 1+ Credits New, Volume: 2135, SKU: VONN0000"
-   Resultado correcto:
-   {
-     "total_credits_purchased": 2135,
-     "products": []  ← NO se pone aquí, va en total_credits_purchased
-   }
-
-5. SI UN PDF TIENE MÚLTIPLES CERTIFICADOS (varias páginas):
-   → Cada página es un certificado independiente
-   → Cada producto regular va al array "products" con su propio Volume
-   → Cada certificado de pool standalone se SUMA al total_credits_purchased
-   → Ejemplo: si hay un certificado de pool de 2,135 cr y 5 certificados de productos regulares:
-     total_credits_purchased = 2135
-     products = [los 5 productos individuales, cada uno con SU PROPIO Volume]
-
-VERIFICACIÓN ANTES DE RESPONDER:
-Antes de devolver el JSON, REVISA cada producto:
-- ¿quantity coincide con el campo "Volume" del documento? ← SÍ DEBE
-- ¿quantity coincide con algún rango del nombre del producto (51, 250, 500, 1000)? ← NO DEBE
-- ¿total_credits = quantity × credits_per_unit? ← SÍ DEBE
-
-Si una respuesta no pasa estas 3 verificaciones, está MAL.
 `;
 
 const SYSTEM_PROMPT = `Eres un experto en propuestas, certificados y cotizaciones de Trend Micro Vision One.
@@ -274,85 +178,32 @@ Devuelve SOLO un JSON válido (sin markdown, sin explicación) con esta estructu
   "notes": "Entitlement Certificate oficial de Trend Micro. total_credits_purchased=0 porque no hay certificado de pool standalone en este documento; solo hay un producto regular (CREM Core)."
 }
 
-⚠️⚠️⚠️ REGLA #2 CRÍTICA — total_credits_purchased ⚠️⚠️⚠️
-
-EL CAMPO "total_credits_purchased" SOLO se llena cuando hay UN CERTIFICADO ESPECÍFICO DE "Vision One Credits Pool" (SKU VONN0000, VORN0232, VORN0309, VONN0309, VONN0358).
-
-JAMÁS calcules total_credits_purchased sumando los productos. Los productos individuales tienen sus propios totales en el campo "total_credits" dentro del array "products".
-
-EJEMPLOS DE CUÁNDO USAR CADA CAMPO:
-
-✅ CASO 1: PDF con 5 productos regulares (Endpoint, Email, etc.) y NINGÚN certificado de pool standalone:
-{
-  "total_credits_purchased": 0,   ← CERO porque NO hay certificado de pool puro
-  "products": [
-    { "name_in_proposal": "Endpoint Core", "quantity": 230, "total_credits": 10350 },
-    { "name_in_proposal": "Endpoint Pro", "quantity": 65, "total_credits": 19500 },
-    { "name_in_proposal": "Email Core", "quantity": 460, "total_credits": 11500 }
-  ]
-}
-
-✅ CASO 2: PDF con 1 certificado de "Vision One Credits Pool" (VONN0000, Volume: 2135) y NADA más:
-{
-  "total_credits_purchased": 2135,   ← El volumen del certificado de pool
-  "products": []
-}
-
-✅ CASO 3: PDF con 1 certificado de pool (VONN0000, Volume: 2135) Y 5 productos regulares:
-{
-  "total_credits_purchased": 2135,   ← SOLO el volumen del pool standalone
-  "products": [
-    { "name_in_proposal": "Email Core", "quantity": 200, "total_credits": 5000 },
-    { "name_in_proposal": "Cloud Risk Mgmt", "quantity": 2, "total_credits": 6000 },
-    { "name_in_proposal": "Endpoint Core", "quantity": 25, "total_credits": 1125 },
-    { "name_in_proposal": "Endpoint Pro", "quantity": 15, "total_credits": 4500 },
-    { "name_in_proposal": "CREM Core", "quantity": 40, "total_credits": 800 }
-  ]
-}
-
-✅ CASO 4: PDF con 2 certificados de pool (VONN0000=2135 y VORN0232=5540) Y 3 productos regulares:
-{
-  "total_credits_purchased": 7675,   ← 2135 + 5540 (suma SOLO los pool standalone)
-  "products": [
-    { "name_in_proposal": "Endpoint Core", "quantity": 230, "total_credits": 10350 },
-    { "name_in_proposal": "CREM Core", "quantity": 295, "total_credits": 5900 },
-    { "name_in_proposal": "Email Core", "quantity": 460, "total_credits": 11500 }
-  ]
-}
-
-❌ CASO INCORRECTO (NUNCA HAGAS ESTO):
-{
-  "total_credits_purchased": 41350,   ← MAL: estás sumando los productos en el campo del pool
-  "products": [
-    { "total_credits": 10350 },
-    { "total_credits": 19500 },
-    { "total_credits": 11500 }
-  ]
-}
-Eso causa DOBLE CONTEO porque el cliente sumará el campo total_credits_purchased + cada producto.
-
-REGLA SIMPLE A MEMORIZAR:
-- ¿Veo el SKU VONN0000, VORN0232, VORN0309, VONN0309 o VONN0358? → Su Volume va a total_credits_purchased
-- ¿Veo cualquier OTRO SKU (VONN0033, VORN0051, VONN0186, etc.)? → Va al array products con su quantity
-- Si NO hay ningún SKU de pool en el documento → total_credits_purchased = 0
-
-`;
+REGLA SIMPLE: total_credits_purchased = 0 SIEMPRE.
+TODOS los certificados (incluido el pool VONN0000/VORN0232/VORN0309/VONN0309/VONN0358) van al array "products" con su Volume como quantity. El frontend se encarga de detectar pools.
 
 REGLAS IMPORTANTES:
 - source_type: usa los criterios arriba
 - Para CADA producto, dates_confidence es OBLIGATORIO
 - Si dates_confidence es "unknown", start_date y end_date deben ser "" (cadena vacía)
 - NUNCA inventes fechas. Si dudas → "unknown"
-- total_credits_purchased: SOLO el volumen de certificados de pool standalone (VONN0000/VORN0232/VORN0309/VONN0309/VONN0358). Si no hay ningún certificado de pool standalone, debe ser 0.
-- NUNCA pongas en total_credits_purchased la suma de los productos individuales — eso causa doble conteo
-- Si el documento tiene VARIOS certificados/líneas (como un PDF con múltiples páginas de Entitlement), cada uno es un producto separado con sus propias fechas
+- total_credits_purchased: SIEMPRE 0. Pon TODO en products[].
+- Si el documento tiene VARIOS certificados/líneas (como un PDF con múltiples páginas), cada uno es un producto separado con sus propias fechas
 - match_confidence: "high" (match exacto), "medium" (similar), "low" (ambiguo)
 - Si NO es un documento Vision One, devuelve products: [] y total_credits_purchased: 0
 - Los créditos son números enteros, sin comas
 - Si la propuesta tiene precios, IGNÓRALOS — solo nos interesan créditos, cantidades y fechas
-- sku: si aparece (ej. "VONN0159"), inclúyelo. Es un dato útil para el cliente.
+- sku: si aparece (ej. "VONN0159"), inclúyelo. Es OBLIGATORIO para certificados Trend.
 - customer_no: si aparece, inclúyelo
-- reseller_name: si aparece, inclúyelo`;
+- reseller_name: si aparece, inclúyelo
+
+PARA EL POOL VISION ONE CREDITS (SKU VONN0000/VORN0232/VORN0309/VONN0309/VONN0358):
+- name_in_proposal: "Vision One Credits Pool"
+- matched_id: "AK"
+- quantity: el Volume del certificado (ej. 2135)
+- credits_per_unit: 1
+- total_credits: igual al quantity (ej. 2135)
+- unit: "créditos"
+`;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
