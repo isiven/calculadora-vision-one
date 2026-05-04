@@ -882,6 +882,72 @@ function PrintView({ data }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════
+// Helper para generar PDF reales desde HTML (sin print del navegador)
+// Carga html2pdf.js dinámicamente la primera vez que se usa
+// ════════════════════════════════════════════════════════════════════════
+let _html2pdfPromise = null;
+function loadHtml2Pdf() {
+  if (_html2pdfPromise) return _html2pdfPromise;
+  _html2pdfPromise = new Promise((resolve, reject) => {
+    if (typeof window !== "undefined" && window.html2pdf) {
+      resolve(window.html2pdf);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+    script.onload = () => resolve(window.html2pdf);
+    script.onerror = () => reject(new Error("No se pudo cargar la librería de PDF"));
+    document.head.appendChild(script);
+  });
+  return _html2pdfPromise;
+}
+
+async function generatePdfFromHtml(htmlContent, filename) {
+  // Cargar html2pdf.js si no está cargado
+  const html2pdf = await loadHtml2Pdf();
+
+  // Crear contenedor temporal off-screen con el HTML
+  const container = document.createElement("div");
+  container.innerHTML = htmlContent;
+  // Posicionar fuera de la vista pero visible para html2canvas
+  container.style.position = "fixed";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "210mm"; // A4 width
+  container.style.background = "#fff";
+  document.body.appendChild(container);
+
+  // Buscar el elemento principal del documento (el .print-only o el body)
+  const target = container.querySelector(".print-only, .pdf-content") || container;
+
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: filename,
+    image: { type: "jpeg", quality: 0.95 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+      compress: true,
+    },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+  };
+
+  try {
+    await html2pdf().set(opt).from(target).save();
+  } finally {
+    // Cleanup
+    document.body.removeChild(container);
+  }
+}
+
 const PRINT_CSS = `
   @media screen {
     .print-only { display: none !important; }
@@ -972,11 +1038,7 @@ function downloadReport(data) {
 </style>
 </head>
 <body>
-  <div class="print-toolbar">
-    <div style="font-size:13px">📄 Análisis listo para imprimir · Usa <strong>Cmd+P</strong> (Mac) o <strong>Ctrl+P</strong> (Windows) y elige "Guardar como PDF"</div>
-    <button onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
-  </div>
-  <div class="container">
+  <div class="container pdf-content">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #0C0A09">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="display:flex;flex-direction:column;gap:4">
@@ -1035,25 +1097,17 @@ function downloadReport(data) {
       <div style="font-size:10px;color:#A8A29E">Trend Micro Credit Calculator · Jan 2026</div>
     </div>
   </div>
-  <script>
-    // Auto-trigger print dialog after a small delay to let the page render
-    window.addEventListener('load', function() {
-      setTimeout(function() { window.print(); }, 400);
-    });
-  </script>
 </body>
 </html>`;
 
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const fname = `Analisis_VisionOne_${(clientName || "Nextcom").replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.html`;
-  a.href = url;
-  a.download = fname;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  const fname = `Analisis_VisionOne_${(clientName || "Nextcom").replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+
+  // Generar PDF real desde el HTML
+  return generatePdfFromHtml(html, fname).catch(err => {
+    console.error("Error generando PDF:", err);
+    alert("No se pudo generar el PDF. Por favor verifica tu conexión a internet e inténtalo de nuevo.\n\nDetalle: " + err.message);
+    throw err;
+  });
 }
 
 function InternalApp() {
@@ -1068,6 +1122,7 @@ function InternalApp() {
   const [soporteCost, setSoporteCost] = useState(0);
   const [soporteDate, setSoporteDate] = useState("");
   const [clientName, setClientName] = useState("");
+  const [pdfLoading, setPdfLoading] = useState(false);
   const isMobile = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1300,9 +1355,14 @@ function InternalApp() {
         </div>
 
         <div style={{ padding:"12px 20px", borderTop:`1px solid ${C.border}` }}>
-          <button onClick={() => downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate })}
-            style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding:"10px", background:C.text, color:"#fff", border:"none", borderRadius:7, fontSize:13, fontWeight:600, cursor:"pointer" }}>
-            ⬇ Exportar análisis PDF
+          <button onClick={async () => {
+              if (pdfLoading) return;
+              setPdfLoading(true);
+              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+              catch(e){} finally { setPdfLoading(false); }
+            }} disabled={pdfLoading}
+            style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding:"10px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:7, fontSize:13, fontWeight:600, cursor: pdfLoading ? "wait" : "pointer", opacity: pdfLoading ? 0.7 : 1 }}>
+            {pdfLoading ? "⏳ Generando PDF..." : "⬇ Exportar análisis PDF"}
           </button>
         </div>
         <div style={{ padding:"10px 20px", fontSize:11, color:C.text3, lineHeight:1.5 }}>
@@ -1559,9 +1619,14 @@ function InternalApp() {
               Margen {fmtU(totalMargin)} · {marginPct.toFixed(1)}%
             </div>
           </div>
-          <button onClick={() => downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate })}
-            style={{ padding:"12px 16px", background:C.text, color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6 }}>
-            ⬇ PDF
+          <button onClick={async () => {
+              if (pdfLoading) return;
+              setPdfLoading(true);
+              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+              catch(e){} finally { setPdfLoading(false); }
+            }} disabled={pdfLoading}
+            style={{ padding:"12px 16px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
+            {pdfLoading ? "⏳ Generando..." : "⬇ PDF"}
           </button>
         </div>
       )}
@@ -2323,11 +2388,7 @@ function downloadEstimate(data) {
   @media print{.print-toolbar{display:none}}
 </style></head>
 <body>
-<div class="print-toolbar">
-  <div style="font-size:13px">📄 Usa <strong>Cmd+P</strong> (Mac) o <strong>Ctrl+P</strong> (Windows) para guardar como PDF</div>
-  <button onclick="window.print()">🖨 Imprimir / Guardar PDF</button>
-</div>
-<div class="container">
+<div class="container pdf-content">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #0C0A09">
     <div style="display:flex;align-items:center;gap:14px">
       <img src="${NEXTCOM_LOGO}" alt="Nextcom" style="height:38px;width:auto" />
@@ -2380,21 +2441,18 @@ function downloadEstimate(data) {
     </div>
   </div>
 </div>
-<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});</script>
 </body></html>`;
 
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
   const filename = hasComparative
-    ? `Analisis_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.html`
-    : `Estimado_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.html`;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 3000);
+    ? `Analisis_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.pdf`
+    : `Estimado_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+
+  // Generar PDF real desde el HTML
+  return generatePdfFromHtml(html, filename).catch(err => {
+    console.error("Error generando PDF:", err);
+    alert("No se pudo generar el PDF. Por favor verifica tu conexión a internet e inténtalo de nuevo.\n\nDetalle: " + err.message);
+    throw err;
+  });
 }
 
 function ClientApp() {
@@ -2408,6 +2466,25 @@ function ClientApp() {
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Wrapper para descargar PDF con loading state
+  const handleDownloadPdf = async () => {
+    if (pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      await downloadEstimate({
+        lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
+        usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
+        proposalItems, proposalEffectiveTotal, proposalTotalPool, proposalDate, proposalPeriod,
+        hasComparative, efficiency, surplus, deficit, recommendedAnnual
+      });
+    } catch (err) {
+      console.error("Error al generar PDF:", err);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   // --- Consumo actual (Mi Drawdown) ---
   const [usageOpen, setUsageOpen] = useState(false);     // panel expandido?
@@ -3712,14 +3789,9 @@ function ClientApp() {
               </div>
             </div>
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => downloadEstimate({
-                lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
-                usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
-                proposalItems, proposalEffectiveTotal, proposalTotalPool, proposalDate, proposalPeriod,
-                hasComparative, efficiency, surplus, deficit, recommendedAnnual
-              })}
-                style={{ padding:"12px 18px", background:"#fff", color:C.blue, border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
-                ⬇ Descargar PDF
+              <button onClick={handleDownloadPdf} disabled={pdfLoading}
+                style={{ padding:"12px 18px", background: pdfLoading ? "#E0E7FF" : "#fff", color:C.blue, border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", opacity: pdfLoading ? 0.7 : 1 }}>
+                {pdfLoading ? "⏳ Generando PDF..." : "⬇ Descargar PDF"}
               </button>
               <button onClick={sendWhatsApp}
                 style={{ padding:"12px 18px", background:"#25D366", color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
@@ -3754,14 +3826,9 @@ function ClientApp() {
             <div style={{ fontSize:10, color:"#DBEAFE", textAlign:"right", fontWeight:600 }}>créditos<br/>Vision One</div>
           </div>
           <div style={{ display:"flex", gap:8 }}>
-            <button onClick={() => downloadEstimate({
-              lines, totalCredits, clientName, contactName, contactEmail, contactPhone,
-              usageItems, usageMonth, usageMonthlyTotal, usageAnnualTotal,
-              proposalItems, proposalEffectiveTotal, proposalTotalPool, proposalDate, proposalPeriod,
-              hasComparative, efficiency, surplus, deficit, recommendedAnnual
-            })}
-              style={{ flex:1, padding:"11px", background:"#fff", color:C.blue, border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
-              ⬇ PDF
+            <button onClick={handleDownloadPdf} disabled={pdfLoading}
+              style={{ flex:1, padding:"11px", background: pdfLoading ? "#E0E7FF" : "#fff", color:C.blue, border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", opacity: pdfLoading ? 0.7 : 1 }}>
+              {pdfLoading ? "⏳..." : "⬇ PDF"}
             </button>
             <button onClick={sendWhatsApp}
               style={{ flex:2, padding:"11px", background:"#25D366", color:"#fff", border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
