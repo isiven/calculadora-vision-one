@@ -1,4 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import {
+  AlertTriangle, BarChart3, Download, FileText, Info, Mail, Package,
+  Plus, Search, Shield, Sparkles, TrendingUp, Upload, X
+} from "lucide-react";
 
 const TRENDAI_LOGO = "data:image/jpeg;base64,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";
 
@@ -446,14 +450,19 @@ function auditUsageVsProposal(proposalItems, usageItems, proposalTotalPool) {
 }
 
 const C = {
-  bg:"#FAFAF9", surface:"#FFFFFF", panel:"#F5F5F4", border:"#E7E5E4",
-  text:"#0C0A09", text2:"#57534E", text3:"#A8A29E",
+  bg:"#FAFAF9", surface:"#FFFFFF", panel:"#F5F5F4", border:"#E7E5E4", borderHover:"#D6D3D1",
+  text:"#0C0A09", text2:"#57534E", text3:"#A8A29E", text4:"#D6D3D1",
   accent:"#D71921",
-  blue:"#1E40AF", blueBg:"#EFF6FF",
+  blue:"#1E40AF", blueDark:"#1E3A8A", blueBg:"#EFF6FF",
   green:"#047857", greenBg:"#ECFDF5",
   red:"#DC2626",
   amber:"#B45309", amberBg:"#FFFBEB",
 };
+
+// Iconos provenientes de lucide-react (importados arriba). Lineales, profesionales,
+// con stroke-width controlable. Uso: <Plus size={14} strokeWidth={2} />
+
+
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
@@ -2330,7 +2339,7 @@ function downloadEstimate(data) {
       <div style="font-size:11px;font-weight:700;color:#1E40AF;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">💡 Recomendación general</div>
       <div style="font-size:11px;color:#0C0A09;line-height:1.55">
         ${efficiency > 100
-          ? `<strong>Tu consumo supera lo comprado por ${fmt(deficit)} créditos al año.</strong> Cuando tu uso excede el pool contratado, Trend Micro factura el excedente como cargos adicionales sobre tu contrato anual (modelo "pay-as-you-go"). Para tu próxima renovación, te recomendamos contratar un pool de aproximadamente <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo actual + 10% de margen). <strong>Conversa con tu partner Trend Micro</strong> para revisar opciones.`
+          ? `<strong>Tu consumo supera lo comprado por ${fmt(deficit)} créditos al año.</strong> Cuando el uso excede el pool contratado, el pool se agota antes del fin del periodo. Para tu próxima renovación, te recomendamos contratar un pool de aproximadamente <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo actual + 10% de margen) para garantizar cobertura completa durante el periodo. <strong>Conversa con tu partner Trend Micro</strong> para revisar opciones.`
           : efficiency < 70
           ? `<strong>Estás muy por debajo de tu pool comprado.</strong> Solo usas el ${efficiency.toFixed(1)}% de tus créditos. Para optimizar, considera un pool de <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer) y aprovecha el sobrante en otros servicios.`
           : `<strong>Tu pool está bien dimensionado</strong> con sobrante saludable de ${fmt(surplus)} créditos. Para próxima renovación podrías mantener algo similar o considerar <strong>${fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer).`
@@ -2956,16 +2965,21 @@ function ClientApp() {
 
   return (
     <div style={{
-      minHeight:"100vh",
-      background:`linear-gradient(180deg, #FAFAF9 0%, #F0F4FF 100%)`,
-      fontFamily:"system-ui,-apple-system,sans-serif",
-      color:C.text,
+      minHeight: "100vh",
+      background: C.bg,
+      fontFamily: "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",
+      color: C.text,
       paddingBottom: isMobile ? "calc(120px + env(safe-area-inset-bottom, 0px))" : 40
     }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input::placeholder { color: ${C.text3}; }
+        input:focus { outline: none; border-color: ${C.text2} !important; }
+        button:focus-visible { outline: 2px solid ${C.blue}; outline-offset: 2px; }
+      `}</style>
       <header style={{
-        background:C.surface, borderBottom:`1px solid ${C.border}`,
-        position:"sticky", top:0, zIndex:50,
-        boxShadow:"0 1px 3px rgba(0,0,0,.04)"
+        background: C.surface, borderBottom: `1px solid ${C.border}`,
+        position: "sticky", top: 0, zIndex: 50
       }}>
         {/* Top row: brand identity */}
         <div style={{
@@ -2990,19 +3004,19 @@ function ClientApp() {
 
         {/* Bottom row: tool title — subtle accent stripe */}
         <div style={{
-          background: `linear-gradient(90deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
-          color:"#fff",
-          padding: isMobile ? "9px 16px" : "10px 32px"
+          background: C.surface,
+          borderBottom: `1px solid ${C.border}`,
+          padding: isMobile ? "10px 16px" : "12px 32px"
         }}>
-          <div style={{ maxWidth:980, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:isMobile?14:15 }}>🪙</span>
-              <span style={{ fontSize:isMobile?12:13, fontWeight:600, letterSpacing:".01em" }}>
+          <div style={{ maxWidth: 980, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Package size={14} color={C.text2} strokeWidth={1.75} />
+              <span style={{ fontSize: 12, fontWeight: 500, color: C.text2, letterSpacing: ".01em" }}>
                 Estimador de Créditos · Trend Vision One
               </span>
             </div>
             {!isMobile && (
-              <span style={{ fontSize:10, color:"#BFDBFE", fontWeight:500 }}>
+              <span style={{ fontSize: 11, color: C.text3, fontWeight: 500 }}>
                 Edición Enero 2026
               </span>
             )}
@@ -3010,103 +3024,117 @@ function ClientApp() {
         </div>
       </header>
 
-      <main style={{ maxWidth:980, margin:"0 auto", padding: isMobile ? "16px 14px" : "32px" }}>
-        <div style={{ marginBottom: isMobile ? 20 : 32 }}>
-          <div style={{ fontSize: isMobile ? 22 : 32, fontWeight:800, letterSpacing:"-.025em", lineHeight:1.15, marginBottom:8 }}>
-            {isMobile ? "Estima los créditos Vision One que necesitas" : <>Estima cuántos créditos<br/>Vision One necesita tu empresa</>}
-          </div>
-          <div style={{ fontSize: isMobile ? 13 : 16, color:C.text2, lineHeight:1.5 }}>
-            Selecciona los productos de Trend Micro Vision One que quieres activar e indica las cantidades. La calculadora te dirá cuántos créditos requieres.
-          </div>
-        </div>
-
-        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:12, padding: isMobile ? 14 : 18, marginBottom:18 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:10 }}>Información de contacto (opcional)</div>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap:10 }}>
-            <input type="text" placeholder="Empresa" value={clientName} onChange={e=>setClientName(e.target.value)}
-              style={{ fontSize:14, padding:"10px 12px", border:`1px solid ${C.border}`, borderRadius:7, background:C.surface, outline:"none", boxSizing:"border-box" }} />
-            <input type="text" placeholder="Tu nombre" value={contactName} onChange={e=>setContactName(e.target.value)}
-              style={{ fontSize:14, padding:"10px 12px", border:`1px solid ${C.border}`, borderRadius:7, background:C.surface, outline:"none", boxSizing:"border-box" }} />
-            <input type="email" placeholder="Email" value={contactEmail} onChange={e=>setContactEmail(e.target.value)}
-              style={{ fontSize:14, padding:"10px 12px", border:`1px solid ${C.border}`, borderRadius:7, background:C.surface, outline:"none", boxSizing:"border-box" }} />
-            <input type="tel" placeholder="Teléfono" value={contactPhone} onChange={e=>setContactPhone(e.target.value)}
-              style={{ fontSize:14, padding:"10px 12px", border:`1px solid ${C.border}`, borderRadius:7, background:C.surface, outline:"none", boxSizing:"border-box" }} />
+      <main style={{ maxWidth: 980, margin: "0 auto", padding: isMobile ? "20px 14px 80px" : "40px 32px 80px" }}>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: isMobile ? 14 : 16, marginBottom: 28 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Información de contacto (opcional)</div>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap: 10 }}>
+            <input type="text" placeholder="Empresa" value={clientName} onChange={e => setClientName(e.target.value)}
+              style={{ fontSize: 13, padding: "9px 11px", border: `1px solid ${C.border}`, borderRadius: 7, background: C.surface, outline: "none", boxSizing: "border-box", color: C.text }} />
+            <input type="text" placeholder="Tu nombre" value={contactName} onChange={e => setContactName(e.target.value)}
+              style={{ fontSize: 13, padding: "9px 11px", border: `1px solid ${C.border}`, borderRadius: 7, background: C.surface, outline: "none", boxSizing: "border-box", color: C.text }} />
+            <input type="email" placeholder="Email" value={contactEmail} onChange={e => setContactEmail(e.target.value)}
+              style={{ fontSize: 13, padding: "9px 11px", border: `1px solid ${C.border}`, borderRadius: 7, background: C.surface, outline: "none", boxSizing: "border-box", color: C.text }} />
+            <input type="tel" placeholder="Teléfono" value={contactPhone} onChange={e => setContactPhone(e.target.value)}
+              style={{ fontSize: 13, padding: "9px 11px", border: `1px solid ${C.border}`, borderRadius: 7, background: C.surface, outline: "none", boxSizing: "border-box", color: C.text }} />
           </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════
-             SELECTOR MANUAL — héroe visual de la pantalla
+             SELECTOR MANUAL — Sin gradientes, sin emojis. Tipografía hace el trabajo.
         ═══════════════════════════════════════════════════════════════ */}
-        <div style={{ marginBottom:24 }}>
-          {/* HEADER HÉROE */}
-          <div style={{
-            display:"flex", alignItems:"center", justifyContent:"space-between", gap:12,
-            marginBottom: 14, padding: isMobile ? "14px 16px" : "16px 20px",
-            background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
-            backgroundColor: C.blue,
-            borderRadius: 12, color:"#fff",
-            boxShadow:"0 4px 14px rgba(30,64,175,.18)"
-          }}>
-            <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
-              <span style={{ fontSize: isMobile ? 24 : 30 }}>🧮</span>
-              <div style={{ minWidth:0 }}>
-                <div style={{ fontSize: isMobile ? 15 : 18, fontWeight:800, lineHeight:1.2, letterSpacing:"-.015em" }}>
-                  Construye tu cotización
-                </div>
-                <div style={{ fontSize: isMobile ? 12 : 13, color:"#DBEAFE", marginTop:3, lineHeight:1.4 }}>
-                  Selecciona productos y cantidades para calcular tus créditos
-                </div>
-              </div>
-            </div>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ marginBottom: 6 }}>
             <div style={{
-              background:"rgba(255,255,255,.2)", padding: isMobile ? "6px 10px" : "8px 14px",
-              borderRadius:8, display:"flex", alignItems:"center", gap:7, whiteSpace:"nowrap",
-              border:"1px solid rgba(255,255,255,.15)"
+              fontSize: 11, color: C.text3, fontWeight: 600, textTransform: "uppercase",
+              letterSpacing: ".06em", marginBottom: 6
             }}>
-              <span style={{ ...mono, fontSize: isMobile ? 18 : 22, fontWeight:800, color:"#fff", lineHeight:1 }}>{activeLines}</span>
-              <span style={{ fontSize:10, color:"#DBEAFE", fontWeight:600, textTransform:"uppercase", letterSpacing:".06em", lineHeight:1.1 }}>
-                {activeLines === 1 ? "producto" : "productos"}
-              </span>
+              Calculadora Vision One
             </div>
+            <h1 style={{
+              fontSize: isMobile ? 22 : 26, fontWeight: 600, color: C.text,
+              margin: 0, letterSpacing: "-.015em", lineHeight: 1.2
+            }}>
+              ¿Cuántos créditos necesitas?
+            </h1>
+            <p style={{
+              fontSize: isMobile ? 13 : 14, color: C.text2, margin: "6px 0 0",
+              lineHeight: 1.55, maxWidth: 560
+            }}>
+              Selecciona los productos que tu empresa requiere y te indicamos el total de créditos a contratar.
+            </p>
           </div>
-          {lines.map((line, idx) => (
-            <LineCard key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} isMobile={isMobile} />
-          ))}
+        </div>
+
+        {/* Container unificado del selector + agregar */}
+        <div style={{
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
+          overflow: "hidden", marginBottom: 28
+        }}>
+          {lines.length === 0 || (lines.length === 1 && !lines[0].picked) ? null : (
+            <>
+              {lines.map((line, idx) => (
+                <LineCard key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} isMobile={isMobile} />
+              ))}
+            </>
+          )}
           <button onClick={addLine} style={{
-            width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            padding:"14px", background:"#fff", border:`2px dashed ${C.blue}`,
-            borderRadius:10, cursor:"pointer", color:C.blue, fontSize:14, fontWeight:600
-          }}>
-            <span style={{ fontSize:18 }}>＋</span> Agregar otro producto
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start",
+            gap: 8, padding: "16px 18px", background: C.surface, border: "none",
+            borderTop: lines.length > 0 ? `1px solid ${C.border}` : "none",
+            cursor: "pointer", color: C.blue, fontSize: 13, fontWeight: 500,
+            textAlign: "left", transition: "background .15s"
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = C.bg}
+          onMouseLeave={(e) => e.currentTarget.style.background = C.surface}>
+            <Plus size={15} color={C.blue} strokeWidth={2} />
+            <span>Agregar producto</span>
           </button>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-             SECCIÓN: Atajos con IA (consumo + propuesta) — grid 2 columnas
-        ═══════════════════════════════════════════════════════════════ */}
-        <div style={{
-          marginBottom:14, padding: isMobile ? "12px 14px" : "14px 18px",
-          background: "linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)",
-          backgroundColor: "#FAF5FF",
-          border: "1px solid #E9D5FF",
-          borderRadius: 10,
-          display:"flex", alignItems:"center", gap:10, flexWrap:"wrap"
-        }}>
-          <span style={{ fontSize: isMobile ? 18 : 22 }}>✨</span>
-          <div style={{ flex:1, minWidth:160 }}>
-            <div style={{ fontSize: isMobile ? 13 : 14, fontWeight:700, color:"#6B21A8", letterSpacing:"-.01em" }}>
-              Atajos con IA
-            </div>
-            <div style={{ fontSize: isMobile ? 11 : 12, color:"#7C3AED", lineHeight:1.45, marginTop:1 }}>
-              ¿Tienes documentos? Súbelos y los analizamos por ti — ahorras tiempo y evitas errores.
+        {/* Total Display - sutil pero presente */}
+        {totalCredits > 0 && (
+          <div style={{
+            display: "flex", alignItems: "baseline", justifyContent: "space-between",
+            padding: "16px 0", borderTop: `1px solid ${C.border}`, marginBottom: 32
+          }}>
+            <div style={{ fontSize: 13, color: C.text2 }}>Total estimado</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{
+                ...mono, fontSize: isMobile ? 22 : 28, fontWeight: 600, color: C.text,
+                letterSpacing: "-.02em"
+              }}>{fmt(totalCredits)}</span>
+              <span style={{ fontSize: 13, color: C.text2 }}>créditos / año</span>
             </div>
           </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+             SECCIÓN: Atajos con IA — secundaria, discreta, eficiente
+        ═══════════════════════════════════════════════════════════════ */}
+        <div style={{
+          marginBottom: 14, paddingTop: 24, borderTop: `1px solid ${C.border}`
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <Sparkles size={14} color={C.text3} strokeWidth={2} />
+            <div style={{
+              fontSize: 11, color: C.text3, fontWeight: 600, textTransform: "uppercase",
+              letterSpacing: ".06em"
+            }}>
+              ¿Tienes documentos? Acelera el proceso
+            </div>
+          </div>
+          <p style={{
+            fontSize: 13, color: C.text2, margin: "0 0 4px",
+            lineHeight: 1.55, maxWidth: 580
+          }}>
+            Sube tu reporte de consumo de Vision One o tu propuesta anterior. Los analizamos automáticamente y completamos los productos por ti.
+          </p>
         </div>
 
         <div style={{
-          display:"flex",
+          display: "flex",
           flexDirection: "column",
-          gap: 14,
+          gap: 12,
           marginBottom: 24
         }}>
 
@@ -3114,25 +3142,26 @@ function ClientApp() {
              PANEL: ¿Ya eres cliente Trend Micro? Sube tu consumo actual
         ═══════════════════════════════════════════════════════════════ */}
         <div style={{
-          background: usageItems.length > 0 ? C.blueBg : C.surface,
-          border: `1.5px ${usageItems.length > 0 ? "solid" : "dashed"} ${usageItems.length > 0 ? C.blue : C.border}`,
-          borderRadius:12, padding: isMobile ? 16 : 20, transition:"all .2s"
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 10, padding: isMobile ? 16 : 18, transition: "border-color .15s"
         }}>
           {/* Header */}
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize: isMobile ? 14 : 15, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8, lineHeight:1.25 }}>
-                <span style={{ fontSize:20 }}>📊</span>
-                <span>Tu consumo actual</span>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2, display: "flex", alignItems: "center", gap: 8, lineHeight: 1.3 }}>
+                <BarChart3 size={15} color={C.text} strokeWidth={2} />
+                <span>Reporte de consumo</span>
               </div>
-              <div style={{ fontSize: isMobile ? 12 : 12.5, color:C.text2, lineHeight:1.5 }}>
-                Sube un screenshot de tu drawdown mensual de Vision One y calculamos tu uso anual + licencias.
+              <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55 }}>
+                Sube un screenshot de tu Drawdown mensual y calculamos tu uso anual.
               </div>
             </div>
             {usageItems.length > 0 && (
               <button onClick={clearUsage}
-                style={{ padding:"6px 10px", background:"transparent", border:`1px solid ${C.border}`, borderRadius:6, fontSize:11, color:C.text3, cursor:"pointer", fontWeight:600, whiteSpace:"nowrap" }}>
-                ✕ Limpiar
+                style={{ padding: "5px 9px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, color: C.text2, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                <X size={11} strokeWidth={2.25} />
+                <span>Limpiar</span>
               </button>
             )}
           </div>
@@ -3167,30 +3196,32 @@ function ClientApp() {
             {/* Upload button (always visible, label changes) */}
             <button onClick={() => usageFileRef.current?.click()} disabled={usageLoading}
               style={{
-                width:"100%", padding:"12px 16px",
-                background: usageLoading ? C.text3 : (usageFiles.length > 0 ? C.surface : C.blue),
-                color: usageLoading ? "#fff" : (usageFiles.length > 0 ? C.blue : "#fff"),
-                border: usageFiles.length > 0 ? `2px dashed ${C.blue}` : "none",
-                borderRadius:9,
-                fontSize:14, fontWeight:700, cursor: usageLoading ? "wait" : "pointer",
-                display:"flex", alignItems:"center", justifyContent:"center", gap:8
+                width: "100%", padding: "11px 14px",
+                background: usageLoading ? C.panel : (usageFiles.length > 0 ? C.surface : C.text),
+                color: usageLoading ? C.text2 : (usageFiles.length > 0 ? C.text : "#fff"),
+                border: usageFiles.length > 0 ? `1px solid ${C.border}` : "none",
+                borderRadius: 8,
+                fontSize: 13, fontWeight: 500, cursor: usageLoading ? "wait" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                transition: "background .15s, border-color .15s"
               }}>
               {usageLoading ? (
-                <>⏳ {usageProgress || "Analizando con IA..."}</>
+                <><span style={{ display: "inline-block", width: 12, height: 12, border: `1.5px solid ${C.text3}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}></span> {usageProgress || "Analizando con IA..."}</>
               ) : usageFiles.length > 0 ? (
-                <>＋ Agregar otro reporte de consumo</>
+                <><Plus size={13} strokeWidth={2.25} /> <span>Agregar otro reporte</span></>
               ) : (
-                <>📎 Subir imagen(es) del reporte de consumo</>
+                <><Upload size={13} color="#fff" strokeWidth={2.25} /> <span>Subir reporte de consumo</span></>
               )}
             </button>
             {usageError && (
-              <div style={{ marginTop:10, padding:"10px 12px", background:"#FEE2E2", border:"1px solid #FCA5A5", borderRadius:7, fontSize:12, color:"#991B1B" }}>
-                ⚠ {usageError}
+              <div style={{ marginTop: 10, padding: "9px 11px", background: "#FEE2E2", border: "1px solid #FCA5A5", borderRadius: 6, fontSize: 12, color: "#991B1B", display: "flex", alignItems: "flex-start", gap: 6 }}>
+                <AlertTriangle size={12} color="#991B1B" strokeWidth={2} style={{ marginTop: 1, flexShrink: 0 }} />
+                <span>{usageError}</span>
               </div>
             )}
             {usageFiles.length === 0 && (
-              <div style={{ marginTop:10, fontSize:11, color:C.text3, lineHeight:1.5 }}>
-                💡 Puedes subir uno o varios screenshots a la vez. Si tienes múltiples cuentas Vision One, los productos duplicados se sumarán automáticamente.
+              <div style={{ marginTop: 8, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
+                Puedes subir uno o varios screenshots. Si tienes múltiples cuentas, los productos duplicados se suman automáticamente.
               </div>
             )}
           </div>
@@ -3334,24 +3365,25 @@ function ClientApp() {
              PANEL: Subir propuesta anterior
         ═══════════════════════════════════════════════════════════════ */}
         <div style={{
-          background: hasProposal ? "#FFF7ED" : C.surface,
-          border: `1.5px ${hasProposal ? "solid" : "dashed"} ${hasProposal ? "#F59E0B" : C.border}`,
-          borderRadius:12, padding: isMobile ? 16 : 20, transition:"all .2s"
+          background: C.surface,
+          border: `1px solid ${C.border}`,
+          borderRadius: 10, padding: isMobile ? 16 : 18, transition: "border-color .15s"
         }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:10, marginBottom: hasProposal ? 14 : 0 }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize: isMobile ? 14 : 15, fontWeight:700, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8, lineHeight:1.25 }}>
-                <span style={{ fontSize:20 }}>📄</span>
-                <span>Tu propuesta anterior</span>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: hasProposal ? 14 : 0 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2, display: "flex", alignItems: "center", gap: 8, lineHeight: 1.3 }}>
+                <FileText size={15} color={C.text} strokeWidth={2} />
+                <span>Propuesta anterior</span>
               </div>
-              <div style={{ fontSize: isMobile ? 12 : 12.5, color:C.text2, lineHeight:1.5 }}>
-                Sube tu propuesta o Entitlement Certificate y comparamos lo que compraste vs lo que usas.
+              <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55 }}>
+                Sube tu Entitlement Certificate o cotización y comparamos compra vs consumo.
               </div>
             </div>
             {hasProposal && (
               <button onClick={clearProposal}
-                style={{ padding:"6px 10px", background:"transparent", border:`1px solid ${C.border}`, borderRadius:6, fontSize:11, color:C.text3, cursor:"pointer", fontWeight:600, whiteSpace:"nowrap" }}>
-                ✕ Limpiar
+                style={{ padding: "5px 9px", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 11, color: C.text2, cursor: "pointer", fontWeight: 500, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                <X size={11} strokeWidth={2.25} />
+                <span>Limpiar</span>
               </button>
             )}
           </div>
@@ -3385,30 +3417,32 @@ function ClientApp() {
 
             <button onClick={() => proposalFileRef.current?.click()} disabled={proposalLoading}
               style={{
-                width:"100%", padding:"12px 16px",
-                background: proposalLoading ? C.text3 : (proposalFiles.length > 0 ? C.surface : "#F59E0B"),
-                color: proposalLoading ? "#fff" : (proposalFiles.length > 0 ? "#B45309" : "#fff"),
-                border: proposalFiles.length > 0 ? `2px dashed #F59E0B` : "none",
-                borderRadius:9,
-                fontSize:14, fontWeight:700, cursor: proposalLoading ? "wait" : "pointer",
-                display:"flex", alignItems:"center", justifyContent:"center", gap:8
+                width: "100%", padding: "11px 14px",
+                background: proposalLoading ? C.panel : (proposalFiles.length > 0 ? C.surface : C.text),
+                color: proposalLoading ? C.text2 : (proposalFiles.length > 0 ? C.text : "#fff"),
+                border: proposalFiles.length > 0 ? `1px solid ${C.border}` : "none",
+                borderRadius: 8,
+                fontSize: 13, fontWeight: 500, cursor: proposalLoading ? "wait" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                transition: "background .15s, border-color .15s"
               }}>
               {proposalLoading ? (
-                <>⏳ {proposalProgress || "Analizando con IA..."}</>
+                <><span style={{ display: "inline-block", width: 12, height: 12, border: `1.5px solid ${C.text3}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}></span> {proposalProgress || "Analizando con IA..."}</>
               ) : proposalFiles.length > 0 ? (
-                <>＋ Agregar otra propuesta</>
+                <><Plus size={13} strokeWidth={2.25} /> <span>Agregar otra propuesta</span></>
               ) : (
-                <>📎 Subir propuesta(s) (PDF, imagen o texto)</>
+                <><Upload size={13} color="#fff" strokeWidth={2.25} /> <span>Subir propuesta o cotización</span></>
               )}
             </button>
             {proposalError && (
-              <div style={{ marginTop:10, padding:"10px 12px", background:"#FEE2E2", border:"1px solid #FCA5A5", borderRadius:7, fontSize:12, color:"#991B1B" }}>
-                ⚠ {proposalError}
+              <div style={{ marginTop: 10, padding: "9px 11px", background: "#FEE2E2", border: "1px solid #FCA5A5", borderRadius: 6, fontSize: 12, color: "#991B1B", display: "flex", alignItems: "flex-start", gap: 6 }}>
+                <AlertTriangle size={12} color="#991B1B" strokeWidth={2} style={{ marginTop: 1, flexShrink: 0 }} />
+                <span>{proposalError}</span>
               </div>
             )}
             {proposalFiles.length === 0 && (
-              <div style={{ marginTop:10, fontSize:11, color:C.text3, lineHeight:1.5 }}>
-                💡 <strong>Mejor opción</strong>: Entitlement Certificates oficiales de Trend Micro (con SKU, Customer No., Start/End Date). También acepta cotizaciones de partners, screenshots o emails. Sube varios archivos a la vez si tienes contratos múltiples.
+              <div style={{ marginTop: 8, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
+                <strong style={{ color: C.text2, fontWeight: 600 }}>Mejor opción:</strong> Entitlement Certificates oficiales (con SKU, Customer No., Start/End Date). También acepta cotizaciones de partners, screenshots o emails.
               </div>
             )}
           </div>
@@ -3694,60 +3728,58 @@ function ClientApp() {
         ═══════════════════════════════════════════════════════════════ */}
         {hasComparative && (
           <div style={{
-            backgroundColor: C.blue,
-            background: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
-            color:"#FFFFFF",
-            borderRadius:14, padding: isMobile ? 18 : 24, marginBottom:18,
-            boxShadow:"0 10px 30px rgba(30,64,175,.25)"
+            background: C.text,
+            color: "#FFFFFF",
+            borderRadius: 12, padding: isMobile ? 18 : 22, marginBottom: 18
           }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:isMobile?14:18 }}>
-              <span style={{ fontSize:isMobile?22:26 }}>📈</span>
-              <div>
-                <div style={{ fontSize:isMobile?16:20, fontWeight:800, letterSpacing:"-.02em", color:"#FFFFFF" }}>Análisis comparativo</div>
-                <div style={{ fontSize:isMobile?11:12, color:"#DBEAFE", fontWeight:500 }}>Lo comprado vs lo consumido</div>
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: isMobile ? 14 : 18 }}>
+              <TrendingUp size={16} color="#fff" strokeWidth={1.75} />
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#fff", textTransform: "uppercase", letterSpacing: ".06em" }}>Análisis comparativo</div>
             </div>
 
             {/* Big numbers */}
-            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr", gap: isMobile?10:14, marginBottom:isMobile?14:18 }}>
-              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
-                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>Comprado</div>
-                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color:"#FFFFFF", lineHeight:1 }}>{fmt(proposalEffectiveTotal)}</div>
-                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>créditos</div>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: isMobile ? 10 : 14, marginBottom: isMobile ? 14 : 18 }}>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: isMobile ? 12 : 14 }}>
+                <div style={{ fontSize: 11, color: C.text4, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Comprado</div>
+                <div style={{ ...mono, fontSize: isMobile ? 22 : 26, fontWeight: 600, color: "#FFFFFF", lineHeight: 1, letterSpacing: "-.015em" }}>{fmt(proposalEffectiveTotal)}</div>
+                <div style={{ fontSize: 11, color: C.text4, marginTop: 5 }}>créditos</div>
               </div>
-              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
-                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>Consumido (×12)</div>
-                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color:"#FFFFFF", lineHeight:1 }}>{fmt(usageAnnualTotal)}</div>
-                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>créditos/año</div>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: isMobile ? 12 : 14 }}>
+                <div style={{ fontSize: 11, color: C.text4, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Consumido</div>
+                <div style={{ ...mono, fontSize: isMobile ? 22 : 26, fontWeight: 600, color: "#FFFFFF", lineHeight: 1, letterSpacing: "-.015em" }}>{fmt(usageAnnualTotal)}</div>
+                <div style={{ fontSize: 11, color: C.text4, marginTop: 5 }}>créditos / año</div>
               </div>
-              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
-                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>Eficiencia</div>
-                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color: efficiency > 100 ? "#FCA5A5" : "#FFFFFF", lineHeight:1 }}>{efficiency.toFixed(1)}%</div>
-                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>de tu pool</div>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: isMobile ? 12 : 14 }}>
+                <div style={{ fontSize: 11, color: C.text4, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>Eficiencia</div>
+                <div style={{ ...mono, fontSize: isMobile ? 22 : 26, fontWeight: 600, color: efficiency > 100 ? "#FCA5A5" : "#FFFFFF", lineHeight: 1, letterSpacing: "-.015em" }}>{efficiency.toFixed(1)}%</div>
+                <div style={{ fontSize: 11, color: C.text4, marginTop: 5 }}>del pool</div>
               </div>
-              <div style={{ background:"rgba(255,255,255,0.1)", borderRadius:10, padding:isMobile?10:14 }}>
-                <div style={{ fontSize:10, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>{efficiency > 100 ? "Déficit" : "Sobrante"}</div>
-                <div style={{ ...mono, fontSize:isMobile?20:24, fontWeight:800, color: efficiency > 100 ? "#FCA5A5" : "#86EFAC", lineHeight:1 }}>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: isMobile ? 12 : 14 }}>
+                <div style={{ fontSize: 11, color: C.text4, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{efficiency > 100 ? "Déficit" : "Sobrante"}</div>
+                <div style={{ ...mono, fontSize: isMobile ? 22 : 26, fontWeight: 600, color: efficiency > 100 ? "#FCA5A5" : "#86EFAC", lineHeight: 1, letterSpacing: "-.015em" }}>
                   {efficiency > 100 ? `+${fmt(deficit)}` : fmt(surplus)}
                 </div>
-                <div style={{ fontSize:10, color:"#DBEAFE", marginTop:3, fontWeight:600 }}>créditos</div>
+                <div style={{ fontSize: 11, color: C.text4, marginTop: 5 }}>créditos</div>
               </div>
             </div>
 
             {/* Recommendation */}
-            <div style={{ background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:10, padding:isMobile?12:14 }}>
-              <div style={{ fontSize:11, color:"#DBEAFE", fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>💡 Recomendación</div>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 8, padding: isMobile ? 12 : 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                <Info size={12} color={C.text4} strokeWidth={2} />
+                <div style={{ fontSize: 10, color: C.text4, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em" }}>Recomendación</div>
+              </div>
               {efficiency > 100 ? (
-                <div style={{ fontSize:isMobile?12:13, lineHeight:1.55, color:"#FFFFFF" }}>
-                  <strong>Tu consumo supera lo comprado.</strong> Estás usando {fmt(deficit)} créditos más al año de lo que tu propuesta cubre. Podrías necesitar un upgrade a <strong style={{ color:"#FEF3C7" }}>{fmt(recommendedAnnual)} créditos</strong> para tu próxima renovación (incluye 10% de buffer para crecimiento).
+                <div style={{ fontSize: isMobile ? 12 : 13, lineHeight: 1.55, color: "#FFFFFF" }}>
+                  <strong style={{ fontWeight: 600 }}>Tu consumo supera lo comprado.</strong> Estás usando {fmt(deficit)} créditos más al año de lo que tu propuesta cubre. Para tu próxima renovación considera contratar <strong style={{ color: "#FEF3C7", fontWeight: 600 }}>{fmt(recommendedAnnual)} créditos</strong> (incluye 10% de buffer para crecimiento).
                 </div>
               ) : efficiency < 70 ? (
-                <div style={{ fontSize:isMobile?12:13, lineHeight:1.55, color:"#FFFFFF" }}>
-                  <strong>Estás muy por debajo de tu pool comprado.</strong> Solo usas el {efficiency.toFixed(1)}% de tus créditos. Para tu próxima renovación podrías considerar <strong style={{ color:"#FEF3C7" }}>{fmt(recommendedAnnual)} créditos</strong> (basado en tu consumo + 10% de buffer) y ahorrar significativamente.
+                <div style={{ fontSize: isMobile ? 12 : 13, lineHeight: 1.55, color: "#FFFFFF" }}>
+                  <strong style={{ fontWeight: 600 }}>Estás muy por debajo de tu pool comprado.</strong> Solo usas el {efficiency.toFixed(1)}% de tus créditos. Para tu próxima renovación podrías considerar <strong style={{ color: "#FEF3C7", fontWeight: 600 }}>{fmt(recommendedAnnual)} créditos</strong> (basado en tu consumo + 10% de buffer) y optimizar tu inversión.
                 </div>
               ) : (
-                <div style={{ fontSize:isMobile?12:13, lineHeight:1.55, color:"#FFFFFF" }}>
-                  <strong>Tu pool está bien dimensionado</strong> con un sobrante saludable de {fmt(surplus)} créditos. Para tu próxima renovación, basado en tu consumo proyectado podrías mantener algo similar o considerar <strong style={{ color:"#FEF3C7" }}>{fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer).
+                <div style={{ fontSize: isMobile ? 12 : 13, lineHeight: 1.55, color: "#FFFFFF" }}>
+                  <strong style={{ fontWeight: 600 }}>Tu pool está bien dimensionado</strong> con un sobrante saludable de {fmt(surplus)} créditos. Para tu próxima renovación podrías mantener algo similar o considerar <strong style={{ color: "#FEF3C7", fontWeight: 600 }}>{fmt(recommendedAnnual)} créditos</strong> (consumo + 10% buffer).
                 </div>
               )}
             </div>
@@ -3769,70 +3801,77 @@ function ClientApp() {
 
         {!isMobile && (totalCredits > 0 || hasUsage || hasProposal) && (
           <div style={{
-            backgroundColor:C.blue,
-            background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
-            color:"#FFFFFF", borderRadius:14, padding:24,
-            display:"flex", alignItems:"center", justifyContent:"space-between", gap:16,
-            boxShadow:"0 10px 30px rgba(30,64,175,.25)", marginBottom:18
+            background: C.text,
+            color: "#FFFFFF", borderRadius: 12, padding: 22,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+            marginBottom: 18
           }}>
             <div>
-              <div style={{ fontSize:12, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700, marginBottom:4 }}>
+              <div style={{ fontSize: 11, color: C.text4, textTransform: "uppercase", letterSpacing: ".08em", fontWeight: 600, marginBottom: 6 }}>
                 {totalCredits > 0 ? "Total cotización" : hasComparative ? "Análisis listo" : hasUsage ? "Consumo proyectado" : "Pool comprado"}
               </div>
-              <div style={{ display:"flex", alignItems:"baseline", gap:10 }}>
-                <span style={{ ...mono, fontSize:38, fontWeight:800, letterSpacing:"-.02em", color:"#FFFFFF" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                <span style={{ ...mono, fontSize: 36, fontWeight: 600, letterSpacing: "-.02em", color: "#FFFFFF" }}>
                   {totalCredits > 0 ? fmt(totalCredits) : hasUsage ? fmt(usageAnnualTotal) : fmt(proposalEffectiveTotal)}
                 </span>
-                <span style={{ fontSize:14, color:"#DBEAFE", fontWeight:500 }}>
-                  créditos Vision One{totalCredits === 0 && hasUsage ? "/año" : ""}
+                <span style={{ fontSize: 13, color: C.text4 }}>
+                  créditos Vision One{totalCredits === 0 && hasUsage ? " / año" : ""}
                 </span>
               </div>
             </div>
-            <div style={{ display:"flex", gap:10 }}>
+            <div style={{ display: "flex", gap: 10 }}>
               <button onClick={handleDownloadPdf} disabled={pdfLoading}
-                style={{ padding:"12px 18px", background: pdfLoading ? "#E0E7FF" : "#fff", color:C.blue, border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", opacity: pdfLoading ? 0.7 : 1 }}>
-                {pdfLoading ? "⏳ Generando PDF..." : "⬇ Descargar PDF"}
+                style={{ padding: "10px 14px", background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: pdfLoading ? "wait" : "pointer", whiteSpace: "nowrap", opacity: pdfLoading ? 0.7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
+                {pdfLoading ? (
+                  <><span style={{ display: "inline-block", width: 12, height: 12, border: `1.5px solid #fff`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}></span> <span>Generando...</span></>
+                ) : (
+                  <><Download size={13} color="#fff" strokeWidth={2.25} /> <span>Descargar PDF</span></>
+                )}
               </button>
               <button onClick={sendWhatsApp}
-                style={{ padding:"12px 18px", background:"#25D366", color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
-                💬 Solicitar cotización
+                style={{ padding: "10px 14px", background: "#25D366", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+                <Mail size={13} color="#fff" strokeWidth={2.25} />
+                <span>Solicitar cotización</span>
               </button>
             </div>
           </div>
         )}
 
-        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:"14px 18px", fontSize:12, color:C.text2, lineHeight:1.6 }}>
-          <strong style={{ color:C.text }}>📋 ¿Qué son los créditos Vision One?</strong> Trend Micro vende su plataforma de seguridad mediante un modelo de créditos prepagados. Cada producto consume una cantidad de créditos según su uso. Esta calculadora te ayuda a estimar tu requerimiento. <strong style={{ color:C.text }}>Para conocer el precio final</strong>, contacta a Nextcom Systems.
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 18px", fontSize: 12, color: C.text2, lineHeight: 1.6, display: "flex", gap: 10, alignItems: "flex-start" }}>
+          <Info size={14} color={C.text2} strokeWidth={1.75} style={{ marginTop: 2, flexShrink: 0 }} />
+          <div>
+            <strong style={{ color: C.text, fontWeight: 600 }}>¿Qué son los créditos Vision One?</strong> Trend Micro vende su plataforma de seguridad mediante un modelo de créditos prepagados. Cada producto consume una cantidad de créditos según su uso. Esta calculadora te ayuda a estimar tu requerimiento. <strong style={{ color: C.text, fontWeight: 600 }}>Para conocer el precio final</strong>, contacta a Nextcom Systems.
+          </div>
         </div>
       </main>
 
       {isMobile && (totalCredits > 0 || hasUsage || hasProposal) && (
         <div style={{
-          position:"fixed", bottom:0, left:0, right:0,
-          backgroundColor:C.blue,
-          background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`, color:"#FFFFFF",
-          padding:"14px 16px calc(14px + env(safe-area-inset-bottom, 0px))",
-          boxShadow:"0 -4px 16px rgba(0,0,0,.15)", zIndex:90
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          background: C.text, color: "#FFFFFF",
+          padding: "12px 14px calc(12px + env(safe-area-inset-bottom, 0px))",
+          borderTop: `1px solid ${C.text}`, zIndex: 90
         }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:10 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
             <div>
-              <div style={{ fontSize:10, color:"#DBEAFE", textTransform:"uppercase", letterSpacing:".08em", fontWeight:700 }}>
+              <div style={{ fontSize: 10, color: C.text4, textTransform: "uppercase", letterSpacing: ".08em", fontWeight: 600 }}>
                 {totalCredits > 0 ? "Total cotización" : hasComparative ? "Análisis" : hasUsage ? "Consumo anual" : "Pool comprado"}
               </div>
-              <div style={{ ...mono, fontSize:24, fontWeight:800, letterSpacing:"-.01em", color:"#FFFFFF" }}>
+              <div style={{ ...mono, fontSize: 22, fontWeight: 600, letterSpacing: "-.015em", color: "#FFFFFF" }}>
                 {totalCredits > 0 ? fmt(totalCredits) : hasUsage ? fmt(usageAnnualTotal) : fmt(proposalEffectiveTotal)}
               </div>
             </div>
-            <div style={{ fontSize:10, color:"#DBEAFE", textAlign:"right", fontWeight:600 }}>créditos<br/>Vision One</div>
+            <div style={{ fontSize: 10, color: C.text4, textAlign: "right", fontWeight: 500 }}>créditos<br />Vision One</div>
           </div>
-          <div style={{ display:"flex", gap:8 }}>
+          <div style={{ display: "flex", gap: 8 }}>
             <button onClick={handleDownloadPdf} disabled={pdfLoading}
-              style={{ flex:1, padding:"11px", background: pdfLoading ? "#E0E7FF" : "#fff", color:C.blue, border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", opacity: pdfLoading ? 0.7 : 1 }}>
-              {pdfLoading ? "⏳..." : "⬇ PDF"}
+              style={{ flex: 1, padding: "10px", background: "rgba(255,255,255,.1)", color: "#fff", border: "1px solid rgba(255,255,255,.2)", borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: pdfLoading ? "wait" : "pointer", opacity: pdfLoading ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              {pdfLoading ? <span>...</span> : <><Download size={12} color="#fff" strokeWidth={2.25} /> <span>PDF</span></>}
             </button>
             <button onClick={sendWhatsApp}
-              style={{ flex:2, padding:"11px", background:"#25D366", color:"#fff", border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>
-              💬 Solicitar cotización
+              style={{ flex: 2, padding: "10px", background: "#25D366", color: "#fff", border: "none", borderRadius: 7, fontSize: 12, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+              <Mail size={12} color="#fff" strokeWidth={2.25} />
+              <span>Solicitar cotización</span>
             </button>
           </div>
         </div>
@@ -4110,15 +4149,17 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
             }}>
               {/* Family header */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 20 }}>
-                  {fa.familyKey === "endpoint" ? "💻" : fa.familyKey === "email" ? "📧" : "🔐"}
-                </span>
+                {(() => {
+                  const FamilyIcon = fa.familyKey === "endpoint" ? Shield : fa.familyKey === "email" ? Mail : AlertTriangle;
+                  return <FamilyIcon size={18} color={C.text2} strokeWidth={1.75} style={{ flexShrink: 0 }} />;
+                })()}
                 <div style={{ flex: 1, minWidth: 180 }}>
-                  <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: "#0C0A09" }}>{fa.familyName}</div>
+                  <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 600, color: "#0C0A09", letterSpacing: "-.005em" }}>{fa.familyName}</div>
                 </div>
                 {fa.hasTierEscalation && (
-                  <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 5 }}>
-                    ⚠ Detectamos uso de un tier superior
+                  <span style={{ background: "#FEF3C7", color: "#92400E", fontSize: 10, fontWeight: 600, padding: "3px 9px", borderRadius: 5, display: "flex", alignItems: "center", gap: 4 }}>
+                    <AlertTriangle size={11} color="#92400E" strokeWidth={2} />
+                    <span>Tier superior detectado</span>
                   </span>
                 )}
               </div>
@@ -4127,8 +4168,9 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 10 : 14 }}>
                 {/* COMPRADO */}
                 <div style={{ background: "#FAFAF9", border: "1px solid #E7E5E4", borderRadius: 9, padding: isMobile ? 12 : 14 }}>
-                  <div style={{ fontSize: 10, color: "#57534E", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
-                    📦 Lo que compraste
+                  <div style={{ fontSize: 10, color: "#57534E", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                    <Package size={11} color="#57534E" strokeWidth={2} />
+                    <span>Lo que compraste</span>
                   </div>
                   {fa.totalBoughtQty > 0 ? (
                     <>
@@ -4159,8 +4201,9 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
 
                 {/* USADO */}
                 <div style={{ background: "#FAFAF9", border: "1px solid #E7E5E4", borderRadius: 9, padding: isMobile ? 12 : 14 }}>
-                  <div style={{ fontSize: 10, color: "#57534E", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
-                    🔍 Lo que estás usando
+                  <div style={{ fontSize: 10, color: "#57534E", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                    <Search size={11} color="#57534E" strokeWidth={2} />
+                    <span>Lo que estás usando</span>
                   </div>
                   {fa.totalUsedQty > 0 ? (
                     <>
@@ -4352,9 +4395,9 @@ function AuditPanel({ audit, isMobile, mode = "client", salePricePerCredit = 0, 
             <div style={{ background: "#fff", borderRadius: 8, padding: 12, fontSize: 12, color: "#0C0A09", lineHeight: 1.6 }}>
               <div style={{ fontWeight: 700, color: "#991B1B", marginBottom: 6 }}>💡 ¿Qué significa esto?</div>
               {isInternal ? (
-                <>Cliente está pagando overages PAYG (pay-as-you-go) sobre el contrato anual. Trend factura el exceso de uso por hora/mes adicional al pool comprado. <strong>Oportunidad CRÍTICA</strong> de upsell para próxima renovación con un pool ampliado de al menos <strong>{fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos</strong> (consumo actual + 10% buffer).</>
+                <>Cliente está consumiendo por encima del pool contratado. El pool se agotará antes del fin del periodo si no se ajusta. <strong>Oportunidad CRÍTICA</strong> de upsell para próxima renovación con un pool ampliado de al menos <strong>{fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos</strong> (consumo actual + 10% buffer) para garantizar cobertura completa.</>
               ) : (
-                <>Cuando tu consumo supera el pool contratado, Trend Micro factura el excedente como cargos adicionales sobre tu contrato anual (modelo "pay-as-you-go"). Para la próxima renovación, te recomendamos contratar un pool de aproximadamente <strong>{fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos</strong> (tu consumo actual + 10% de margen). <strong>Conversa con tu partner Trend Micro</strong> para revisar opciones.</>
+                <>Cuando tu consumo supera el pool contratado, el pool se agota antes del fin del periodo. Para la próxima renovación, te recomendamos contratar un pool de aproximadamente <strong>{fmt(Math.ceil(audit.totalAnnualUsage * 1.1 / 100) * 100)} créditos</strong> (tu consumo actual + 10% de margen) para garantizar cobertura completa durante el periodo. <strong>Conversa con tu partner Trend Micro</strong> para revisar opciones.</>
               )}
             </div>
           </div>
