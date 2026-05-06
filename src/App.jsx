@@ -2603,7 +2603,7 @@ function ClientApp() {
             return null;
           }
           existingProdIds.add(item.prodId);
-          const prod = catalog.find(p => p.id === item.prodId);
+          const prod = CATALOG.find(p => p.id === item.prodId);
           if (!prod || !prod.credits) return null;
           const annualCr = (Number(item.monthly) || 0) * 12;
           const estimatedQty = Math.round(annualCr / prod.credits);
