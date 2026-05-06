@@ -1977,10 +1977,40 @@ function LineCard({ line, onUpdate, onDelete, idx, isMobile }) {
             style={{ width:"100%", textAlign:"left", background:"none", border:`1px solid ${prod ? "transparent" : C.border}`, borderRadius:8, padding:"8px 12px", cursor:"pointer", minHeight:44 }}>
             {prod ? (
               <div>
-                <div style={{ fontSize:isMobile?15:16, fontWeight:600, color:C.text, lineHeight:1.3 }}>
-                  {CAT_ICONS[prod.cat] || "•"}  {prod.name}
+                <div style={{ fontSize:isMobile?15:16, fontWeight:600, color:C.text, lineHeight:1.3, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                  <span>{CAT_ICONS[prod.cat] || "•"}  {prod.name}</span>
+                  {line.origin === "from_usage" && (
+                    <span style={{ fontSize:10, padding:"2px 7px", background:"#EFF6FF", color:"#1E40AF", borderRadius:4, fontWeight:600, letterSpacing:".02em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
+                      del consumo
+                    </span>
+                  )}
+                  {line.origin === "from_proposal" && (
+                    <span style={{ fontSize:10, padding:"2px 7px", background:"#FFFBEB", color:"#92400E", borderRadius:4, fontWeight:600, letterSpacing:".02em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
+                      del contrato
+                    </span>
+                  )}
+                  {(line.origin === "edited_usage" || line.origin === "edited_proposal") && (
+                    <span style={{ fontSize:10, padding:"2px 7px", background:"#FEF3C7", color:"#854D0E", borderRadius:4, fontWeight:600, letterSpacing:".02em", textTransform:"uppercase", whiteSpace:"nowrap" }}>
+                      editado
+                    </span>
+                  )}
                 </div>
                 {desc && <div style={{ fontSize:12, color:C.text2, marginTop:4, lineHeight:1.4 }}>{desc}</div>}
+                {line.origin === "from_usage" && line.originMeta && (
+                  <div style={{ fontSize:11, color:C.text3, marginTop:4, lineHeight:1.4 }}>
+                    Detectado: {fmt(line.originMeta.monthlyCr)} cr/mes ({fmt(line.originMeta.annualCr)} cr/año){line.originMeta.monthLabel ? ` · ${line.originMeta.monthLabel}` : ""}
+                  </div>
+                )}
+                {line.origin === "edited_usage" && line.originMeta && (
+                  <div style={{ fontSize:11, color:C.text3, marginTop:4, lineHeight:1.4 }}>
+                    Original: {fmt(line.originMeta.monthlyCr)} cr/mes (estimado del consumo)
+                  </div>
+                )}
+                {line.origin === "from_proposal" && line.originMeta && (
+                  <div style={{ fontSize:11, color:C.text3, marginTop:4, lineHeight:1.4 }}>
+                    Del contrato {line.originMeta.sourceFile ? `· ${line.originMeta.sourceFile}` : ""}
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ color:C.text3, fontSize:14, display:"flex", alignItems:"center", gap:6 }}>
@@ -2379,12 +2409,35 @@ function downloadEstimate(data) {
     </table>
   </div>`;
 
-  // Document title based on what was included
-  const docTitle = hasComparative
-    ? `Análisis Vision One${clientName ? " — " + clientName : ""}`
-    : hasUsage
-    ? `Análisis de Consumo Vision One${clientName ? " — " + clientName : ""}`
-    : `Estimado Vision One${clientName ? " — " + clientName : ""}`;
+  // ════════════════════════════════════════════════════════════════════════
+  // SMART PDF MODE: detecta el contexto y adapta el documento
+  // ════════════════════════════════════════════════════════════════════════
+  let pdfMode, docTitle, docSubtitle;
+  if (hasComparative) {
+    pdfMode = "comparative";
+    docTitle = `Análisis Comparativo Vision One${clientName ? " — " + clientName : ""}`;
+    docSubtitle = "Lo contratado vs lo consumido · Recomendación de renovación";
+  } else if (hasUsage && hasNewQuote) {
+    pdfMode = "usage_with_quote";
+    docTitle = `Análisis de Consumo y Recomendación${clientName ? " — " + clientName : ""}`;
+    docSubtitle = "Consumo actual y propuesta de pool dimensionado";
+  } else if (hasUsage) {
+    pdfMode = "usage_only";
+    docTitle = `Análisis de Consumo Vision One${clientName ? " — " + clientName : ""}`;
+    docSubtitle = `Reporte de consumo${usageMonth ? ` · ${usageMonth}` : ""}`;
+  } else if (hasProposal && hasNewQuote) {
+    pdfMode = "proposal_with_quote";
+    docTitle = `Estimado Vision One${clientName ? " — " + clientName : ""}`;
+    docSubtitle = "Resumen de contrato actual y nueva cotización";
+  } else if (hasProposal) {
+    pdfMode = "proposal_only";
+    docTitle = `Resumen de Contrato Vision One${clientName ? " — " + clientName : ""}`;
+    docSubtitle = `Pool contratado${proposalPeriod ? ` · ${proposalPeriod}` : ""}`;
+  } else {
+    pdfMode = "quote_only";
+    docTitle = `Estimado Vision One${clientName ? " — " + clientName : ""}`;
+    docSubtitle = "Cálculo de créditos requeridos";
+  }
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${docTitle}</title>
 <style>
@@ -2402,7 +2455,7 @@ function downloadEstimate(data) {
     <div style="display:flex;align-items:center;gap:14px">
       <img src="${NEXTCOM_LOGO}" alt="Nextcom" style="height:38px;width:auto" />
       <div style="border-left:1px solid #E7E5E4;padding-left:14px">
-        <div style="font-size:11px;color:#A8A29E;font-weight:500">${hasComparative ? "Análisis de Consumo y Optimización" : hasUsage && !hasNewQuote ? "Análisis de Consumo Mensual" : "Estimado de Créditos"}</div>
+        <div style="font-size:11px;color:#A8A29E;font-weight:500">${docSubtitle}</div>
         <div style="font-size:14px;color:#0C0A09;font-weight:700;letter-spacing:-.01em">Trend Vision One${clientName ? ` · ${clientName}` : ""}</div>
       </div>
     </div>
@@ -2452,9 +2505,15 @@ function downloadEstimate(data) {
 </div>
 </body></html>`;
 
-  const filename = hasComparative
-    ? `Analisis_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.pdf`
-    : `Estimado_VisionOne_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+  const filenamePrefix = (
+    pdfMode === "comparative" ? "Analisis_Comparativo" :
+    pdfMode === "usage_with_quote" ? "Analisis_Consumo_Recomendacion" :
+    pdfMode === "usage_only" ? "Analisis_Consumo" :
+    pdfMode === "proposal_with_quote" ? "Estimado_VisionOne" :
+    pdfMode === "proposal_only" ? "Resumen_Contrato" :
+    "Estimado_VisionOne"
+  );
+  const filename = `${filenamePrefix}_${(clientName || "cliente").replace(/\s+/g,"_")}_${new Date().toISOString().split("T")[0]}.pdf`;
 
   // Generar PDF real desde el HTML
   return generatePdfFromHtml(html, filename).catch(err => {
@@ -2466,16 +2525,14 @@ function downloadEstimate(data) {
 
 function ClientApp() {
   const isMobile = useIsMobile();
-  const [lines, setLines] = useState(() => {
-    const d = defaultDates();
-    return [{ rowId: 1, prodId: null, qty: 0, date: d.date, startDate: d.startDate }];
-  });
-  const [rc, setRc] = useState(2);
+  const [lines, setLines] = useState([]);
+  const [rc, setRc] = useState(1);
   const [clientName, setClientName] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [autofillToast, setAutofillToast] = useState(""); // toast feedback "8 productos detectados..."
 
   // Wrapper para descargar PDF con loading state
   const handleDownloadPdf = async () => {
@@ -2520,6 +2577,125 @@ function ClientApp() {
   const [unifyOpen, setUnifyOpen] = useState(false);
   const [unifyTargetDate, setUnifyTargetDate] = useState("");
   const [unifyStartDate, setUnifyStartDate] = useState(""); // empty = use today
+
+  // ════════════════════════════════════════════════════════════════════════
+  // AUTOFILL HELPERS
+  // Toman los items detectados por IA (consumo o propuesta) y rellenan el
+  // selector manual `lines`. Cada línea queda marcada con su origen para
+  // trazabilidad ("from_usage", "from_proposal", "manual").
+  // Si ya hay una línea manual con el mismo producto, se conserva el manual
+  // (asumimos que el cliente sabe lo que quiere).
+  // ════════════════════════════════════════════════════════════════════════
+  const autofillFromUsage = (newUsageItems, monthLabel) => {
+    if (!newUsageItems || newUsageItems.length === 0) return;
+    const d = defaultDates();
+    setLines(prev => {
+      const existingProdIds = new Set(prev.filter(l => l.prodId).map(l => l.prodId));
+      const startId = prev.length > 0 ? Math.max(...prev.map(l => l.rowId)) : 0;
+      let nextId = startId + 1;
+      const skipped = [];
+
+      const fromUsage = newUsageItems
+        .filter(item => item.prodId)
+        .map(item => {
+          if (existingProdIds.has(item.prodId)) {
+            skipped.push(item.name);
+            return null;
+          }
+          existingProdIds.add(item.prodId);
+          const prod = catalog.find(p => p.id === item.prodId);
+          if (!prod || !prod.credits) return null;
+          const annualCr = (Number(item.monthly) || 0) * 12;
+          const estimatedQty = Math.round(annualCr / prod.credits);
+          if (estimatedQty <= 0) return null;
+          return {
+            rowId: nextId++,
+            prodId: item.prodId,
+            qty: estimatedQty,
+            date: d.date,
+            startDate: d.startDate,
+            origin: "from_usage",
+            originMeta: {
+              monthlyCr: Number(item.monthly) || 0,
+              annualCr,
+              monthLabel: monthLabel || "",
+              detectedName: item.name
+            }
+          };
+        })
+        .filter(Boolean);
+
+      if (fromUsage.length === 0) {
+        if (skipped.length > 0) {
+          setAutofillToast(`${skipped.length} producto${skipped.length === 1 ? "" : "s"} ya estaba${skipped.length === 1 ? "" : "n"} en el selector — mantuvimos las cantidades manuales.`);
+          setTimeout(() => setAutofillToast(""), 6000);
+        }
+        return prev;
+      }
+
+      setRc(nextId);
+      const total = fromUsage.length;
+      const skipMsg = skipped.length > 0 ? ` (${skipped.length} ya existía${skipped.length === 1 ? "" : "n"} y se mantuv${skipped.length === 1 ? "o" : "ieron"})` : "";
+      setAutofillToast(`${total} producto${total === 1 ? "" : "s"} agregado${total === 1 ? "" : "s"} desde el reporte de consumo${skipMsg}.`);
+      setTimeout(() => setAutofillToast(""), 6000);
+
+      return [...prev, ...fromUsage];
+    });
+  };
+
+  const autofillFromProposal = (newProposalItems) => {
+    if (!newProposalItems || newProposalItems.length === 0) return;
+    const d = defaultDates();
+    setLines(prev => {
+      const existingProdIds = new Set(prev.filter(l => l.prodId).map(l => l.prodId));
+      const startId = prev.length > 0 ? Math.max(...prev.map(l => l.rowId)) : 0;
+      let nextId = startId + 1;
+      const skipped = [];
+
+      const fromProposal = newProposalItems
+        .filter(item => item.prodId && Number(item.qty) > 0)
+        .map(item => {
+          if (existingProdIds.has(item.prodId)) {
+            skipped.push(item.name);
+            return null;
+          }
+          existingProdIds.add(item.prodId);
+          const startDate = item.startDate || d.startDate;
+          const endDate = item.endDate || d.date;
+          return {
+            rowId: nextId++,
+            prodId: item.prodId,
+            qty: Number(item.qty),
+            date: endDate,
+            startDate,
+            origin: "from_proposal",
+            originMeta: {
+              creditsPerUnit: item.creditsPerUnit,
+              totalCredits: item.totalCredits,
+              sourceFile: item.sourceFile,
+              detectedName: item.name
+            }
+          };
+        })
+        .filter(Boolean);
+
+      if (fromProposal.length === 0) {
+        if (skipped.length > 0) {
+          setAutofillToast(`${skipped.length} producto${skipped.length === 1 ? "" : "s"} ya estaba${skipped.length === 1 ? "" : "n"} en el selector — mantuvimos las cantidades.`);
+          setTimeout(() => setAutofillToast(""), 6000);
+        }
+        return prev;
+      }
+
+      setRc(nextId);
+      const total = fromProposal.length;
+      const skipMsg = skipped.length > 0 ? ` (${skipped.length} ya existía${skipped.length === 1 ? "" : "n"})` : "";
+      setAutofillToast(`${total} producto${total === 1 ? "" : "s"} agregado${total === 1 ? "" : "s"} desde la propuesta${skipMsg}.`);
+      setTimeout(() => setAutofillToast(""), 6000);
+
+      return [...prev, ...fromProposal];
+    });
+  };
 
   // Helper: process one usage file and return parsed items
   const processOneUsageFile = async (file, attempt = 1) => {
@@ -2625,6 +2801,11 @@ function ClientApp() {
     setUsageLoading(false);
     setUsageProgress("");
     if (usageFileRef.current) usageFileRef.current.value = "";
+
+    // 🎯 AUTOFILL: rellena el selector manual con productos detectados
+    if (newItems.length > 0) {
+      autofillFromUsage(newItems, earliestMonth);
+    }
   };
 
   // Helper: process one proposal file
@@ -2842,6 +3023,11 @@ function ClientApp() {
     setProposalLoading(false);
     setProposalProgress("");
     if (proposalFileRef.current) proposalFileRef.current.value = "";
+
+    // 🎯 AUTOFILL: rellena el selector manual con productos comprados
+    if (newItems.length > 0) {
+      autofillFromProposal(newItems);
+    }
   };
 
   const updateUsageItem = (rowId, field, value) => {
@@ -2944,15 +3130,25 @@ function ClientApp() {
 
   const addLine = () => {
     const d = defaultDates();
-    setLines(p => [...p, { rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]);
-    setRc(c => c+1);
+    setLines(p => [...p, { rowId: rc, prodId: null, qty: 0, date: d.date, startDate: d.startDate, origin: "manual" }]);
+    setRc(c => c + 1);
   };
-  const updateLine = (row) => setLines(p => p.map(l => l.rowId===row.rowId ? row : l));
-  const deleteLine = (id) => setLines(p => {
-    if (p.length > 1) return p.filter(l => l.rowId!==id);
-    const d = defaultDates();
-    return [{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }];
-  });
+  const updateLine = (row) => setLines(p => p.map(l => {
+    if (l.rowId !== row.rowId) return l;
+    // Si cambia el qty desde una línea autocompletada, marcar como editada
+    if (l.origin === "from_usage" && row.qty !== l.qty) {
+      return { ...row, origin: "edited_usage" };
+    }
+    if (l.origin === "from_proposal" && row.qty !== l.qty) {
+      return { ...row, origin: "edited_proposal" };
+    }
+    // Si cambia el producto entero, vuelve a manual (es otro producto)
+    if (l.prodId !== row.prodId && row.prodId !== null && l.prodId !== null) {
+      return { ...row, origin: "manual", originMeta: undefined };
+    }
+    return row;
+  }));
+  const deleteLine = (id) => setLines(p => p.filter(l => l.rowId !== id));
 
   const sendWhatsApp = () => {
     const summary = lines.filter(l => l.prodId && l.qty > 0).map(l => {
@@ -3065,22 +3261,59 @@ function ClientApp() {
           </div>
         </div>
 
+        {/* Toast de feedback de autofill */}
+        {autofillToast && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 14px", background: "#EFF6FF",
+            border: "1px solid #DBEAFE", borderRadius: 10,
+            marginBottom: 14, fontSize: 13, color: "#1E3A8A",
+            lineHeight: 1.5
+          }}>
+            <Sparkles size={14} color="#1E40AF" strokeWidth={2} style={{ flexShrink: 0 }} />
+            <span>{autofillToast}</span>
+            <button onClick={() => setAutofillToast("")}
+              style={{ marginLeft: "auto", background: "transparent", border: "none", color: "#1E40AF", cursor: "pointer", padding: 4, display: "flex", flexShrink: 0 }}>
+              <X size={14} strokeWidth={2.25} />
+            </button>
+          </div>
+        )}
+
         {/* Container unificado del selector + agregar */}
         <div style={{
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12,
           overflow: "hidden", marginBottom: 28
         }}>
-          {lines.length === 0 || (lines.length === 1 && !lines[0].picked) ? null : (
-            <>
-              {lines.map((line, idx) => (
-                <LineCard key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} isMobile={isMobile} />
-              ))}
-            </>
+          {lines.length === 0 ? (
+            // Estado vacío
+            <div style={{
+              padding: isMobile ? "32px 20px" : "44px 28px",
+              textAlign: "center"
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: C.bg, border: `1px solid ${C.border}`,
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                marginBottom: 12
+              }}>
+                <Package size={20} color={C.text3} strokeWidth={1.5} />
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: C.text, marginBottom: 4 }}>
+                Aún no has agregado productos
+              </div>
+              <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55, maxWidth: 380, margin: "0 auto" }}>
+                Agrega productos manualmente o sube un documento más abajo y los completaremos por ti.
+              </div>
+            </div>
+          ) : (
+            lines.map((line, idx) => (
+              <LineCard key={line.rowId} line={line} idx={idx} onUpdate={updateLine} onDelete={deleteLine} isMobile={isMobile} />
+            ))
           )}
           <button onClick={addLine} style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start",
             gap: 8, padding: "16px 18px", background: C.surface, border: "none",
-            borderTop: lines.length > 0 ? `1px solid ${C.border}` : "none",
+            borderTop: `1px solid ${C.border}`,
             cursor: "pointer", color: C.blue, fontSize: 13, fontWeight: 500,
             textAlign: "left", transition: "background .15s"
           }}
@@ -3229,11 +3462,14 @@ function ClientApp() {
           {/* Detected usage table */}
           {usageItems.length > 0 && (
             <>
-              <div style={{ fontSize:12, color:C.text2, marginBottom:10, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-                <span>✅ Detectamos <strong style={{ color:C.text }}>{usageItems.length} productos</strong></span>
-                {usageMonth && <><span>·</span><span>Mes: <strong style={{ color:C.text }}>{usageMonth}</strong></span></>}
-                <span>·</span>
-                <span style={{ color:C.text3, fontSize:11 }}>Edita las cantidades si necesitas</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "#065F46", lineHeight: 1.5 }}>
+                <Sparkles size={13} color="#065F46" strokeWidth={2} style={{ flexShrink: 0 }} />
+                <div>
+                  <strong style={{ fontWeight: 600 }}>{usageItems.length} producto{usageItems.length === 1 ? "" : "s"}</strong> detectado{usageItems.length === 1 ? "" : "s"} y agregado{usageItems.length === 1 ? "" : "s"} arriba en tu cotización{usageMonth ? ` · ${usageMonth}` : ""}. Las cantidades se estimaron a partir del consumo mensual.
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: C.text3, marginBottom: 10, lineHeight: 1.5 }}>
+                Detalle del consumo mensual original (referencia, no editable):
               </div>
 
               {/* Items table - desktop */}
@@ -3449,6 +3685,14 @@ function ClientApp() {
 
           {hasProposal && (
             <>
+              {proposalItems.length > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#ECFDF5", border: "1px solid #A7F3D0", borderRadius: 8, marginBottom: 12, fontSize: 12, color: "#065F46", lineHeight: 1.5 }}>
+                  <Sparkles size={13} color="#065F46" strokeWidth={2} style={{ flexShrink: 0 }} />
+                  <div>
+                    <strong style={{ fontWeight: 600 }}>{proposalItems.length} producto{proposalItems.length === 1 ? "" : "s"}</strong> del contrato agregado{proposalItems.length === 1 ? "" : "s"} arriba en tu cotización con sus cantidades originales.
+                  </div>
+                </div>
+              )}
               {/* Summary bar */}
               <div style={{ display:"flex", flexWrap:"wrap", gap:isMobile?10:14, marginBottom:14, padding:"12px 14px", background:C.surface, borderRadius:8, border:`1px solid ${C.border}` }}>
                 <div style={{ flex:isMobile?"1 1 100%":"none" }}>
