@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  AlertTriangle, BarChart3, Download, FileText, Info, Mail, Package,
-  Plus, Search, Shield, Sparkles, TrendingUp, Upload, X
+  AlertTriangle, BarChart3, Download, FileText, Info, Mail, MessageSquare, Package,
+  Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X
 } from "lucide-react";
 
 const TRENDAI_LOGO = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACbAZADASIAAhEBAxEB/8QAHQABAQADAQADAQAAAAAAAAAAAAgGBwkFAQIEA//EAFQQAAEDAwIDAwYHCQwHCQAAAAEAAgMEBQYHEQgSIRMxQRQiUWFxgQkyOHKRobIVFhhCUnN1grQ1NjdUV2KUorGz0tMXJHSDlaPRIyYzQ0VVhJLC/8QAGwEBAAEFAQAAAAAAAAAAAAAAAAUBAgQGBwP/xAAxEQEAAgECBAMHAwQDAAAAAAAAAQIDBBEFBiExEkFhE1FxgZGhsTLR8BQjQlKiwcL/2gAMAwEAAhEDEQA/ALLREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBF5VDfrfWZJcbBDKDWW+KGWdu/cJObl+z9YXqqkTE9l98dsc7WjbtPymN4+wi+sr2xxukfvytG52BJ+gLwbleb5ttZsYnqz4Pq6llMz/9P/qpNohdjw2yTtXb5zEfedmQItWX66a5MY59txnFuUdQxtY+V/8AWLAVrqt1z1Hxq6eQ5Ri1BFIOpikhkgc5vpa7mcCPWNwsa+rpT9UTHyTel5b1Wrj+xelp90XjdTCLXel+ruN5zIKBnPbbttv5HUOB7TbvMbh0dt6Oh9S2IvemSuSPFWd4RGr0efR5ZxZ6zW0eU/zqIiK9jCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAsX1MzS2YNjM12r3B8pBZS0wOzqiXbo0erxJ8Asb1O1jx7DTLQxw1Fxu4BDadsbo2A+lz3Dbb5u5UrZzlt7zK+Pu17qe1l25YomdI4Wfksb4D6z4rA1Wuriia162/DceXuU8+vvXNqI8OLv62+Hp6/R7OFajXixakvzGqe6qkrJXfdGMHbto3EbtHo5dhy+jlAVnY/d7ffrPTXa1VLKmjqWB8UjfEeg+gjuI8CufSzfSrUq+YDXk0n+uWyZ3NUUMjtmuP5TD+I/19x8QVH6PWeyna/aW58zcrxxHHGXTREZKxtt2iYjtHpMeX0n0txFh2nWo+N5zTg2mWoZUtG8tPNC5roz4+cByn3FZip2l63jes7w5FqNNm02ScWas1tHlIsfz7EbRmePTWi7QNcHAmGYDz4H7dHtPgR9Y6FZAh7lW1YtG0rcObJgyRkxztaOsS5+3CmuOOZJPSOlfTXG21bmdpGdiySN2wc0+0bhW9pjkRyvA7RfpA1s1VTjtgO4SNJa/+sCpC1vkil1byZ0O3L5cWnb8oNaHfWCqW4ZYJIdHbSZAQJZJ5GfNMrtv7FD8P3rmtSO37S6ZznWuo4Vp9VeNrzMf8q7zH1h+/WXVbGNKbVQ3LJ4rjJBXTmCLyOFsjg4N5uoLhsNlq/8ADI0k/iuT/wBAj/zE468HyzOMMx6ixOx1V2qKe4vlmZBy7saYiATuR4qRPwe9Zv5P7t/y/wDEply5Xf4ZGkn8Vyf+gR/5ifhkaSfxXJ/6BH/mKF87wXLcGq6alyyx1VpmqozJCyfl3e0HYkbE+K/LhmK5DmN6bZsZtU9zuDo3SiCHbmLW956kdyC8vwyNJP4rk/8AQI/8xZ9ozrfhuq9xuFDi8N2jloIWTTGsp2xgtc4gbbOO53Cgb8HvWb+T+7f8v/EqS4EtN84wXJsmqctxuttENVRQsgfPy7PcJCSBsT4FBWqIiAiIgIiICIm49IQEREBERAREQFPNdxf6U0dbPRzUuTdpBI6N+1CzbdpIO3/aepUMVx7yz99N1/22b+8cg6v6ZZrZ9QsMo8ssLKtlvrDIIhVRhknmPLDuAT4tPislWlOCD5NeNfPq/wBpkW60H1mkjhifLK9rI2NLnOcdg0DqSVPE3GLpHHM+MQZJIGuID2ULOV2x7xvJ3Fe9xoZ0cK0QuUVNN2dxvZ+5tNsdiA8HtXe6MOG/pcFzSQdTtGNbMK1YqblS4wbjHUW9jJJYq2ARuc15IDm7OduARsfRuPStlLl7woZz94etlluE83Z2+uf9z67c7DspSAHH1NfyO9xXUIIC0pqLxNac4JmdwxS909+dcKBzGzGno2PjJcxrxsS8b9HDwW6z3LmPxl/KTy787T/s8SC9dF9YMU1Zhuk2LxXONtsdE2fy2Bse5kDi3l2c7f4h39y9m55pHb8ofYZrBeXOZSvrDVsEHYdizbmfuZOboSG7cu+57tuqmf4NH9ys5/P0X2ZlU92xqjuV2luU007ZJbZNbS1pHL2crmuLu743mjbwQeVjupGMX+vstDbJqmWou9DJWxsMJBgYzYFs2/8A4b9yRynrux3oWYLGbXhFltlxt1fRRmGoo2OD3sa0Gqc6GOHtJSB5zuSJg39SyZAREQEREBEXm5TeqPHcdr73cHctNRQulft3u27mj1k7AesqkzERvK/HS2S0UrG8z0h9Mnx2y5NbH22+W6Ctp3Dukb1YfS13e0+sKTNatKq7A6zy6jdJWWGd/LFO4efA490cm31O7j6j3/Wxa0ZpbMuqb3JWuq6arnMk9umeTCGnuaz8ggAAEejqCqms1wx/UTBhUMjZWWu5QmOaGQdWnucxw8HNP1gEeCjZnDromI6WhvmKvEuU8lL5J8WG3eI7b+fwn3eU/iEFu/QzRY5DBBkeVxyRWp+z6ajBLX1I8HOPe1h8AOrvUO/4wbRt51mr7LdmOnstnLakvcOlSx53hYfbseb5hHiqkY1rGBjGhrQNgANgAvDRaLeZtkjt5JTmnmv2VK4NFbraImbR5RPWIj1mPp8e357ZQUVsoo6K3UkFJTRDZkULAxrR6gF+lEU12cttabTvM9Redkt3pbDj9dea14bT0cDpn7nv5Rvt7Sdh716Kmvip1BZWTjB7TOHRQPElykYejpB1bF7u8+vYeBXhqM0Ycc2lLcE4Xfiesrgr272n3R5/tHq0dM+vv9/fIGumr7lVFwaOpdLI/u+lyu/DrNFj2LWyyQ7FlFTMh3H4xA6n3nc+9Tpwq4K+5312ZXCH/Ure4sog4dJJ9ti4epgP0n1KoVh8NwzWs5J82zc88Tplz00eLtj7/GfL5R+QgHvXxsPQF8opNoSGPhJQBnOK7D/0yX++WHcA3XiDpd//AG2q+yFmPwkv7+cV/Rkv98sO4BflB0v6NqvshB0X2HoC52a7a16qWLWPLbPac3utJQUl1nhp4GObyxsDujR5vcF0UK5VcSn8Peb/AKaqPtINn/hY5vQ6T22wW+tkqcodJOa+81kbXuZGXkxtjbtyl2x6uI2AA2BPUawh1f1Sr71BLU6hZM4yTMDg25SMbtzDpytIAHuX6uHnR+86vZZLbaOobQWyia2S4Vzmc4ia47Na1vTme7Y7DcDYEnuVjWPhB0mt0MPlH3dr6iPZxmlruTdw8dmNACDcOoma2DAMPqsnySr8noqZoADRvJM8/FjY38Zx8B7SdgCVBuqXFhqVlFxmjxusGLWrmIiipA107m+BfKRvv83lHtXr/CCZxU3nVGDDIJ3C3WCnYXxg9HVMrQ5zj6dmFjR6PO9K8zgy0dsGot5uN+zB7ZLJaXsjZRmbs/Kp3Au2cQQeRoG5A23Lh123Qayj1f1UjqBUN1EyntAd+t0lI39hdst16JcXeVWa5U9s1FcL5Z3uDH1zYg2rph+UeUASNHiCOb0E9xq+4aU6O11oNqnwrFRTFvKOypYo3t9Ye3ZwPrB3XPjiV06pdMtUquw2yqdU2qeJlZQPc8OeInkjkcR3lrmuG/iAD4oOmVfd6euwmpvdmrWT081vfU0lTC7drmmMua9p+grmh+EBrL3f6Qbz3flM/wAKpHgazGpvGieXYjWTGQ2KKSSm5j1bBNHIeUeoPa8/rKICgprO+LrM6rGLRZMSeKCpit0Edyu08TX1E9SIwJCxp3axvNv1IJPf5q09PrBqpNWeVyah5R2u++4ucrR9AO31LdnCHw5WnPrC7Ns3NQ+0PldFQUMMhj8p5Ds+R7x1DAd2gN2JIPXYddv6y8Kentxwmunwm0vsl9pYHS0pjqJJI6hzQT2b2vcfjbbcw2IJB6jog1Lw7cVmS2/IqOwakV4ulmqpGxC5StDZ6Qk7Bz3DYPZueu45gOu522N2NcHNDgQQe4hcadiHbHor/rtUK+2cCtBlkVS8Xae1x2uCbfZ4m5zTl+/5Qa1zt/SEGNcSfFdUWO9VWJ6aimlqKV5iq7vK0SsbIOhbC09HbHoXu3G++wPepiuWs2q9xqnVNTqHkvaO6kRV74mj2NYQB7gsGpoJquripqeN8s0zwyNjRuXOJ2AHrJKv3SXhGwG043TSZ1SzX69yxh9S3yl8UEDiOrGBhBdt3czid+/YdyCcdMOKLVDErpAbveJcmtXOO3pLgQ+Qt8eSXbna7bu3JHpC0ve6qOuvVbWxNc2OoqJJWtd3gOcSAfX1Vr8QPCbizcRrr9pxBU265UMTpzb3TumiqmNG7mt5yXNfsDt1IPdsN9xDvig6WcEHya8a+fV/tMi3WtKcEHya8a+fV/tMi2bqHk1HhuD3nKK8jsLZSPqC0nbncB5rB63O2aPaghLj7zj749XWY1Szc9DjkHYEA9DUybPlPuHI32tK/rwTaU02e/flcbtCDQttUlrp3ubuG1FQ0+ePWxo3/XCnq+XOsvV7rbvcJTLWVtRJUVDz+M97i5x+kldNuFHCfvF0Qsduni7OvrY/uhWgjY9rMA4NPrazkb+qg5kXi31dovFXa66Mw1dFO+nnYe9j2OLXD3EFdQ+GbN/v/wBGLDfJpe0ro4fI6709vF5rifnDlf8ArKMeO/CzjOtc15p4uSiyGAVrCO4TDzJh7dw1x+esw+Dqzn7n5dd8Dq5toLrF5ZRtJ6CeIbPA9bo+v+7QXOe5cx+Mv5SeXfnaf9niXTg9y5j8Zfyk8u/O0/7PEg3t8Gj+5Wc/n6L7MysJR78Gj+5Wc/n6L7MysJAREQEREBERAWhuMDIX01htWNQSbGuldU1AB7449g0ewudv+qt8qTOLapkl1Pp4HE8kFsiDf1nyErC195rgnbzbTybpq5+K0m3asTb6dvvO7T6qrhGs9dQ4LW3SpmkFPcqvmpoT8UNYOQvHrcdx7GhSoTs0kd4G6vLTKjgodO8epacARstsBG3iSwEn3klR/DKeLLNvc3XnzVzi0FcMf52+0dfzs95kELKiSobEwSyNa17wOrg3fYH2bn6V/REU65FMzPcRfzqZ4aaB89RNHDDG0ufJI4Na0DvJJ6ALQGr+vUMcU1lwWUSyuBZLdNvNZ6eyB+Mf5x6Dw37145s9MNd7SkuGcJ1XE8vs9PXf3z5R8Z/ksh181agxWklx+wTslv0zdpJGncUTT4n+efAeHefAGfdL8JumoGVNoIHSsp2u7WvrHed2TCep3Pe93XYeJ69wK+NO8IyDUG/ugoQ/sg/nra+bdzIt+pLj+M8+A7z47DqrGwPErPhmPxWezwckbfOlld1fM/xe8+JP1dwUZSl9bk8d+lYb7q9XpeVtJOl0s+LPbvPu9Z/8x859fRsFpoLFZqW0WynbT0dLGI4ox4Aen0k95PiSv3IimIiIjaHMb3te02tO8yIiKq1DHwkv7+cV/Rkv98sO4BflB0v6NqvshZj8JL+/nFf0ZL/fLDuAX5QdL+jar7IQdGCuVXEp/D3m/wCmqj7S6qlcquJT+HvN/wBNVH2kFZfBwU0LNKb/AFbWATS3sse7xLWwR8o93M76VUbvilTF8HJ/A7ev09J/cQqnUHLfiuEg4iM07Xfm+6HTf8nkZy/VssbwvTvPMwt81fiuMXS7UsMvYyy0sRc1r9geU+vYg+9bw+EGwWqs+ptPm0EDjbr7AyOWQDoypibylp9G7A0j07O9CxLhQ1vbpJf62lvFLPWY9dOTylsABlgkbuGytB2B6EhzdxuNj4bEMZ/0Hax/yfZF/Rj/ANV8O0M1hcd3aeZCfbSn/qriqOKfROK2eWMyeaZ/LuKaO3T9qT6Ni0Df2nb1qcsz4yM9qcmrJcUobXQWUvApIayl7WYNA23e4O23J3Ow6DfbrtuQzHg10+zXDKTUGpyrHLjZ4amziOE1UXJ2jgJCdvTsP7VGXiF0X4c84z/UXSDJcpzRtCylljmgtopqXsudrIndo89TuOYho9bXLnR4hB1M4W4Y4OHzCmRNDWm1seR63EuP1krZZ7lrjhj/AIAMJ/REP9hWxyg475G1rchuLWgBoq5QAPDzyqRzJsp+D2w8s35BfnF+3o7Wq2+vZTfk3747l/tcv2yrW07wufPeAKHH6KLta/s6mpomDvdNFVPe1o9bti39ZBJWhppW6y4Y6t5fJxfaPn5u7btm966zBcbGPnpKpsjHSQzwvBaRu1zHA/UQQrk0o4xsWnxynpNQaSvobxBG1ktVSwdtDUkDbn2B5mOPeRsR6D4IKsnfHHC98zmtja0l5d3AeO/uXHa9Pp5LzWvpABTuqJDEP5pcdvq2VccQ/Fna75iVbi2ndLXtdcIjBVXOqYIuSJw2c2Jm5PMR05jtsCdhv1EeeKDpZwQfJrxr59X+0yLXPwi2ceQYlZ8CpJdp7pL5bWAHqIIjswH1Ok6/7tbF4IiBw042SdgH1fX/AOTIob4ls4OoGsl9vsUvaULJvJKDr07CLzWkfOPM/wDWQYJYqunoL1Q11XRMrqenqI5ZaZ7y1szWuBLCR1AO22/rVi27jhpBABW6cyteB/5F1Bb9cfRad0L4ccj1XwuryW33qhtccVWaWCOrieROWtBc7mbvsAXAdx8fQshqeDTVaOYtiuGLzMHc8Vsrd/cY0Hh8Sev8GsVmt1tOGx2l9vqTNDVGuM0mzm8rmbcjQAfNPtaFqjTzJazDs4s2UUJPb2ysjqA0Hbna0+cz2Obu33qhbJwU59UOabvk2O0Ee/ndiZZ3AezlaD9KnXNsersSy+641chtV2yrkppCBsHFriA4eojYj1FB1zslyo7zZaK72+UTUdbTsqIJB3Oje0OafoIXNPjL+Unl352n/Z4lVvAPnAyTR92OVU3PXY5P5OAT1NO/d8R9x52+xoUpcZfyk8u/O0/7PEg3t8Gj+5Wc/n6L7MysJR78Gj+5Wc/n6L7MysJAREQEREBERAUycYdmkhyOzX5rD2NTSupXuHg9ji4b+1rj9BVNrHtQ8St2a4tU2K47sbJs+GZo3dDIPivHs9HiCR4rH1WH22Kax3TXL/Eq8N19M9/09p+E/t3QaqP0J1nslFjdLjOWVJoZKJgipqx4JjkjHxWvI+K4Dpv3EALTud6d5Xh1bJFdLZNJStO0dbTsL4JB6eYfF9jtisRL2A7F7QfnBQOPJk0199urseu0Gi47pYrNvFXvE1ntP87xK6Z9SMChg7d+X2Xk236VbXH6Ad1g2X8QuI2yN8dhhqb3U/iua0wwg+tzhufcFLdstlyucwittuq62QnYNp4HSH+qFsjENCc5vj2SV9NFY6U976x28m3qjb139pCzY1uoy9MdWqW5U4Lw6fHrM0zHumYj7R1n5Mc1C1IyrN5S271vZUIduyhp92Qt9G473n1uJ9WyyzSfRG95Q+G539s1osx2cA5vLUVA/mtPxQfyj7ge9bw080bxDEXR1ZpzdrmzqKuraDyH0sZ8Vvt6n1rY69cWgm1vHmneUfxHnHFgxf03CqeCv+2230j/ALnr6POxyx2rHbRDabNRRUdHCPNjYO8+JJ7yT4k9SvRRFJxERG0Of3vbJabXneZ8xERVWiIiCWeNPRzPtTMqsFfiFqgraejoZIZ3SVkcJa4ycwGzyN+ixzhM0H1L0+1fp8hyiy09JbmUVRE6RldFKQ5wAaOVrifBWSiAoK1p4bdW8m1ZyjILRYKWa33C5zVFNI64wsLmOduDsXbj2FXqiDR3Bnp5lWm2nNzs2XUEVFWT3Z9TGyOoZKDGYo2g7sJA6tPRbxREHhZ7iNgzjFqvG8koW1lvqm7OaTs5jh8V7Hd7XA9QR/ZuFEOpXBznVprppsKrKTIbcSTFHLK2nqmj0ODtmO9oI39AV9og5gxcN+tklR2AwOta7f4zqiAN/wDtz7Lb2kvBpe6m4Q1+o9zp6GhY4Odb6CXtJ5dvxXSDzWA+lvMfZ3q4Nh6AiDxJ7FSUGFTY9YqGGlpoqB9LSU0QDWMHIWtaPR4dVz2/BQ1s3H/dqj/4pT/4l0kRBhmh1hueL6R4xj15gbBcKC3xwVEbZA8NeO8cw6H3LMyiIOc164V9aKq81tTFjlIY5aiR7D904BuC4kfjetWbww4lfcH0VsmM5JSspbnSOn7aJkrZAOaZ7m+c0kHoQtmIglriQ4VKfMbxVZZgdVS2y71LjJV0E+7aepee97XAHs3nxGxaT16Hfeaa/hr1rpKs0xwaqmO+wfDUwPYfXzB/T3rp2mw9CCCNJ+DzNLtdaeqz2WnsNqY4Omp4p2zVUrfyRy7sZv3cxJI9BWPX7hQ1d+7tf9ycapPuf5TJ5LvdId+y5zyd7t/i7d/VdGEQaAwjCtSMR4RXYVbbTF9+LoammjhbWRBsQmnfvJ2m/LuI3lw69+wUtfgoa2b/AL2qP/ilP/iXSREGHaLYdHgOl1gxRrWCWipGipc3udO7zpXb+O73O92yzFEQFH3F1w8Zlm2p7crwa2U1XHXUjG17X1UcJbOzzQ7zyN92Bnd+SVYKII54TdH9YtL9UW3G8WGCOxV9M+luBZcYXlg+Mx4aHbkh4A6eDivE4keHnVTNdashybH7HTVFsrZIjBK64QxlwbCxp81zgR1aVcKIJz4JtLM00xocphzC2w0TrhLSupuzqo5uYMEgdvyE7fGb3qjERAREQEREBERAREQCARsRuCvwyWa0SSdpJa6Jz+/mdTsJ+nZfuRUmIldW9q/pnZ9IYooWBkUbI2Dua1oA+pfdEVVszuIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiD/2Q==";
@@ -463,6 +463,450 @@ const C = {
 // con stroke-width controlable. Uso: <Plus size={14} strokeWidth={2} />
 
 
+// ════════════════════════════════════════════════════════════════════════
+// ADVISOR — Asistente de IA Vision One by Nextcom
+// Botón flotante + panel chat. Modo cliente vs interno según prop.
+// Recibe contexto de la sesión (productos, consumo, propuesta) para dar
+// respuestas específicas en lugar de genéricas.
+// ════════════════════════════════════════════════════════════════════════
+
+const ADVISOR_QUICK_PROMPTS_CLIENT = [
+  "¿Qué es Trend Vision One?",
+  "¿Qué son los créditos / TrendAI Flex?",
+  "¿Qué es CREM?",
+  "Explícame mi cotización",
+  "¿Cómo empiezo?",
+];
+
+const ADVISOR_QUICK_PROMPTS_INTERNAL = [
+  "Argumentos para defender una subida de tier",
+  "Cómo responder: 'es muy caro'",
+  "Upsell típicos en banca",
+  "Health check checklist",
+  "Diferencia partner-led vs marketplace",
+];
+
+function Advisor({ mode = "client", getContext, isMobile }) {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const isInternal = mode === "internal";
+
+  // Auto-scroll al fondo cuando llegan mensajes
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading]);
+
+  // Focus el input cuando se abre
+  useEffect(() => {
+    if (open && inputRef.current && !isMobile) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [open, isMobile]);
+
+  const sendMessage = async (text) => {
+    const userText = (text || input).trim();
+    if (!userText || loading) return;
+
+    setInput("");
+    setError("");
+
+    const newUserMsg = { role: "user", content: userText, ts: Date.now() };
+    const nextMessages = [...messages, newUserMsg];
+    setMessages(nextMessages);
+    setLoading(true);
+
+    try {
+      const context = typeof getContext === "function" ? getContext() : {};
+      const resp = await fetch("/api/advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
+          mode,
+          context,
+        }),
+      });
+
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.detail || errData.error || `HTTP ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      const reply = data.reply || "No pude generar una respuesta. Intenta reformular tu pregunta.";
+      setMessages(prev => [...prev, { role: "assistant", content: reply, ts: Date.now() }]);
+    } catch (e) {
+      console.error("[Advisor] error:", e);
+      setError(e.message || "Error al consultar el asistente. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault();
+    sendMessage();
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const clearChat = () => {
+    if (messages.length === 0) return;
+    if (confirm("¿Borrar la conversación?")) {
+      setMessages([]);
+      setError("");
+    }
+  };
+
+  const quickPrompts = isInternal ? ADVISOR_QUICK_PROMPTS_INTERNAL : ADVISOR_QUICK_PROMPTS_CLIENT;
+
+  // ─── Estilo del avatar y header según modo ─────────
+  const accentColor = isInternal ? "#7C3AED" : "#0C0A09";
+  const accentBg = isInternal ? "#F5F3FF" : "#F5F5F4";
+  const modeLabel = isInternal ? "Modo Nextcom · IA experta" : "by Nextcom · IA experta";
+
+  return (
+    <>
+      <style>{`
+        @keyframes advisor-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes advisor-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes advisor-dot { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+        .advisor-md p { margin: 0 0 8px 0; }
+        .advisor-md p:last-child { margin-bottom: 0; }
+        .advisor-md strong { font-weight: 600; color: #0C0A09; }
+        .advisor-md ul, .advisor-md ol { margin: 6px 0 8px 0; padding-left: 18px; }
+        .advisor-md li { margin: 2px 0; }
+        .advisor-md code { background: #F5F5F4; padding: 1px 5px; border-radius: 4px; font-family: 'SF Mono', monospace; font-size: 92%; }
+      `}</style>
+
+      {/* Botón flotante */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Abrir asistente Vision One"
+          style={{
+            position: "fixed",
+            bottom: isMobile ? 18 : 24,
+            right: isMobile ? 18 : 24,
+            zIndex: 100,
+            width: 56, height: 56,
+            borderRadius: "50%",
+            background: accentColor,
+            border: "none",
+            cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.1)",
+            transition: "transform .15s ease",
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+          <Sparkles size={22} color="#fff" strokeWidth={2} />
+        </button>
+      )}
+
+      {/* Panel del chat */}
+      {open && (
+        <div style={{
+          position: "fixed",
+          bottom: isMobile ? 0 : 24,
+          right: isMobile ? 0 : 24,
+          left: isMobile ? 0 : "auto",
+          top: isMobile ? 0 : "auto",
+          width: isMobile ? "100%" : 380,
+          height: isMobile ? "100%" : "min(620px, calc(100vh - 48px))",
+          background: "#FFFFFF",
+          borderRadius: isMobile ? 0 : 14,
+          border: `1px solid #E7E5E4`,
+          boxShadow: "0 25px 50px rgba(0,0,0,0.18), 0 10px 20px rgba(0,0,0,0.08)",
+          zIndex: 100,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          animation: "advisor-fade-in .2s ease",
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: "12px 16px",
+            borderBottom: `1px solid #F5F5F4`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            background: "#fff",
+            flexShrink: 0,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: accentColor,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+              }}>
+                <Sparkles size={15} color="#fff" strokeWidth={2.25} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#0C0A09", lineHeight: 1.2 }}>
+                  Vision One Advisor
+                </div>
+                <div style={{ fontSize: 11, color: "#78716C", lineHeight: 1.2, marginTop: 1 }}>
+                  {modeLabel}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {messages.length > 0 && (
+                <button
+                  onClick={clearChat}
+                  title="Borrar conversación"
+                  style={{
+                    background: "transparent", border: "none", color: "#A8A29E",
+                    cursor: "pointer", padding: 6, borderRadius: 6,
+                    display: "flex", alignItems: "center"
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F5F5F4"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <span style={{ fontSize: 11 }}>Limpiar</span>
+                </button>
+              )}
+              <button
+                onClick={() => setOpen(false)}
+                title="Cerrar"
+                style={{
+                  background: "transparent", border: "none", color: "#A8A29E",
+                  cursor: "pointer", padding: 6, borderRadius: 6,
+                  display: "flex", alignItems: "center"
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "#F5F5F4"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <X size={16} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
+
+          {/* Body — mensajes */}
+          <div
+            ref={scrollRef}
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "16px",
+              background: "#FFFFFF",
+            }}>
+            {messages.length === 0 ? (
+              <>
+                <div style={{
+                  background: accentBg,
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  fontSize: 13,
+                  color: "#0C0A09",
+                  lineHeight: 1.55,
+                  marginBottom: 14,
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                    Hola, soy tu asesor Vision One.
+                  </div>
+                  <div style={{ color: "#57534E" }}>
+                    {isInternal
+                      ? "Estoy en modo Nextcom — puedo ayudarte a preparar reuniones, defender renovaciones, identificar oportunidades de upsell y resolver objeciones."
+                      : "Puedes preguntarme cualquier cosa sobre Trend Vision One: créditos, TrendAI Flex, módulos, consola, casos de uso, o pedirme que explique lo que tienes en la calculadora."}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 11, color: "#A8A29E", fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
+                  Sugerencias para empezar
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {quickPrompts.map((q, i) => (
+                    <button key={i} onClick={() => sendMessage(q)}
+                      style={{
+                        textAlign: "left",
+                        background: "#fff",
+                        border: "1px solid #E7E5E4",
+                        color: "#57534E",
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        fontSize: 12.5,
+                        cursor: "pointer",
+                        transition: "border-color .15s, color .15s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#A8A29E"; e.currentTarget.style.color = "#0C0A09"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E7E5E4"; e.currentTarget.style.color = "#57534E"; }}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {messages.map((msg, i) => (
+                  <div key={i} style={{
+                    marginBottom: 12,
+                    display: "flex",
+                    justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+                  }}>
+                    <div style={{
+                      maxWidth: "85%",
+                      background: msg.role === "user" ? accentColor : "#F5F5F4",
+                      color: msg.role === "user" ? "#fff" : "#0C0A09",
+                      borderRadius: 12,
+                      padding: "9px 12px",
+                      fontSize: 13,
+                      lineHeight: 1.55,
+                      whiteSpace: "pre-wrap",
+                      wordWrap: "break-word",
+                    }}>
+                      {msg.role === "assistant" ? (
+                        <div className="advisor-md" dangerouslySetInnerHTML={{ __html: renderSimpleMarkdown(msg.content) }} />
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Loading indicator */}
+                {loading && (
+                  <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
+                    <div style={{
+                      background: "#F5F5F4",
+                      borderRadius: 12,
+                      padding: "11px 14px",
+                      display: "flex", alignItems: "center", gap: 4,
+                    }}>
+                      <span style={{ width: 6, height: 6, background: "#A8A29E", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0s" }}></span>
+                      <span style={{ width: 6, height: 6, background: "#A8A29E", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0.16s" }}></span>
+                      <span style={{ width: 6, height: 6, background: "#A8A29E", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0.32s" }}></span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error */}
+                {error && (
+                  <div style={{
+                    background: "#FEF2F2",
+                    border: "1px solid #FCA5A5",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                    color: "#991B1B",
+                    marginBottom: 12,
+                    display: "flex", gap: 6, alignItems: "flex-start"
+                  }}>
+                    <AlertTriangle size={12} color="#991B1B" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+                    <span>{error}</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Input area */}
+          <form onSubmit={handleSubmit} style={{
+            padding: "10px 12px",
+            borderTop: `1px solid #F5F5F4`,
+            display: "flex", gap: 6,
+            background: "#fff",
+            flexShrink: 0,
+          }}>
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={loading ? "Esperando respuesta..." : "Pregunta lo que quieras..."}
+              disabled={loading}
+              rows={1}
+              style={{
+                flex: 1,
+                resize: "none",
+                border: "1px solid #E7E5E4",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 13,
+                fontFamily: "inherit",
+                color: "#0C0A09",
+                outline: "none",
+                lineHeight: 1.4,
+                minHeight: 36,
+                maxHeight: 100,
+                background: loading ? "#F5F5F4" : "#fff",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={loading || !input.trim()}
+              aria-label="Enviar"
+              style={{
+                background: input.trim() && !loading ? accentColor : "#E7E5E4",
+                border: "none",
+                borderRadius: 8,
+                padding: "0 12px",
+                cursor: input.trim() && !loading ? "pointer" : "not-allowed",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background .15s",
+              }}>
+              <Send size={14} color={input.trim() && !loading ? "#fff" : "#A8A29E"} strokeWidth={2.25} />
+            </button>
+          </form>
+
+          {/* Disclaimer footer */}
+          <div style={{
+            padding: "6px 14px 8px",
+            background: "#fff",
+            fontSize: 10,
+            color: "#A8A29E",
+            textAlign: "center",
+            borderTop: "1px solid #F5F5F4",
+            flexShrink: 0,
+          }}>
+            La IA puede cometer errores. Verifica información crítica con Nextcom.
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Render simple markdown a HTML (negritas, listas, párrafos)
+function renderSimpleMarkdown(text) {
+  if (!text) return "";
+  // Escape HTML
+  let html = String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  // Bold **text**
+  html = html.replace(/\*\*([^\*]+)\*\*/g, "<strong>$1</strong>");
+  // Inline code `text`
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  // Lists (lines starting with - or *)
+  const lines = html.split("\n");
+  const out = [];
+  let inList = false;
+  for (const line of lines) {
+    const listMatch = line.match(/^(\s*)[-\*]\s+(.+)$/);
+    if (listMatch) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      out.push("<li>" + listMatch[2] + "</li>");
+    } else {
+      if (inList) { out.push("</ul>"); inList = false; }
+      if (line.trim()) out.push("<p>" + line + "</p>");
+    }
+  }
+  if (inList) out.push("</ul>");
+  return out.join("");
+}
+
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
@@ -919,16 +1363,27 @@ async function generatePdfFromHtml(htmlContent, filename) {
   // Crear contenedor temporal off-screen con el HTML
   const container = document.createElement("div");
   container.innerHTML = htmlContent;
-  // Posicionar fuera de la vista pero visible para html2canvas
-  container.style.position = "fixed";
-  container.style.left = "-9999px";
+  // IMPORTANTE: html2canvas necesita que el elemento sea VISIBLE en el DOM
+  // pero podemos esconderlo del usuario con opacity:0 + pointer-events:none.
+  // No usar `display:none` ni `visibility:hidden` porque rompen html2canvas.
+  // No usar `left: -9999px` porque algunos navegadores no renderizan elementos
+  // fuera del viewport correctamente.
+  container.style.position = "absolute";
+  container.style.left = "0";
   container.style.top = "0";
-  container.style.width = "210mm"; // A4 width
+  container.style.width = "210mm";
+  container.style.minHeight = "100vh";
   container.style.background = "#fff";
+  container.style.opacity = "0";
+  container.style.pointerEvents = "none";
+  container.style.zIndex = "-9999";
   document.body.appendChild(container);
 
-  // Buscar el elemento principal del documento (el .print-only o el body)
-  const target = container.querySelector(".print-only, .pdf-content") || container;
+  // Dar al browser un tick para hacer layout antes de capturar
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  // Buscar el elemento principal del documento
+  const target = container.querySelector(".pdf-content, .print-only") || container.firstElementChild || container;
 
   const opt = {
     margin: [10, 10, 10, 10],
@@ -937,8 +1392,11 @@ async function generatePdfFromHtml(htmlContent, filename) {
     html2canvas: {
       scale: 2,
       useCORS: true,
+      allowTaint: true,
       logging: false,
       backgroundColor: "#ffffff",
+      windowWidth: target.scrollWidth || 794, // 210mm at 96dpi
+      windowHeight: target.scrollHeight || 1123,
     },
     jsPDF: {
       unit: "mm",
@@ -951,9 +1409,13 @@ async function generatePdfFromHtml(htmlContent, filename) {
 
   try {
     await html2pdf().set(opt).from(target).save();
+  } catch (err) {
+    console.error("[generatePdfFromHtml] error:", err);
+    throw err;
   } finally {
-    // Cleanup
-    document.body.removeChild(container);
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
   }
 }
 
@@ -1856,6 +2318,36 @@ function InternalApp() {
         </div>
       )}
     </div>
+
+    {/* ═══ ADVISOR — Asistente de IA Vision One (modo interno Nextcom) ═══ */}
+    <Advisor
+      mode="internal"
+      isMobile={isMobile}
+      getContext={() => ({
+        clientName,
+        products: lines.filter(l => l.prodId && l.qty > 0).map(l => {
+          const p = CATALOG.find(c => c.id === l.prodId);
+          return p ? {
+            name: p.name,
+            qty: l.qty,
+            unit: p.unit,
+            creditsPerUnit: p.credits,
+            totalCredits: Math.round(l.qty * (p.credits || 0)),
+            origin: l.origin || "manual",
+          } : null;
+        }).filter(Boolean),
+        totalCredits,
+        commercials: {
+          salePrice,
+          costPrice,
+          totalRevenue,
+          totalCost,
+          totalMargin,
+          marginPct,
+          currency,
+        },
+      })}
+    />
     </>
   );
 }
@@ -2081,10 +2573,11 @@ function downloadEstimate(data) {
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
+    if (!p) return null; // defensive: si no se encuentra el producto, omitirlo
     const months = monthsBetween(l.startDate, l.date);
-    const prorated = Math.round(l.qty * p.credits * (months / 12));
+    const prorated = Math.round(l.qty * (p.credits || 0) * (months / 12));
     return { ...l, prod:p, months, prorated, isProrated: Math.abs(months - 12) > 0.1 };
-  });
+  }).filter(Boolean);
 
   const hasUsage = usageItems.length > 0 && usageAnnualTotal > 0;
   const hasProposal = proposalEffectiveTotal > 0;
@@ -3043,6 +3536,9 @@ function ClientApp() {
       setUsageError("");
       setUsageFiles([]);
       setUsageOpen(false);
+      // También quitar líneas autocompletadas desde consumo del selector
+      // (mantener líneas manuales y editadas — el cliente las creó/modificó conscientemente)
+      setLines(prev => prev.filter(l => l.origin !== "from_usage" && l.origin !== "edited_usage"));
     }
   };
 
@@ -3076,6 +3572,8 @@ function ClientApp() {
       setProposalPeriod("");
       setProposalError("");
       setProposalFiles([]);
+      // También quitar líneas autocompletadas desde propuesta del selector
+      setLines(prev => prev.filter(l => l.origin !== "from_proposal" && l.origin !== "edited_proposal"));
     }
   };
 
@@ -4120,6 +4618,46 @@ function ClientApp() {
           </div>
         </div>
       )}
+
+      {/* ═══ ADVISOR — Asistente de IA Vision One (modo cliente) ═══ */}
+      <Advisor
+        mode="client"
+        isMobile={isMobile}
+        getContext={() => ({
+          clientName,
+          contactName,
+          products: lines.filter(l => l.prodId && l.qty > 0).map(l => {
+            const p = CATALOG.find(c => c.id === l.prodId);
+            return p ? {
+              name: p.name,
+              qty: l.qty,
+              unit: p.unit,
+              creditsPerUnit: p.credits,
+              totalCredits: Math.round(l.qty * (p.credits || 0)),
+              origin: l.origin,
+            } : null;
+          }).filter(Boolean),
+          totalCredits,
+          usage: hasUsage ? {
+            month: usageMonth,
+            monthlyTotal: usageMonthlyTotal,
+            annualTotal: usageAnnualTotal,
+            items: usageItems.map(it => ({
+              name: it.nameInScreenshot || (CATALOG.find(c => c.id === it.prodId)?.name) || "Desconocido",
+              monthly: Number(it.monthly) || 0,
+            })),
+          } : null,
+          proposal: hasProposal ? {
+            totalPool: proposalEffectiveTotal,
+            period: proposalPeriod,
+            items: proposalItems.map(it => ({
+              name: it.name,
+              qty: it.qty,
+              totalCredits: it.totalCredits,
+            })),
+          } : null,
+        })}
+      />
     </div>
   );
 }
