@@ -423,6 +423,48 @@ REFERENCIAS COMERCIALES ÚTILES:
 
 // ─── HANDLER ──────────────────────────────────────────────────────────
 
+// Detecta si el último mensaje del usuario pide una respuesta larga
+// (speech, propuesta, correo completo, etc.) y devuelve el max_tokens apropiado.
+function pickMaxTokens(userText) {
+  if (!userText) return 4096;
+  const t = String(userText).toLowerCase();
+
+  // Patrones que indican deliverable largo
+  const longPatterns = [
+    /\bspeech\b/, /discurso/, /presentaci[oó]n\b/, /pitch\b/, /keynote/,
+    /propuesta (comercial|completa|formal|t[eé]cnica|ejecutiva)/,
+    /correo (largo|completo|formal|ejecutivo)/, /e-?mail (largo|completo|formal)/,
+    /carta (formal|comercial)/,
+    /documento (completo|formal|ejecutivo)/,
+    /informe (completo|ejecutivo|detallado)/,
+    /reporte (completo|ejecutivo|detallado)/,
+    /resumen ejecutivo/, /executive summary/,
+    /minuta (completa|detallada)/,
+    /gu[ií]a (completa|detallada|paso a paso)/,
+    /plan de (acci[oó]n|implementaci[oó]n|trabajo|migraci[oó]n)/,
+    /redacta(me)? (un|una|el|la)/,
+    /escribe(me)? (un|una|el|la)/,
+    /elabora(me)? (un|una|el|la)/,
+    /prepara(me)? (un|una|el|la)/,
+    /art[ií]culo/, /blog post/, /case study/, /caso de [eé]xito/,
+  ];
+
+  if (longPatterns.some(rx => rx.test(t))) return 8192;
+
+  // Patrones intermedios (explicación extensa, comparativas, etc.)
+  const mediumPatterns = [
+    /expl[ií]ca(me)? (en )?detalle/, /detalladamente/,
+    /compara(ci[oó]n)? (entre|de) /,
+    /lista (completa|detallada|todos|todas)/,
+    /todos los (productos|m[oó]dulos|features|beneficios)/,
+    /paso a paso/, /step by step/,
+  ];
+
+  if (mediumPatterns.some(rx => rx.test(t))) return 6144;
+
+  return 4096;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -461,6 +503,11 @@ export default async function handler(req, res) {
         content: String(m.content).slice(0, 8000) // safety cap per message
       }));
 
+    // Detectar si el usuario está pidiendo una respuesta larga (speech, propuesta,
+    // correo, presentación, documento, etc.) y subir max_tokens cuando aplique.
+    const lastUserMsg = [...claudeMessages].reverse().find(m => m.role === "user");
+    const maxTokens = pickMaxTokens(lastUserMsg ? lastUserMsg.content : "");
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -470,7 +517,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
-        max_tokens: 1500,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages: claudeMessages,
       }),
