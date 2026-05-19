@@ -1360,61 +1360,130 @@ async function generatePdfFromHtml(htmlContent, filename) {
   // Cargar html2pdf.js si no está cargado
   const html2pdf = await loadHtml2Pdf();
 
-  // Crear contenedor temporal off-screen con el HTML
-  const container = document.createElement("div");
-  container.innerHTML = htmlContent;
-  // IMPORTANTE: html2canvas necesita que el elemento sea VISIBLE en el DOM
-  // pero podemos esconderlo del usuario con opacity:0 + pointer-events:none.
-  // No usar `display:none` ni `visibility:hidden` porque rompen html2canvas.
-  // No usar `left: -9999px` porque algunos navegadores no renderizan elementos
-  // fuera del viewport correctamente.
-  container.style.position = "absolute";
-  container.style.left = "0";
-  container.style.top = "0";
-  container.style.width = "210mm";
-  container.style.minHeight = "100vh";
-  container.style.background = "#fff";
-  container.style.opacity = "0";
-  container.style.pointerEvents = "none";
-  container.style.zIndex = "-9999";
-  document.body.appendChild(container);
+  // ════════════════════════════════════════════════════════════════════════
+  // FIX: usamos un <iframe> para aislar completamente el documento del PDF.
+  //
+  // Problema anterior: hacer `container.innerHTML = htmlContent` con un doc
+  // HTML completo descartaba <html>/<head>/<body> pero dejaba el <style>
+  // interno aplicándose al documento principal. Reglas como
+  // `*{margin:0;padding:0}` y `body{padding:24px 28px}` contaminaban la
+  // app y desfasaban los cálculos de posición de html2canvas, capturando
+  // solo una franja del contenido (la mitad derecha en muchos casos).
+  //
+  // El iframe da scope CSS verdadero: las reglas solo afectan el doc del PDF.
+  // ════════════════════════════════════════════════════════════════════════
 
-  // Dar al browser un tick para hacer layout antes de capturar
-  await new Promise(resolve => setTimeout(resolve, 100));
+  // Ancho fijo en píxeles para el render (no usar mm — algunos browsers
+  // calculan scrollWidth en píxeles y el desfase rompe el layout).
+  // 816px ≈ 8.5in a 96dpi, suficiente para que el .container de 780px quepa.
+  const RENDER_WIDTH = 816;
 
-  // Buscar el elemento principal del documento
-  const target = container.querySelector(".pdf-content, .print-only") || container.firstElementChild || container;
-
-  const opt = {
-    margin: [10, 10, 10, 10],
-    filename: filename,
-    image: { type: "jpeg", quality: 0.95 },
-    html2canvas: {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-      windowWidth: target.scrollWidth || 794, // 210mm at 96dpi
-      windowHeight: target.scrollHeight || 1123,
-    },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait",
-      compress: true,
-    },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-  };
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText = [
+    "position:fixed",
+    "left:0",
+    "top:0",
+    `width:${RENDER_WIDTH}px`,
+    "height:1200px",  // altura inicial; se reajusta tras el layout
+    "border:0",
+    "opacity:0",
+    "pointer-events:none",
+    "z-index:-9999",
+  ].join(";");
+  document.body.appendChild(iframe);
 
   try {
+    // Escribir el HTML completo en el doc del iframe
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+
+    // Esperar a que el iframe termine de parsear
+    if (doc.readyState !== "complete") {
+      await new Promise(resolve => {
+        const tick = () => doc.readyState === "complete" ? resolve() : setTimeout(tick, 30);
+        tick();
+      });
+    }
+
+    // Esperar a que TODAS las imágenes del iframe terminen de cargar.
+    // Los logos van en base64, pero hay un delay de decodificación que
+    // si no se espera, html2canvas captura el doc sin imágenes (= en blanco).
+    const images = Array.from(doc.images || []);
+    if (images.length > 0) {
+      await Promise.all(images.map(img => {
+        if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+        return new Promise(res => {
+          let done = false;
+          const finish = () => { if (!done) { done = true; res(); } };
+          img.addEventListener("load", finish);
+          img.addEventListener("error", finish);
+          // safety net: nunca colgarse esperando una imagen
+          setTimeout(finish, 3000);
+        });
+      }));
+    }
+
+    // Esperar dos frames para que el layout final estabilice
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // Encontrar el elemento target dentro del iframe
+    const target = doc.querySelector(".pdf-content, .print-only")
+      || (doc.body && doc.body.firstElementChild)
+      || doc.body;
+
+    if (!target) {
+      throw new Error("No se encontró el contenido del PDF en el iframe");
+    }
+
+    // Ajustar la altura del iframe al contenido real (para que html2canvas
+    // pueda medirlo todo sin recortes)
+    const contentHeight = Math.max(
+      target.scrollHeight,
+      doc.body.scrollHeight,
+      doc.documentElement.scrollHeight
+    );
+    iframe.style.height = `${contentHeight + 40}px`;
+
+    // Una pausa más para que el resize del iframe se asiente
+    await new Promise(r => setTimeout(r, 50));
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: filename,
+      image: { type: "jpeg", quality: 0.95 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+        // CRÍTICO: que windowWidth coincida con el ancho real del iframe.
+        // Sin esto, html2canvas asume el viewport de la página principal
+        // y calcula posiciones desfasadas.
+        windowWidth: RENDER_WIDTH,
+        windowHeight: contentHeight,
+        width: target.offsetWidth || RENDER_WIDTH,
+        height: target.scrollHeight || contentHeight,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+        compress: true,
+      },
+      pagebreak: { mode: ["css", "legacy"] },
+    };
+
     await html2pdf().set(opt).from(target).save();
   } catch (err) {
     console.error("[generatePdfFromHtml] error:", err);
     throw err;
   } finally {
-    if (container.parentNode) {
-      document.body.removeChild(container);
+    if (iframe.parentNode) {
+      document.body.removeChild(iframe);
     }
   }
 }
