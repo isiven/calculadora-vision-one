@@ -1337,64 +1337,70 @@ function PrintView({ data }) {
 
 // ════════════════════════════════════════════════════════════════════════
 // Helper para generar PDF reales desde HTML (sin print del navegador)
-// Carga html2pdf.js dinámicamente la primera vez que se usa
+//
+// NOTA: NO usamos html2pdf.js porque tiene un bug crítico — clona el
+// elemento target al main document para renderizarlo, pero NO copia los
+// <style> siblings del <head>. El clone llega al main doc sin las reglas
+// CSS que necesita y termina renderizando recortado y mal posicionado.
+//
+// En lugar de eso vamos directo a html2canvas + jsPDF:
+//   1. Render el HTML en un iframe aislado (CSS no contamina la app)
+//   2. html2canvas captura el elemento DENTRO del iframe (con su CSS)
+//   3. jsPDF arma el PDF manualmente con el canvas resultante
 // ════════════════════════════════════════════════════════════════════════
-let _html2pdfPromise = null;
-function loadHtml2Pdf() {
-  if (_html2pdfPromise) return _html2pdfPromise;
-  _html2pdfPromise = new Promise((resolve, reject) => {
-    if (typeof window !== "undefined" && window.html2pdf) {
-      resolve(window.html2pdf);
-      return;
+let _pdfDepsPromise = null;
+function loadPdfDeps() {
+  if (_pdfDepsPromise) return _pdfDepsPromise;
+  _pdfDepsPromise = (async () => {
+    if (typeof window === "undefined") throw new Error("PDF generation requires a browser");
+
+    const loadScript = (src) => new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("No se pudo cargar " + src));
+      document.head.appendChild(s);
+    });
+
+    if (!window.html2canvas) {
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
     }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-    script.onload = () => resolve(window.html2pdf);
-    script.onerror = () => reject(new Error("No se pudo cargar la librería de PDF"));
-    document.head.appendChild(script);
-  });
-  return _html2pdfPromise;
+    if (!window.jspdf) {
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    }
+    if (!window.html2canvas || !window.jspdf) {
+      throw new Error("No se cargaron las librerías de PDF");
+    }
+    return { html2canvas: window.html2canvas, jsPDF: window.jspdf.jsPDF };
+  })();
+  return _pdfDepsPromise;
 }
 
 async function generatePdfFromHtml(htmlContent, filename) {
-  // Cargar html2pdf.js si no está cargado
-  const html2pdf = await loadHtml2Pdf();
+  const { html2canvas, jsPDF } = await loadPdfDeps();
 
-  // ════════════════════════════════════════════════════════════════════════
-  // FIX: usamos un <iframe> para aislar completamente el documento del PDF.
-  //
-  // Problema anterior: hacer `container.innerHTML = htmlContent` con un doc
-  // HTML completo descartaba <html>/<head>/<body> pero dejaba el <style>
-  // interno aplicándose al documento principal. Reglas como
-  // `*{margin:0;padding:0}` y `body{padding:24px 28px}` contaminaban la
-  // app y desfasaban los cálculos de posición de html2canvas, capturando
-  // solo una franja del contenido (la mitad derecha en muchos casos).
-  //
-  // El iframe da scope CSS verdadero: las reglas solo afectan el doc del PDF.
-  // ════════════════════════════════════════════════════════════════════════
+  // Ancho fijo en px para el iframe — 800px deja margen cómodo para el
+  // .container de 780px aún con padding de body (28px × 2 = 56px).
+  const RENDER_WIDTH = 800;
+  const SCALE = 2;
 
-  // Ancho fijo en píxeles para el render (no usar mm — algunos browsers
-  // calculan scrollWidth en píxeles y el desfase rompe el layout).
-  // 816px ≈ 8.5in a 96dpi, suficiente para que el .container de 780px quepa.
-  const RENDER_WIDTH = 816;
-
+  // Iframe off-screen pero RENDERIZADO (left negativo, NO opacity:0 ni
+  // visibility:hidden, que en algunos browsers paran el render del contenido).
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
   iframe.style.cssText = [
     "position:fixed",
-    "left:0",
+    "left:-10000px",
     "top:0",
     `width:${RENDER_WIDTH}px`,
-    "height:1200px",  // altura inicial; se reajusta tras el layout
+    "height:1200px",
     "border:0",
-    "opacity:0",
-    "pointer-events:none",
-    "z-index:-9999",
+    "z-index:-1",
   ].join(";");
   document.body.appendChild(iframe);
 
   try {
-    // Escribir el HTML completo en el doc del iframe
+    // Escribir el HTML completo en el iframe (CSS queda aislado)
     const doc = iframe.contentDocument || iframe.contentWindow.document;
     doc.open();
     doc.write(htmlContent);
@@ -1408,9 +1414,8 @@ async function generatePdfFromHtml(htmlContent, filename) {
       });
     }
 
-    // Esperar a que TODAS las imágenes del iframe terminen de cargar.
-    // Los logos van en base64, pero hay un delay de decodificación que
-    // si no se espera, html2canvas captura el doc sin imágenes (= en blanco).
+    // Esperar a que TODAS las imágenes terminen de decodificar.
+    // Los logos van en base64 pero la decodificación no es instantánea.
     const images = Array.from(doc.images || []);
     if (images.length > 0) {
       await Promise.all(images.map(img => {
@@ -1420,64 +1425,109 @@ async function generatePdfFromHtml(htmlContent, filename) {
           const finish = () => { if (!done) { done = true; res(); } };
           img.addEventListener("load", finish);
           img.addEventListener("error", finish);
-          // safety net: nunca colgarse esperando una imagen
-          setTimeout(finish, 3000);
+          setTimeout(finish, 3000); // safety net
         });
       }));
     }
 
-    // Esperar dos frames para que el layout final estabilice
+    // Dos frames para que el layout estabilice
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    // Encontrar el elemento target dentro del iframe
+    // Encontrar el target
     const target = doc.querySelector(".pdf-content, .print-only")
       || (doc.body && doc.body.firstElementChild)
       || doc.body;
 
     if (!target) {
-      throw new Error("No se encontró el contenido del PDF en el iframe");
+      throw new Error("No se encontró el contenido del PDF");
     }
 
-    // Ajustar la altura del iframe al contenido real (para que html2canvas
-    // pueda medirlo todo sin recortes)
+    // Ajustar iframe al alto del contenido para que html2canvas mida bien
     const contentHeight = Math.max(
       target.scrollHeight,
       doc.body.scrollHeight,
-      doc.documentElement.scrollHeight
+      doc.documentElement.scrollHeight,
+      target.offsetHeight
     );
-    iframe.style.height = `${contentHeight + 40}px`;
+    iframe.style.height = `${contentHeight + 80}px`;
+    await new Promise(r => setTimeout(r, 80));
 
-    // Una pausa más para que el resize del iframe se asiente
-    await new Promise(r => setTimeout(r, 50));
+    // ════════════════════════════════════════════════════════════════════
+    // CAPTURA: html2canvas directamente sobre el elemento del iframe.
+    // Sin overrides de windowWidth/width/height — dejamos que html2canvas
+    // use el contexto del iframe (target.ownerDocument.defaultView). Esto
+    // evita el desfase que aparecía con html2pdf.js.
+    // ════════════════════════════════════════════════════════════════════
+    const canvas = await html2canvas(target, {
+      scale: SCALE,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    });
 
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: filename,
-      image: { type: "jpeg", quality: 0.95 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        // CRÍTICO: que windowWidth coincida con el ancho real del iframe.
-        // Sin esto, html2canvas asume el viewport de la página principal
-        // y calcula posiciones desfasadas.
-        windowWidth: RENDER_WIDTH,
-        windowHeight: contentHeight,
-        width: target.offsetWidth || RENDER_WIDTH,
-        height: target.scrollHeight || contentHeight,
-      },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait",
-        compress: true,
-      },
-      pagebreak: { mode: ["css", "legacy"] },
-    };
+    // ════════════════════════════════════════════════════════════════════
+    // CONSTRUCCIÓN DEL PDF: jsPDF directamente, paginando manualmente.
+    // ════════════════════════════════════════════════════════════════════
+    const pdf = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+      compress: true,
+    });
 
-    await html2pdf().set(opt).from(target).save();
+    const pageWidthMm = pdf.internal.pageSize.getWidth();   // 210
+    const pageHeightMm = pdf.internal.pageSize.getHeight(); // 297
+    const marginMm = 10;
+    const contentWidthMm = pageWidthMm - 2 * marginMm;      // 190
+    const contentHeightMm = pageHeightMm - 2 * marginMm;    // 277
+
+    // Canvas tiene dimensiones en píxeles físicos (ya con scale aplicado).
+    // Para escalarlo a mm: dividir por SCALE para volver a CSS px, luego
+    // convertir CSS px → mm a 96 DPI (25.4mm = 96px).
+    const cssPxToMm = (px) => (px * 25.4) / 96;
+    const canvasCssWidth = canvas.width / SCALE;
+    const canvasCssHeight = canvas.height / SCALE;
+    const naturalWidthMm = cssPxToMm(canvasCssWidth);
+
+    // Factor de escala para ajustar al ancho disponible de la página
+    const fitFactor = contentWidthMm / naturalWidthMm;
+    const totalRenderedHeightMm = cssPxToMm(canvasCssHeight) * fitFactor;
+
+    if (totalRenderedHeightMm <= contentHeightMm + 0.5) {
+      // Cabe en una sola página
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      pdf.addImage(imgData, "JPEG", marginMm, marginMm, contentWidthMm, totalRenderedHeightMm);
+    } else {
+      // Paginar: cortar el canvas en slices, cada uno con la altura de una página
+      const pxPerMm = canvas.height / totalRenderedHeightMm;
+      const pageSlicePx = Math.floor(contentHeightMm * pxPerMm);
+      let yCanvas = 0;
+      let pageIdx = 0;
+
+      while (yCanvas < canvas.height) {
+        const sliceHeightPx = Math.min(pageSlicePx, canvas.height - yCanvas);
+
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeightPx;
+        const sctx = sliceCanvas.getContext("2d");
+        sctx.fillStyle = "#ffffff";
+        sctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        sctx.drawImage(canvas, 0, -yCanvas);
+
+        const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.95);
+        const sliceHeightMm = sliceHeightPx / pxPerMm;
+
+        if (pageIdx > 0) pdf.addPage();
+        pdf.addImage(sliceData, "JPEG", marginMm, marginMm, contentWidthMm, sliceHeightMm);
+
+        yCanvas += sliceHeightPx;
+        pageIdx++;
+      }
+    }
+
+    pdf.save(filename);
   } catch (err) {
     console.error("[generatePdfFromHtml] error:", err);
     throw err;
