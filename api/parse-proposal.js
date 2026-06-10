@@ -43,15 +43,15 @@ CLOUD RISK MANAGEMENT (por rango):
 
 SECURITY OPERATIONS:
 - "Agentic SIEM" / "SIEM" → L (5 cr/GB/mes)
-- "Sandbox Analysis - Manual" → M (3 cr)
+- "Sandbox Analysis - Manual" → X (3 cr)
 - "Sandbox Analysis - Automated" → N (5 cr)
-- "XDR for Endpoints" / "EDR" → P (20 cr/endpoint)
-- "XDR for Email" / "EmDR" → Q (5 cr/usuario)
-- "XDR for Cloud" / "CDR" → R (3 cr/GB/año)
-- "XDR for Network" / "NDR" → S (10 cr/Gbps)
+- "XDR for Endpoints" / "EDR" → R (20 cr/endpoint)
+- "XDR for Email" / "EmDR" → S (5 cr/usuario)
+- "XDR for Cloud" / "CDR" → V (3 cr/GB/año)
+- "XDR for Network" / "NDR" → U (10 cr/Gbps)
 - "XDR for Identity" → T (10 cr/identidad)
 - "XDR for Servers" → U (50 cr/servidor)
-- "Forensics" → V (400 cr/GB)
+- "Forensics" → P (400 cr/GB)
 
 THREAT INTELLIGENCE:
 - "Threat Intelligence Core" → X (50 cr/usuario)
@@ -67,9 +67,9 @@ CLOUD SECURITY:
 - "File Storage Security" → f (5 cr/file)
 
 ZTSA:
-- "ZTSA Internet Access" → AA (60 cr/usuario)
-- "ZTSA Private Access" → AB (50 cr/usuario)
-- "ZTSA Internet + Private Access" → AC (110 cr/usuario)
+- "ZTSA Internet Access" → AB (60 cr/usuario)
+- "ZTSA Private Access" → AC (50 cr/usuario)
+- "ZTSA Internet + Private Access" → AA (110 cr/usuario)
 - "AI Service Access" → AD (50 cr/usuario)
 - "ZTSA Internet + AI Secure Access" → AE (110 cr/usuario)
 - "Outbound Static IP Add-on" → AF

@@ -46,14 +46,14 @@ CLOUD RISK MANAGEMENT (por rango de recursos):
 SECURITY OPERATIONS:
 - "Agentic SIEM" / "SIEM" → L (5 cr/GB/mes)
 - "Agentic SIEM - Analytic Data Ingestion" → L (5 cr/GB/mes)
-- "XDR for Endpoints" / "EDR" → P (20 cr/endpoint)
-- "XDR for Email" / "EmDR" → Q (5 cr/usuario)
-- "XDR for Cloud" / "CDR" → R (3 cr/GB/año)
-- "XDR for Network" / "NDR" → S (10 cr/Gbps)
+- "XDR for Endpoints" / "EDR" → R (20 cr/endpoint)
+- "XDR for Email" / "EmDR" → S (5 cr/usuario)
+- "XDR for Cloud" / "CDR" → V (3 cr/GB/año)
+- "XDR for Network" / "NDR" → U (10 cr/Gbps)
 - "XDR for Identity" → T (10 cr/identidad)
 - "XDR for Servers" → U (50 cr/servidor)
-- "Forensics" → V (400 cr/GB)
-- "Sandbox Analysis - Manual Submission" → M (3 cr/análisis)
+- "Forensics" → P (400 cr/GB)
+- "Sandbox Analysis - Manual Submission" → X (3 cr/análisis)
 - "Sandbox Analysis - Automated" → N (5 cr/análisis)
 
 THREAT INTELLIGENCE:
@@ -70,9 +70,9 @@ CLOUD SECURITY (Workload):
 - "File Storage Security" → f (5 cr/file)
 
 ZERO TRUST SECURE ACCESS (ZTSA):
-- "Zero Trust Secure Access - Internet Access" → AA (60 cr/usuario)
-- "Zero Trust Secure Access - Private Access" → AB (50 cr/usuario)
-- "Zero Trust Secure Access - Internet + Private Access" → AC (110 cr/usuario)
+- "Zero Trust Secure Access - Internet Access" → AB (60 cr/usuario)
+- "Zero Trust Secure Access - Private Access" → AC (50 cr/usuario)
+- "Zero Trust Secure Access - Internet + Private Access" → AA (110 cr/usuario)
 - "AI Service Access" / "AI Secure Access" → AD (50 cr/usuario)
 - "Zero Trust Secure Access - Internet Access + AI Secure Access" → AE (110 cr/usuario)
 - "Outbound Static IP Add-on" → AF (varies cr/256Mbps)
@@ -114,7 +114,7 @@ Devuelve SOLO un JSON válido (sin markdown, sin explicación, sin texto adicion
     {
       "name_in_screenshot": "XDR for Endpoints (EDR)",
       "monthly_credits": 40,
-      "matched_id": "P",
+      "matched_id": "R",
       "match_confidence": "high"
     }
   ],
