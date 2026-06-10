@@ -118,6 +118,58 @@ Reducir el riesgo del monolito `src/App.jsx` y preparar la app para crecer.
 - Los calculos clave viven en funciones independientes.
 - Los componentes principales son localizables y revisables.
 
+## Fase UX/UI: Consola interna Nextcom
+
+### Objetivo
+
+Evolucionar la seccion interna hacia una consola SaaS empresarial moderna para
+Nextcom, sin reemplazar ni romper la calculadora actual.
+
+Base visual decidida:
+
+- shadcn/ui + Tailwind + Radix como base principal.
+- Recharts como primera opcion para graficas simples.
+- Tremor como referencia o uso selectivo.
+- TanStack Table para tablas, filtros y reportes.
+
+No instalar todavia:
+
+- Material UI
+- Ant Design
+- React-admin
+- AG Grid
+- OpenHands
+- Continue
+- Aider
+- Cline
+
+### Tareas
+
+1. Inventario visual actual.
+2. Instalacion controlada de Tailwind + shadcn en rama separada.
+3. Crear shell interno Nextcom sin reemplazar la calculadora.
+4. Crear dashboard mock/local.
+5. Agregar tablas con TanStack Table.
+6. Disenar persistencia real.
+7. Implementar auth/roles.
+8. Migrar/refactorizar gradualmente `App.jsx`.
+
+### Riesgos
+
+- Introducir dependencias visuales antes de tener alcance y criterios claros.
+- Romper la calculadora actual al reemplazar UI demasiado pronto.
+- Duplicar estados o calculos entre la consola nueva y `App.jsx`.
+- Crear dashboards sin modelo de datos persistente validado.
+- Usar componentes pesados que compliquen mantenimiento o performance.
+
+### Criterio de finalizacion
+
+- Existe inventario visual y de flujos internos actuales.
+- La base shadcn/ui + Tailwind + Radix se prueba en rama separada.
+- La consola interna puede convivir con la calculadora actual.
+- Dashboards y tablas empiezan con datos mock/locales sin alterar calculos.
+- La migracion de `App.jsx` ocurre gradualmente y con verificacion funcional.
+
 ## Fase 4: Parsers confiables y pruebas
 
 ### Objetivo
