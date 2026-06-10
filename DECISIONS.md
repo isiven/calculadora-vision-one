@@ -81,6 +81,36 @@ detectar oportunidades comerciales.
 Decision: futuras funcionalidades deben alinearse con ese camino, no solo agregar
 pantallas aisladas.
 
+### La futura consola interna usara shadcn/ui, Tailwind y Radix
+
+La evolucion visual de la Calculadora Vision One debe apuntar a una experiencia
+SaaS empresarial moderna, controlable y compatible con React + Vite, sin meter
+frameworks pesados ni romper la calculadora actual.
+
+Decision: usar shadcn/ui + Tailwind + Radix como base principal para la futura
+consola interna de Nextcom.
+
+Para dashboards y analitica:
+
+- Recharts sera la primera opcion para graficas simples.
+- Tremor se estudiara como referencia o para uso selectivo.
+- TanStack Table sera la opcion recomendada para tablas, filtros y reportes.
+
+No instalar todavia:
+
+- Material UI
+- Ant Design
+- React-admin
+- AG Grid
+- OpenHands
+- Continue
+- Aider
+- Cline
+
+Implicacion: cualquier adopcion visual debe hacerse en rama separada, con cambios
+incrementales y sin reemplazar la calculadora actual hasta tener equivalencia
+funcional clara.
+
 ## Decisiones pendientes recomendadas
 
 - Proveedor y flujo de autenticacion interna.
