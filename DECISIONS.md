@@ -1,86 +1,92 @@
 # DECISIONS.md
 
-## Registro de decisiones
+## Proposito
 
-Este archivo documenta decisiones actuales observadas en el proyecto y decisiones
-recomendadas para futuras iteraciones. Agregar entradas nuevas con fecha cuando
-se tome una decision relevante.
+Registro de decisiones actuales del proyecto y criterios que deben guiar cambios
+futuros.
 
-## 2026-06-10 - SPA React con Vite
+## Decisiones actuales
 
-La aplicacion actual usa React 18 y Vite. Esto permite desarrollo rapido y
-deploy simple en Vercel/Netlify/GitHub Pages para la parte estatica.
+### La app tiene dos modos: cliente e interno
 
-Consecuencia: no hay routing servidor tradicional ni backend persistente.
+La experiencia cliente esta pensada para estimar creditos y explicar Vision One
+sin exponer informacion sensible.
 
-## 2026-06-10 - Funciones serverless en Vercel
+La experiencia interna Nextcom incluye datos comerciales como precio por credito,
+costo, soporte Platinum, margen y rentabilidad.
 
-Las capacidades sensibles que requieren API keys viven en `api/` como funciones
-serverless. Esto evita exponer `ANTHROPIC_API_KEY` en el navegador.
+Implicacion: cualquier cambio debe preservar la separacion entre cliente e
+interno.
 
-Consecuencia: cada endpoint necesita controles explicitos de autenticacion,
-rate limiting, tamanos de archivo y manejo de errores.
+### El endpoint advisor usa Claude via Anthropic
 
-## 2026-06-10 - Estado local, sin base de datos
+`api/advisor.js` actua como proxy serverless hacia la API de Anthropic. Recibe
+mensajes, modo y contexto de la sesion, y devuelve una respuesta textual.
 
-La app no persiste datos en servidor. El estado de cotizacion, consumo y chat se
-mantiene en memoria del navegador.
+Implicacion: la API key debe vivir solo en variables de entorno del servidor.
 
-Consecuencia: no hay historial ni auditoria persistente, pero se reduce el
-riesgo de almacenar documentos de clientes.
+### La base de conocimiento esta actualmente embebida
 
-## 2026-06-10 - Dos modos de usuario
+La informacion de Vision One, reglas de respuesta y personas del advisor estan
+incluidas directamente en `api/advisor.js`.
 
-La app tiene modo cliente y modo interno Nextcom.
+Implicacion: esto facilita despliegue inicial, pero dificulta versionado,
+auditoria y actualizacion. Debe migrarse a una base de conocimiento versionada.
 
-Modo cliente:
+### El catalogo debe centralizarse en una sola fuente
 
-- sin precios ni margenes
-- estimacion de creditos
-- PDF preliminar
-- solicitud por WhatsApp
+Hoy el catalogo y los mapeos aparecen en varios lugares, incluyendo frontend y
+prompts/mapeos de parsers.
 
-Modo interno:
+Decision: el catalogo de productos, SKUs, codigos, creditos, unidades y aliases
+debe vivir en una fuente unica reutilizable.
 
-- precio por credito
-- costo proveedor
-- soporte Platinum
-- margen y rentabilidad
-- importacion de cotizaciones
+### Los parsers no deben tener codigos/SKUs duplicados o contradictorios
 
-Consecuencia: cualquier cambio futuro debe preservar la separacion de datos
-comerciales internos.
+Los endpoints `parse-usage`, `parse-proposal` y `parse-quote` no deben mantener
+tablas divergentes del catalogo.
 
-## 2026-06-10 - Advisor con base de conocimiento embebida
+Decision: todo parser debe resolver productos contra la misma fuente de verdad y
+devolver confianza de matching.
 
-`api/advisor.js` incluye persona, reglas y base de conocimiento dentro del
-codigo.
+### El modo interno no debe depender de PIN en frontend en una version seria
 
-Consecuencia: es facil de desplegar, pero dificil de versionar, auditar y
-mantener actualizado. La siguiente evolucion deberia separar conocimiento,
-prompts y reglas comerciales en archivos versionados o una capa de retrieval.
+El PIN en frontend es una barrera de UX, no una medida de seguridad real.
 
-## 2026-06-10 - Catalogo duplicado
+Decision: para uso serio o publico, el modo interno requiere autenticacion y
+autorizacion de servidor.
 
-El catalogo aparece en `src/App.jsx` y tambien como texto/mapeos en endpoints de
-parseo. Los IDs no estan completamente alineados.
+### Los endpoints de IA deben protegerse antes de produccion
 
-Decision recomendada: crear una unica fuente de verdad para catalogo, SKUs,
-creditos y unidades, y reutilizarla en frontend y backend.
+Los endpoints que llaman modelos pueden generar costo, procesar datos sensibles y
+exponer capacidades internas.
 
-## 2026-06-10 - PIN interno temporal
+Decision: antes de uso publico amplio, agregar autenticacion/autorizacion,
+rate limit, validacion de body, limites de archivo y logs seguros.
 
-El modo interno usa un PIN hardcodeado en frontend.
+### Archivos de clientes/propuestas/certificados son informacion sensible
 
-Decision recomendada: reemplazarlo por autenticacion real antes de exponer datos
-comerciales sensibles en produccion.
+Screenshots, certificados, propuestas y cotizaciones pueden contener nombres de
+clientes, contratos, volumenes, SKUs, vigencias y datos comerciales.
 
-## 2026-06-10 - PDFs generados en navegador
+Decision: tratarlos como datos sensibles, minimizar envio a modelos y evitar
+guardarlos sin consentimiento.
 
-La app genera PDFs con `html2canvas` y `jsPDF`, cargados desde CDN.
+### El proyecto debe evolucionar hacia asesor comercial inteligente
 
-Consecuencia: funciona sin backend adicional, pero depende de red externa y
-puede fallar por CDN, CSP o cambios de libreria.
+La calculadora es la base. La direccion de producto es construir un advisor que
+ayude a Nextcom a calificar, explicar, recomendar, preparar renovaciones y
+detectar oportunidades comerciales.
 
-Decision recomendada: fijar dependencias en `package.json` o migrar generacion
-de documentos a un servicio controlado.
+Decision: futuras funcionalidades deben alinearse con ese camino, no solo agregar
+pantallas aisladas.
+
+## Decisiones pendientes recomendadas
+
+- Proveedor y flujo de autenticacion interna.
+- Fuente oficial y versionada del catalogo.
+- Politica de retencion de archivos subidos.
+- Modelo de rate limiting y control de costos.
+- Estructura de knowledge base del advisor.
+- Estrategia de tests y fixtures anonimizados.
+- Integraciones comerciales futuras, como CRM o pipeline.

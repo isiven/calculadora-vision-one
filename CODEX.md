@@ -2,94 +2,113 @@
 
 ## Proposito
 
-Este archivo da contexto operativo para futuros agentes Codex que trabajen en
-`isiven/calculadora-vision-one`.
+Este archivo define como debe trabajar Codex en este repositorio. El objetivo es
+mantener cambios seguros, pequenos y trazables para la calculadora comercial de
+Trend Vision One / TrendAI Flex de Nextcom Systems.
 
-Antes de modificar codigo, leer tambien:
+## Lectura obligatoria antes de cambiar codigo
+
+Antes de modificar codigo funcional, Codex debe leer siempre:
 
 - `PROJECT_BRIEF.md`
 - `DECISIONS.md`
-- `SECURITY_RULES.md`
 - `ROADMAP.md`
+- `SECURITY_RULES.md`
 - `README.md`
 - `package.json`
-- `api/advisor.js`
-- `src/App.jsx`
 
-## Resumen tecnico
+Si la tarea toca el advisor, parsers, catalogo, seguridad o autenticacion,
+tambien revisar los archivos involucrados antes de proponer o aplicar cambios.
 
-La aplicacion es una SPA React creada con Vite. La mayor parte de la logica vive
-en `src/App.jsx`, incluyendo:
+## Reglas de trabajo
 
-- catalogo de productos Trend Vision One
-- vista cliente
-- vista interna Nextcom
-- calculo de creditos
-- auditoria de consumo vs propuesta
-- importacion de archivos mediante IA
-- generacion de PDF
+- Trabajar siempre en ramas, nunca directamente sobre `main`.
+- Hacer cambios pequenos, testeables y faciles de revisar.
+- No tocar logica comercial sin explicar impacto.
+- No cambiar SKUs, codigos, creditos, unidades o nombres de productos sin una
+  fuente verificable o aprobacion explicita.
+- No exponer secretos, tokens, API keys, PINs reales ni credenciales.
+- No subir datos reales de clientes, propuestas, certificados, screenshots de
+  consumo ni informacion comercial sensible.
+- No mezclar refactors grandes con cambios funcionales.
+- No modificar archivos fuera del alcance solicitado.
+- Respetar la separacion entre modo cliente y modo interno Nextcom.
+
+## Cambios que requieren plan previo
+
+Antes de tocar cualquiera de estas areas, Codex debe proponer un plan primero:
+
+- seguridad
+- autenticacion o autorizacion
+- endpoints de IA
+- parsers de archivos
+- catalogo de productos
+- calculos de creditos
+- reglas comerciales
+- datos internos de Nextcom
+- manejo de archivos de clientes
+
+El plan debe explicar alcance, riesgos, archivos afectados y forma de verificar.
+
+## Arquitectura actual resumida
+
+La aplicacion es una SPA React + Vite. La mayor parte de la logica vive en
+`src/App.jsx`.
+
+Funciones principales actuales:
+
+- estimador de creditos para cliente externo
+- calculadora interna de rentabilidad para Nextcom
+- importacion asistida por IA de reportes, propuestas y cotizaciones
+- comparacion de consumo vs propuesta
+- generacion de PDFs preliminares
 - widget `Vision One Advisor`
 
-El backend esta compuesto por funciones serverless de Vercel en `api/`:
+Backend serverless en `api/`:
 
-- `api/advisor.js`: chat consultivo con Anthropic para modo cliente o interno
-- `api/parse-usage.js`: extraccion de consumo mensual desde screenshots
-- `api/parse-proposal.js`: extraccion de certificados/propuestas anteriores
-- `api/parse-quote.js`: importador interno de cotizaciones
-- `api/rates.js`: proxy de tasas USD/VES
+- `api/advisor.js`: proxy a Claude via Anthropic
+- `api/parse-usage.js`: analiza screenshots de consumo
+- `api/parse-proposal.js`: analiza certificados/propuestas
+- `api/parse-quote.js`: analiza cotizaciones internas
+- `api/rates.js`: obtiene tasas USD/VES
 
-No hay base de datos. El estado vive en memoria del navegador. No hay
-autenticacion real; el modo interno usa un PIN en frontend y debe tratarse como
-proteccion temporal, no como seguridad.
+## Verificacion esperada
 
-## Reglas para Codex
+Al finalizar una tarea, Codex debe explicar:
 
-- No cambiar logica existente sin pedido explicito.
-- Mantener cambios pequenos, revisables y alineados al objetivo del usuario.
-- Antes de tocar calculos, revisar todas las apariciones del catalogo y de los
-  IDs de productos en frontend y endpoints.
-- No agregar precios reales, secretos, credenciales ni datos de clientes al repo.
-- No enviar informacion sensible en logs.
-- Si se edita el advisor, revisar `SECURITY_RULES.md` por riesgo de prompt
-  injection, fuga de datos internos y respuestas comerciales incorrectas.
-- Si se agrega una dependencia, justificarla y actualizar `package.json` y el
-  lockfile correspondiente.
-- Si se introduce una nueva API, documentar contrato de entrada/salida.
+- archivos modificados
+- razon del cambio
+- impacto funcional o comercial
+- riesgos introducidos o reducidos
+- pruebas o verificaciones realizadas
+- pruebas que no se pudieron ejecutar y por que
 
-## Comandos conocidos
+Cuando aplique, ejecutar:
 
 ```bash
-npm install
-npm run dev
 npm run build
 ```
 
 Actualmente no hay scripts de test ni lint configurados.
 
-## Variables de entorno
+## Variables y secretos
 
-La variable requerida para funciones de IA es:
+Usar `.env.example` como referencia. Nunca commitear `.env` con valores reales.
+
+La clave de Anthropic debe vivir en variables de entorno del entorno local o de
+Vercel:
 
 ```bash
 ANTHROPIC_API_KEY=
 ```
 
-Ver `.env.example`.
+## Criterio para aceptar cambios futuros
 
-## Areas delicadas
+Un cambio es aceptable si:
 
-- `src/App.jsx` es monolitico y contiene mucho estado compartido.
-- Los IDs de productos no estan centralizados entre UI y parsers.
-- El modo interno muestra datos comerciales y no debe exponerse a clientes.
-- Los parsers dependen de respuestas de LLM y requieren validacion humana cuando
-  la confianza sea baja.
-- La generacion de PDF carga librerias desde CDN en runtime.
-
-## Criterios de entrega
-
-Para cambios futuros, una entrega correcta debe incluir:
-
-- resumen de archivos modificados
-- explicacion del impacto funcional
-- verificacion ejecutada, como `npm run build`, o razon clara si no se ejecuto
-- riesgos residuales si aplica
+- respeta el contexto comercial de Nextcom
+- no rompe la separacion cliente/interno
+- mantiene o mejora seguridad
+- no altera catalogo ni creditos sin fuente
+- es verificable
+- deja documentados riesgos relevantes

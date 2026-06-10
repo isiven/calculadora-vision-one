@@ -1,101 +1,236 @@
 # ROADMAP.md
 
-## Vision
+## Vision general
 
 Convertir la calculadora actual en un asesor comercial inteligente de Trend
-Vision One para Nextcom: una herramienta que estime creditos, explique valor,
-analice consumo real, detecte oportunidades y prepare acciones comerciales con
-seguridad y trazabilidad.
+Vision One / TrendAI Flex para Nextcom Systems.
 
-## Fase 1 - Contexto y seguridad base
+## Fase 0: Contexto y documentacion
 
-- Agregar documentacion de contexto del proyecto.
+### Objetivo
+
+Preparar el repositorio para que Codex y el equipo trabajen con contexto claro
+sin modificar todavia la logica funcional.
+
+### Tareas
+
+- Crear `CODEX.md`.
+- Crear `PROJECT_BRIEF.md`.
+- Crear `DECISIONS.md`.
+- Crear `ROADMAP.md`.
+- Crear `SECURITY_RULES.md`.
 - Crear `.env.example`.
-- Documentar riesgos de seguridad.
+- Documentar arquitectura, riesgos y direccion de producto.
+
+### Riesgos
+
+- Documentacion incompleta puede guiar mal futuras tareas.
+- Documentacion desactualizada puede ser peor que no tener documentacion.
+
+### Criterio de finalizacion
+
+- Los archivos existen en la raiz.
+- Cubren reglas de trabajo, brief, decisiones, seguridad y roadmap.
+- No se modifica logica funcional.
+
+## Fase 1: Seguridad base
+
+### Objetivo
+
+Reducir riesgos antes de exponer la herramienta a uso publico o a datos
+sensibles de clientes.
+
+### Tareas
+
 - Reemplazar PIN frontend por autenticacion real.
-- Proteger endpoints con autorizacion y rate limiting.
-- Definir politica de datos para archivos subidos.
-- Evitar CORS abierto cuando no sea necesario.
+- Mover autorizacion del modo interno al servidor.
+- Proteger endpoints de IA.
+- Agregar rate limiting.
+- Validar tamanos y tipos de archivos.
+- Restringir CORS segun `ALLOWED_ORIGINS`.
+- Agregar aviso de uso de IA y consentimiento para archivos.
+- Evitar logs con informacion sensible.
 
-## Fase 2 - Catalogo unico y calculos confiables
+### Riesgos
 
-- Extraer catalogo de `src/App.jsx` a una fuente unica versionada.
+- Romper flujos actuales de cliente o interno.
+- Bloquear previews o dominios validos si CORS queda demasiado estricto.
+- Agregar friccion excesiva al flujo comercial.
+
+### Criterio de finalizacion
+
+- Cliente no puede acceder a datos internos.
+- Endpoints sensibles rechazan llamadas no autorizadas.
+- Hay limites contra abuso y costo inesperado.
+- El usuario entiende que archivos pueden procesarse con IA.
+
+## Fase 2: Centralizacion de catalogo
+
+### Objetivo
+
+Crear una fuente unica de verdad para productos, SKUs, codigos, creditos,
+unidades y aliases.
+
+### Tareas
+
+- Extraer catalogo fuera de `src/App.jsx`.
+- Definir estructura de datos versionada.
 - Reutilizar catalogo en frontend y endpoints.
-- Corregir inconsistencias de IDs entre parsers y UI.
-- Agregar pruebas unitarias para calculo de creditos, prorrateo y auditoria.
-- Agregar fixtures reales anonimizados de propuestas, certificados y drawdown.
-- Documentar reglas de calculo por producto.
+- Eliminar mapeos duplicados de parsers.
+- Agregar aliases para matching de IA.
+- Documentar fuente y fecha de actualizacion de cada producto.
 
-## Fase 3 - Modularizacion de frontend
+### Riesgos
 
-- Separar `src/App.jsx` en componentes y modulos:
-  - catalogo
-  - calculadora cliente
-  - calculadora interna
-  - advisor
-  - auditoria
-  - importadores
-  - PDF
-  - autenticacion
-- Agregar validacion de tipos o migrar gradualmente a TypeScript.
-- Agregar lint, formato y CI.
-- Reducir logos base64 embebidos moviendolos a assets.
+- Cambiar IDs puede romper datos existentes en UI.
+- Un mapeo incorrecto puede producir cotizaciones incorrectas.
+- La fuente oficial de creditos puede cambiar.
 
-## Fase 4 - Parsers robustos con IA
+### Criterio de finalizacion
 
-- Definir schemas JSON estrictos para cada parser.
-- Validar respuestas de LLM antes de usarlas.
-- Mostrar estado de confianza y campos que requieren confirmacion.
-- Separar extraccion, normalizacion y matching de productos.
-- Manejar DOCX/XLSX con parsers reales, no como texto plano.
-- Agregar evaluaciones automaticas contra fixtures.
+- Una sola fuente alimenta calculadora, parsers y advisor.
+- No hay IDs contradictorios entre endpoints.
+- Los calculos existentes siguen produciendo los mismos resultados esperados.
 
-## Fase 5 - Advisor comercial inteligente
+## Fase 3: Refactor de arquitectura
 
-- Sacar knowledge base y prompts de `api/advisor.js` a archivos versionados.
-- Agregar retrieval o carga controlada de contexto comercial.
-- Incorporar playbooks Nextcom:
-  - discovery
-  - renovacion
-  - upsell
-  - objeciones
-  - banca
-  - retail
-  - salud
-  - empresa mediana
-- Generar recomendaciones con estructura:
-  - situacion
-  - riesgo
-  - oportunidad
-  - producto recomendado
-  - razon de negocio
-  - siguiente accion
-- Separar respuestas de cliente y respuestas internas con controles de servidor.
+### Objetivo
 
-## Fase 6 - Flujo comercial Nextcom
+Reducir el riesgo del monolito `src/App.jsx` y preparar la app para crecer.
 
-- Capturar leads con consentimiento.
-- Generar resumen ejecutivo para comercial.
-- Generar correo o WhatsApp sugerido.
-- Preparar minuta de reunion.
-- Exportar propuesta preliminar.
-- Integrar CRM o pipeline si Nextcom lo define.
-- Agregar historial por oportunidad si se implementa almacenamiento seguro.
+### Tareas
 
-## Fase 7 - Operacion y gobierno
+- Separar componentes de cliente, interno, advisor, upload, auditoria y PDF.
+- Extraer calculos puros a modulos testeables.
+- Extraer servicios de API.
+- Mover assets base64 a archivos dedicados.
+- Considerar migracion gradual a TypeScript o schemas runtime.
+- Agregar estructura de carpetas clara.
 
-- Observabilidad de errores, latencia y costos de IA.
-- Control de gasto por endpoint.
-- Auditoria de cambios del catalogo.
-- Revision trimestral de conocimiento Trend Vision One.
-- Roles de acceso para cliente, comercial, preventa y admin.
-- Politica de retencion y borrado de archivos.
+### Riesgos
 
-## Prioridad recomendada
+- Refactor grande puede introducir regresiones visuales o de calculo.
+- Separar demasiado pronto puede crear abstracciones innecesarias.
 
-1. Seguridad de acceso interno y endpoints.
-2. Catalogo unico.
-3. Tests de calculo y parsers.
-4. Modularizacion.
-5. Advisor con playbooks y knowledge base versionada.
-6. Integraciones comerciales.
+### Criterio de finalizacion
+
+- La UI mantiene comportamiento actual.
+- Los calculos clave viven en funciones independientes.
+- Los componentes principales son localizables y revisables.
+
+## Fase 4: Parsers confiables y pruebas
+
+### Objetivo
+
+Hacer que extraccion de consumo, propuestas y cotizaciones sea confiable,
+auditable y facil de validar.
+
+### Tareas
+
+- Definir schemas de respuesta para cada parser.
+- Validar respuestas de IA antes de usarlas.
+- Agregar fixtures anonimizados de screenshots, certificados y cotizaciones.
+- Agregar pruebas para matching de productos.
+- Agregar pruebas para deteccion de pools y doble conteo.
+- Manejar DOCX/XLSX con parsers reales.
+- Mostrar campos de baja confianza para revision humana.
+
+### Riesgos
+
+- Documentos reales varian mucho en formato.
+- La IA puede alucinar fechas, cantidades o productos.
+- Fixtures con datos reales pueden filtrar informacion sensible.
+
+### Criterio de finalizacion
+
+- Parsers tienen contratos claros.
+- Hay pruebas automatizadas para casos frecuentes y edge cases.
+- La app no aplica automaticamente datos de baja confianza sin visibilidad.
+
+## Fase 5: Advisor comercial inteligente
+
+### Objetivo
+
+Evolucionar el advisor de chat informativo a copiloto comercial contextual para
+Nextcom.
+
+### Tareas
+
+- Separar knowledge base y prompts de `api/advisor.js`.
+- Versionar playbooks comerciales.
+- Agregar modo de recomendacion estructurada.
+- Usar contexto de consumo, propuesta y cotizacion para sugerir siguiente accion.
+- Generar argumentos de valor por industria.
+- Preparar respuestas a objeciones.
+- Distinguir estrictamente respuestas cliente vs internas.
+- Evaluar retrieval o carga controlada de conocimiento.
+
+### Riesgos
+
+- El advisor puede revelar informacion interna si no hay permisos reales.
+- Recomendaciones incorrectas pueden afectar confianza comercial.
+- Base de conocimiento desactualizada puede causar errores de licenciamiento.
+
+### Criterio de finalizacion
+
+- Advisor responde con estructura comercial util.
+- No expone datos internos en modo cliente.
+- Sus recomendaciones indican supuestos y dependencias.
+- La knowledge base puede actualizarse sin tocar logica principal.
+
+## Fase 6: Integraciones comerciales futuras
+
+### Objetivo
+
+Conectar la herramienta con procesos comerciales reales de Nextcom.
+
+### Tareas
+
+- Definir captura de leads con consentimiento.
+- Generar resumen para comercial.
+- Preparar email o WhatsApp sugerido.
+- Exportar propuesta preliminar estructurada.
+- Evaluar integracion CRM.
+- Evaluar historial por oportunidad.
+- Definir estados de oportunidad y handoff comercial.
+
+### Riesgos
+
+- Integrar CRM sin modelo de datos claro puede crear deuda.
+- Guardar datos de clientes requiere controles de seguridad y retencion.
+- Automatizar demasiado puede reducir revision humana necesaria.
+
+### Criterio de finalizacion
+
+- Hay flujo claro desde estimacion hasta siguiente accion comercial.
+- Los datos capturados tienen consentimiento y proposito.
+- Nextcom puede dar seguimiento sin copiar datos manualmente.
+
+## Fase 7: Observabilidad, costos y gobierno
+
+### Objetivo
+
+Operar la herramienta con control de calidad, costo y riesgo.
+
+### Tareas
+
+- Medir errores de endpoints.
+- Medir latencia de IA.
+- Medir consumo de tokens/costo.
+- Agregar alertas de fallo o abuso.
+- Auditar cambios de catalogo.
+- Definir revision periodica de knowledge base.
+- Definir politica de retencion y borrado.
+- Documentar proceso de release.
+
+### Riesgos
+
+- Falta de observabilidad puede ocultar costos o errores.
+- Logs mal disenados pueden capturar informacion sensible.
+- Gobierno excesivo puede frenar mejoras pequenas.
+
+### Criterio de finalizacion
+
+- El equipo puede ver salud y costo de la herramienta.
+- Hay proceso para actualizar catalogo y conocimiento.
+- Hay controles de retencion, seguridad y auditoria razonables.

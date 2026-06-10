@@ -2,86 +2,126 @@
 
 ## Proyecto
 
-Calculadora Vision One para Nextcom Systems.
+Herramienta comercial de Nextcom Systems para Trend Vision One / TrendAI Flex.
 
-## Objetivo comercial
+## Proposito
 
-Ayudar a clientes, prospectos y equipo interno de Nextcom a estimar, explicar y
+Ayudar a clientes, prospectos y equipo interno de Nextcom a entender, estimar y
 preparar conversaciones comerciales sobre creditos de Trend Vision One.
 
-La herramienta busca reducir friccion en tres momentos:
+La herramienta permite calcular creditos, analizar consumo, interpretar
+propuestas/certificados y explicar el valor de Vision One con lenguaje
+consultivo.
 
-- estimar creditos requeridos para una nueva compra
-- interpretar consumo real de Vision One
-- comparar consumo actual contra una propuesta o contrato anterior
+## Usuarios objetivo
 
-## Audiencias
+### Cliente externo
 
-### Cliente o prospecto
+Cliente o prospecto que quiere:
 
-Usuario externo que quiere entender cuantos creditos necesita, que productos
-consume y como preparar una conversacion con Nextcom.
+- estimar cuantos creditos necesita
+- entender productos de Vision One
+- subir un reporte de consumo o propuesta anterior
+- recibir un PDF preliminar
+- contactar a Nextcom para una cotizacion formal
 
-La vista cliente no debe mostrar precios internos, costos, margen, comisiones ni
-estrategia comercial privada.
+Esta experiencia no debe mostrar precios internos, costos, margen, rentabilidad
+ni estrategia comercial privada.
 
-### Equipo Nextcom
+### Equipo interno Nextcom
 
-Usuario interno comercial, preventa, ingenieria o gerencia. Usa la herramienta
-para preparar cotizaciones, analizar rentabilidad, importar cotizaciones y
-construir argumentos de renovacion o upsell.
+Comerciales, preventa, ingenieros y gerencia de Nextcom que quieren:
 
-## Propuesta de valor
+- preparar una cotizacion
+- analizar rentabilidad
+- importar cotizaciones
+- entender consumo vs contrato
+- preparar argumentos de renovacion o upsell
+- responder objeciones de clientes
 
-- Explica el modelo de creditos Vision One / TrendAI Flex de forma simple.
-- Convierte productos y cantidades en creditos estimados.
-- Usa IA para acelerar lectura de screenshots, certificados y propuestas.
-- Genera PDFs preliminares para conversaciones comerciales.
-- Permite que el advisor responda con contexto de la sesion.
+## Problema que resuelve
 
-## Flujos actuales
+Trend Vision One / TrendAI Flex puede ser dificil de explicar porque combina
+productos, creditos, tiers, consumo mensual, contratos previos y necesidades de
+seguridad del cliente.
 
-1. El usuario elige modo cliente o modo interno.
-2. En modo cliente, agrega productos manualmente o sube documentos.
-3. El frontend envia archivos a funciones serverless que consultan Anthropic.
-4. El frontend transforma resultados de IA en lineas de productos.
-5. La app calcula creditos anuales y, si hay consumo y propuesta, muestra una
-   comparacion.
-6. El usuario puede descargar PDF o solicitar cotizacion por WhatsApp.
-7. En modo interno, Nextcom configura precio por credito, costo, soporte y ve
-   rentabilidad.
-8. El widget advisor puede responder preguntas usando el contexto actual.
+La herramienta reduce esa complejidad al:
 
-## Limites actuales
+- convertir productos y cantidades en creditos
+- estimar consumo anual desde drawdown mensual
+- comparar consumo real contra creditos contratados
+- detectar brechas, sobrantes y posibles oportunidades
+- generar documentos preliminares para conversaciones comerciales
+- responder preguntas contextuales con un advisor de IA
 
-- No reemplaza una cotizacion formal de Nextcom.
-- No valida contratos, precios ni descuentos reales.
-- No debe prometer seguridad total ni resultados garantizados.
-- No debe usarse como fuente unica para decisiones regulatorias o incidentes.
-- El resultado de IA debe considerarse asistido, no definitivo.
+## Funciones actuales
 
-## Terminologia importante
+- Pantalla inicial con dos modos: cliente e interno Nextcom.
+- Catalogo de productos Trend Vision One con creditos por unidad.
+- Calculadora manual de creditos.
+- Vista cliente sin precios.
+- Vista interna con precio por credito, costo, soporte Platinum y margen.
+- Upload de screenshots de consumo.
+- Upload de propuestas o certificados.
+- Importacion interna de cotizaciones.
+- Extraccion asistida por IA usando Claude via Anthropic.
+- Auditoria de consumo vs propuesta.
+- Unificacion/prorrateo de fechas.
+- Generacion de PDFs preliminares.
+- Solicitud por WhatsApp.
+- Advisor flotante con modo cliente e interno.
 
-- Vision One: plataforma de ciberseguridad de Trend Micro.
-- TrendAI Flex: modelo flexible de creditos para Vision One.
-- Pool de creditos: creditos contratados disponibles para consumo.
-- Drawdown: consumo de creditos durante un periodo.
-- CREM: Cyber Risk Exposure Management.
-- XDR: Extended Detection and Response.
-- ZTSA: Zero Trust Secure Access.
+## Vision futura
 
-## Criterios de exito
+Evolucionar de calculadora a asesor comercial inteligente para Nextcom.
 
-- El cliente entiende su estimacion de creditos sin ver datos internos.
-- El equipo Nextcom puede preparar mejor una renovacion o upsell.
-- Los calculos son trazables y auditables.
-- Las respuestas del advisor son consultivas, correctas y prudentes.
-- Los documentos generados dejan claro que son preliminares.
+La vision es que el sistema pueda:
 
-## No objetivos actuales
+- entender el contexto del cliente
+- calificar oportunidad comercial
+- identificar brechas de seguridad y licenciamiento
+- recomendar modulos y tiers
+- preparar discurso comercial y tecnico
+- generar resumen ejecutivo
+- proponer siguiente accion
+- asistir renovaciones y upsells
+- integrarse eventualmente con CRM o pipeline comercial
 
-- CRM completo.
-- Portal de autenticacion empresarial.
-- Cotizacion formal vinculante.
-- Sustituto de PriceBook oficial de Trend Micro.
-- Operacion SOC o respuesta a incidentes.
+## Stack tecnico actual
+
+- React 18
+- Vite
+- JavaScript ES modules
+- lucide-react
+- Funciones serverless de Vercel en `api/`
+- Anthropic Claude para advisor y parsers
+- Generacion de PDF en navegador con html2canvas y jsPDF cargados por CDN
+- Sin base de datos
+- Sin autenticacion real de servidor
+- Sin tests automatizados configurados
+
+## Limitaciones actuales detectadas
+
+- `src/App.jsx` es monolitico y concentra UI, estado, calculos y PDF.
+- El catalogo esta duplicado entre frontend y prompts/mapeos de parsers.
+- Hay riesgo de IDs, SKUs o creditos contradictorios entre endpoints.
+- El modo interno depende de un PIN en frontend.
+- Los endpoints de IA no tienen proteccion robusta.
+- No hay rate limiting.
+- No hay politica formal de consentimiento para archivos enviados a IA.
+- No hay tests para calculos, parsers o auditoria.
+- El advisor tiene base de conocimiento embebida en codigo.
+- La generacion de PDF depende de scripts externos cargados en runtime.
+- README es minimo y no documenta despliegue, seguridad ni variables.
+
+## Principios de producto
+
+- Primero claridad comercial, luego automatizacion.
+- El cliente debe entender el resultado sin ver informacion interna.
+- El equipo Nextcom debe poder defender la recomendacion con datos.
+- Toda recomendacion debe ser trazable a consumo, propuesta o catalogo.
+- La IA asiste, no reemplaza la validacion humana.
+- No prometer seguridad total ni resultados garantizados.
+- Ser transparente cuando falta informacion o depende del contrato.
+- Mantener una separacion fuerte entre contexto cliente e interno.
+- Proteger datos comerciales y datos de clientes desde el diseno.
