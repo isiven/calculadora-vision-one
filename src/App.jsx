@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  AlertTriangle, BarChart3, Download, FileText, Info, Mail, MessageSquare, Package,
-  Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X
+  AlertTriangle, ArrowRight, BarChart3, Building2, CheckCircle2, ClipboardCheck,
+  Download, FileText, Info, LockKeyhole, Mail, MessageSquare, Package,
+  Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, UserRound, X
 } from "lucide-react";
 import { InternalShell } from "@/components/internal/InternalShell";
 
@@ -3777,10 +3778,16 @@ function ClientApp() {
     window.open(`https://wa.me/50763941405?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  const clientSteps = [
+    { label: "Datos", detail: "Opcional", icon: UserRound },
+    { label: "Productos", detail: "Manual o IA", icon: Package },
+    { label: "Resultado", detail: "PDF o contacto", icon: ClipboardCheck },
+  ];
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: C.bg,
+      background: "#F8FAFC",
       fontFamily: "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",
       color: C.text,
       paddingBottom: isMobile ? "calc(120px + env(safe-area-inset-bottom, 0px))" : 40
@@ -3792,7 +3799,8 @@ function ClientApp() {
         button:focus-visible { outline: 2px solid ${C.blue}; outline-offset: 2px; }
       `}</style>
       <header style={{
-        background: C.surface, borderBottom: `1px solid ${C.border}`,
+        background: "rgba(255,255,255,.92)", borderBottom: `1px solid ${C.border}`,
+        backdropFilter:"blur(10px)",
         position: "sticky", top: 0, zIndex: 50
       }}>
         {/* Top row: brand identity */}
@@ -3838,9 +3846,13 @@ function ClientApp() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 980, margin: "0 auto", padding: isMobile ? "20px 14px 80px" : "40px 32px 80px" }}>
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: isMobile ? 14 : 16, marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>Información de contacto (opcional)</div>
+      <main style={{ maxWidth: 980, margin: "0 auto", padding: isMobile ? "18px 14px 80px" : "34px 32px 80px" }}>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: isMobile ? 14 : 16, marginBottom: 18, boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+            <UserRound size={14} color={C.text3} strokeWidth={2} />
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: ".06em" }}>Información de contacto</div>
+            <span style={{ fontSize:10.5, color:C.text3, background:C.panel, borderRadius:999, padding:"2px 7px" }}>Opcional</span>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap: 10 }}>
             <input type="text" placeholder="Empresa" value={clientName} onChange={e => setClientName(e.target.value)}
               style={{ fontSize: 13, padding: "9px 11px", border: `1px solid ${C.border}`, borderRadius: 7, background: C.surface, outline: "none", boxSizing: "border-box", color: C.text }} />
@@ -3856,26 +3868,45 @@ function ClientApp() {
         {/* ═══════════════════════════════════════════════════════════════
              SELECTOR MANUAL — Sin gradientes, sin emojis. Tipografía hace el trabajo.
         ═══════════════════════════════════════════════════════════════ */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ marginBottom: 6 }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:16, padding:isMobile?"20px 18px":"26px 28px", marginBottom:22, boxShadow:"0 12px 30px rgba(15,23,42,.05)" }}>
+          <div style={{ marginBottom: isMobile ? 18 : 22 }}>
             <div style={{
-              fontSize: 11, color: C.text3, fontWeight: 600, textTransform: "uppercase",
+              display:"inline-flex", alignItems:"center", gap:7,
+              fontSize: 11, color: C.blue, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: ".06em", marginBottom: 6
             }}>
+              <Shield size={13} color={C.blue} strokeWidth={2} />
               Calculadora Vision One
             </div>
             <h1 style={{
-              fontSize: isMobile ? 22 : 26, fontWeight: 600, color: C.text,
-              margin: 0, letterSpacing: "-.015em", lineHeight: 1.2
+              fontSize: isMobile ? 24 : 34, fontWeight: 750, color: C.text,
+              margin: 0, letterSpacing: 0, lineHeight: 1.12
             }}>
               ¿Cuántos créditos necesitas?
             </h1>
             <p style={{
-              fontSize: isMobile ? 13 : 14, color: C.text2, margin: "6px 0 0",
-              lineHeight: 1.55, maxWidth: 560
+              fontSize: isMobile ? 13 : 15, color: C.text2, margin: "8px 0 0",
+              lineHeight: 1.6, maxWidth: 620
             }}>
-              Selecciona los productos que tu empresa requiere y te indicamos el total de créditos a contratar.
+              Selecciona productos o carga documentos para estimar tu consumo anual de Trend Vision One con una guía simple de Nextcom.
             </p>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(3, 1fr)", gap:10 }}>
+            {clientSteps.map((step, idx) => {
+              const Icon = step.icon;
+              return (
+                <div key={step.label} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:"#FAFAF9", border:`1px solid ${C.border}`, borderRadius:10 }}>
+                  <div style={{ width:30, height:30, borderRadius:8, background:idx === 0 ? C.blueBg : C.surface, display:"flex", alignItems:"center", justifyContent:"center", border:`1px solid ${idx === 0 ? "#DBEAFE" : C.border}` }}>
+                    <Icon size={15} color={idx === 0 ? C.blue : C.text3} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{step.label}</div>
+                    <div style={{ fontSize:11, color:C.text3, marginTop:1 }}>{step.detail}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -3905,22 +3936,23 @@ function ClientApp() {
           {lines.length === 0 ? (
             // Estado vacío
             <div style={{
-              padding: isMobile ? "32px 20px" : "44px 28px",
-              textAlign: "center"
+              padding: isMobile ? "30px 20px" : "42px 28px",
+              textAlign: "center",
+              background:"#FAFAF9"
             }}>
               <div style={{
                 width: 44, height: 44, borderRadius: "50%",
-                background: C.bg, border: `1px solid ${C.border}`,
+                background: C.surface, border: `1px solid ${C.border}`,
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 marginBottom: 12
               }}>
-                <Package size={20} color={C.text3} strokeWidth={1.5} />
+                <Package size={20} color={C.blue} strokeWidth={1.75} />
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, color: C.text, marginBottom: 4 }}>
                 Aún no has agregado productos
               </div>
               <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55, maxWidth: 380, margin: "0 auto" }}>
-                Agrega productos manualmente o sube un documento más abajo y los completaremos por ti.
+                Empieza manualmente o usa los paneles de documentos para completar la estimación con IA.
               </div>
             </div>
           ) : (
@@ -3963,22 +3995,23 @@ function ClientApp() {
              SECCIÓN: Atajos con IA — secundaria, discreta, eficiente
         ═══════════════════════════════════════════════════════════════ */}
         <div style={{
-          marginBottom: 14, paddingTop: 24, borderTop: `1px solid ${C.border}`
+          marginBottom: 14, padding: "14px 16px", border: `1px solid ${C.border}`,
+          background: C.surface, borderRadius: 12
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <Sparkles size={14} color={C.text3} strokeWidth={2} />
+            <Sparkles size={14} color={C.blue} strokeWidth={2} />
             <div style={{
-              fontSize: 11, color: C.text3, fontWeight: 600, textTransform: "uppercase",
+              fontSize: 11, color: C.blue, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: ".06em"
             }}>
-              ¿Tienes documentos? Acelera el proceso
+              Atajos inteligentes
             </div>
           </div>
           <p style={{
             fontSize: 13, color: C.text2, margin: "0 0 4px",
             lineHeight: 1.55, maxWidth: 580
           }}>
-            Sube tu reporte de consumo de Vision One o tu propuesta anterior. Los analizamos automáticamente y completamos los productos por ti.
+            Sube un reporte de consumo o una propuesta anterior para acelerar la estimación sin perder revisión humana.
           </p>
         </div>
 
@@ -3995,7 +4028,8 @@ function ClientApp() {
         <div style={{
           background: C.surface,
           border: `1px solid ${C.border}`,
-          borderRadius: 10, padding: isMobile ? 16 : 18, transition: "border-color .15s"
+          borderRadius: 12, padding: isMobile ? 16 : 18, transition: "border-color .15s",
+          boxShadow:"0 1px 2px rgba(15,23,42,.03)"
         }}>
           {/* Header */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: usageItems.length > 0 ? 14 : 0 }}>
@@ -4005,7 +4039,7 @@ function ClientApp() {
                 <span>Reporte de consumo</span>
               </div>
               <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55 }}>
-                Sube un screenshot de tu Drawdown mensual y calculamos tu uso anual.
+                Sube screenshots del drawdown mensual para estimar consumo anual.
               </div>
             </div>
             {usageItems.length > 0 && (
@@ -4031,7 +4065,7 @@ function ClientApp() {
                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                   {usageFiles.map((f, idx) => (
                     <div key={idx} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:7, fontSize:12 }}>
-                      <span style={{ fontSize:14 }}>✅</span>
+                      <CheckCircle2 size={15} color={C.green} strokeWidth={2.25} style={{ flexShrink:0 }} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:12, fontWeight:600, color:C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</div>
                         <div style={{ fontSize:10, color:C.text3, marginTop:1 }}>
@@ -4072,7 +4106,7 @@ function ClientApp() {
             )}
             {usageFiles.length === 0 && (
               <div style={{ marginTop: 8, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
-                Puedes subir uno o varios screenshots. Si tienes múltiples cuentas, los productos duplicados se suman automáticamente.
+                Puedes subir varios screenshots; los duplicados se consolidan automáticamente.
               </div>
             )}
           </div>
@@ -4221,7 +4255,8 @@ function ClientApp() {
         <div style={{
           background: C.surface,
           border: `1px solid ${C.border}`,
-          borderRadius: 10, padding: isMobile ? 16 : 18, transition: "border-color .15s"
+          borderRadius: 12, padding: isMobile ? 16 : 18, transition: "border-color .15s",
+          boxShadow:"0 1px 2px rgba(15,23,42,.03)"
         }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, marginBottom: hasProposal ? 14 : 0 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -4230,7 +4265,7 @@ function ClientApp() {
                 <span>Propuesta anterior</span>
               </div>
               <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55 }}>
-                Sube tu Entitlement Certificate o cotización y comparamos compra vs consumo.
+                Sube un certificado o cotización para comparar compra vs consumo.
               </div>
             </div>
             {hasProposal && (
@@ -4256,7 +4291,7 @@ function ClientApp() {
                 <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                   {proposalFiles.map((f, idx) => (
                     <div key={idx} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 10px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:7, fontSize:12 }}>
-                      <span style={{ fontSize:14 }}>✅</span>
+                      <CheckCircle2 size={15} color={C.green} strokeWidth={2.25} style={{ flexShrink:0 }} />
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ fontSize:12, fontWeight:600, color:C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</div>
                         <div style={{ fontSize:10, color:C.text3, marginTop:1 }}>
@@ -4296,7 +4331,7 @@ function ClientApp() {
             )}
             {proposalFiles.length === 0 && (
               <div style={{ marginTop: 8, fontSize: 11, color: C.text3, lineHeight: 1.5 }}>
-                <strong style={{ color: C.text2, fontWeight: 600 }}>Mejor opción:</strong> Entitlement Certificates oficiales (con SKU, Customer No., Start/End Date). También acepta cotizaciones de partners, screenshots o emails.
+                Mejor con certificados oficiales; también acepta cotizaciones, screenshots o emails.
               </div>
             )}
           </div>
@@ -5357,90 +5392,129 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
   return (
     <div style={{
       minHeight:"100vh",
-      background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 50%, #0F172A 100%)`,
+      background:"#F8FAFC",
       display:"flex", alignItems:"center", justifyContent:"center",
       padding: isMobile ? "20px 16px" : "40px",
       fontFamily:"system-ui,-apple-system,sans-serif"
     }}>
       <div style={{
         background:C.surface,
-        borderRadius: 16,
-        padding: isMobile ? "32px 24px" : "48px 56px",
-        maxWidth: 520, width:"100%",
-        boxShadow:"0 20px 60px rgba(0,0,0,.3)"
+        border:`1px solid ${C.border}`,
+        borderRadius: 18,
+        padding: isMobile ? "24px" : "34px",
+        maxWidth: 760, width:"100%",
+        boxShadow:"0 24px 60px rgba(15,23,42,.10)"
       }}>
         {/* Header with logos */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isMobile?24:32, paddingBottom:20, borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isMobile?24:30, paddingBottom:18, borderBottom:`1px solid ${C.border}` }}>
           <img src={NEXTCOM_LOGO} alt="Nextcom" style={{ height:isMobile?32:38, width:"auto" }} />
-          <div style={{ height:30, width:1, background:C.border }} />
-          <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?32:38, width:"auto" }} />
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", display:isMobile?"none":"inline" }}>
+              Trend Micro Platinum Partner
+            </span>
+            <div style={{ height:28, width:1, background:C.border }} />
+            <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?30:36, width:"auto" }} />
+          </div>
         </div>
 
         {/* Title */}
-        <div style={{ textAlign:"center", marginBottom:isMobile?28:36 }}>
-          <div style={{ fontSize: isMobile?22:26, fontWeight:800, letterSpacing:"-.02em", marginBottom:8, color:C.text }}>
+        <div style={{ textAlign:"center", marginBottom:isMobile?24:30 }}>
+          <div style={{
+            display:"inline-flex", alignItems:"center", gap:7,
+            padding:"5px 10px", border:`1px solid ${C.border}`, borderRadius:999,
+            fontSize:11, fontWeight:700, color:C.text2, background:"#FAFAF9",
+            textTransform:"uppercase", letterSpacing:".06em", marginBottom:14
+          }}>
+            <Shield size={13} color={C.blue} strokeWidth={2} />
+            Nextcom · Trend Vision One
+          </div>
+          <div style={{ fontSize: isMobile?26:34, fontWeight:750, letterSpacing:0, marginBottom:9, color:C.text, lineHeight:1.08 }}>
             Calculadora Vision One
           </div>
-          <div style={{ fontSize: isMobile?13:14, color:C.text2, lineHeight:1.5 }}>
-            ¿Cómo deseas ingresar?
+          <div style={{ fontSize: isMobile?13:15, color:C.text2, lineHeight:1.55, maxWidth:520, margin:"0 auto" }}>
+            Estima créditos, analiza consumo y prepara conversaciones comerciales con una experiencia separada para clientes y equipo Nextcom.
           </div>
         </div>
 
         {/* Two buttons */}
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr", gap:12 }}>
           {/* Cliente */}
           <button onClick={onChooseClient}
             style={{
-              padding: isMobile ? "18px 20px" : "20px 24px",
+              padding: isMobile ? "18px" : "20px",
               background:C.surface, color:C.text,
-              border:`2px solid ${C.blue}`, borderRadius:12, cursor:"pointer",
-              textAlign:"left", display:"flex", alignItems:"center", gap:14,
-              boxShadow:"0 4px 14px rgba(30,64,175,.18)",
-              transition:"transform .1s, box-shadow .1s"
+              border:`1.5px solid ${C.blue}`, borderRadius:14, cursor:"pointer",
+              textAlign:"left", display:"flex", flexDirection:"column", gap:16,
+              boxShadow:"0 10px 28px rgba(30,64,175,.12)",
+              transition:"transform .1s, box-shadow .1s, border-color .1s"
             }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(30,64,175,.28)"; }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 14px rgba(30,64,175,.18)"; e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 14px 34px rgba(30,64,175,.18)"; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 10px 28px rgba(30,64,175,.12)"; e.currentTarget.style.transform = "scale(1)"; }}
             onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
             onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-            <span style={{ fontSize:32 }}>👤</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:isMobile?16:18, fontWeight:700, marginBottom:3, color:C.text }}>Cliente</div>
-              <div style={{ fontSize:isMobile?12:13, color:C.text2, lineHeight:1.4 }}>
-                Estimar mis créditos Vision One
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+              <div style={{
+                width:42, height:42, borderRadius:12, background:C.blueBg,
+                display:"flex", alignItems:"center", justifyContent:"center"
+              }}>
+                <UserRound size={21} color={C.blue} strokeWidth={2} />
+              </div>
+              <ArrowRight size={18} color={C.blue} strokeWidth={2.25} />
+            </div>
+            <div>
+              <div style={{ fontSize:isMobile?16:18, fontWeight:750, marginBottom:5, color:C.text }}>Cliente externo</div>
+              <div style={{ fontSize:isMobile?12.5:13, color:C.text2, lineHeight:1.5 }}>
+                Estimar créditos, cargar documentos y solicitar una cotización formal.
               </div>
             </div>
-            <span style={{ fontSize:18, color:C.blue, fontWeight:700 }}>→</span>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {["Sin precios internos", "PDF preliminar"].map(t => (
+                <span key={t} style={{ fontSize:10.5, fontWeight:700, color:C.blue, background:C.blueBg, padding:"3px 7px", borderRadius:999 }}>{t}</span>
+              ))}
+            </div>
           </button>
 
           {/* Nextcom interno */}
           <button onClick={onChooseInternal}
             style={{
-              padding: isMobile ? "18px 20px" : "20px 24px",
+              padding: isMobile ? "18px" : "20px",
               background:C.surface, color:C.text,
               border:`1.5px solid ${C.border}`, borderRadius:12, cursor:"pointer",
-              textAlign:"left", display:"flex", alignItems:"center", gap:14,
+              textAlign:"left", display:"flex", flexDirection:"column", gap:16,
               transition:"transform .1s, border-color .1s"
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = C.text2}
             onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "scale(1)"; }}
             onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
             onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-            <span style={{ fontSize:32 }}>🔐</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:isMobile?16:18, fontWeight:700, marginBottom:3, color:C.text }}>Equipo Nextcom</div>
-              <div style={{ fontSize:isMobile?12:13, color:C.text2, lineHeight:1.4 }}>
-                Acceso interno · requiere clave
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
+              <div style={{
+                width:42, height:42, borderRadius:12, background:"#F5F5F4",
+                display:"flex", alignItems:"center", justifyContent:"center"
+              }}>
+                <Building2 size={21} color={C.text2} strokeWidth={2} />
+              </div>
+              <ArrowRight size={18} color={C.text2} strokeWidth={2.25} />
+            </div>
+            <div>
+              <div style={{ fontSize:isMobile?16:18, fontWeight:750, marginBottom:5, color:C.text }}>Equipo Nextcom</div>
+              <div style={{ fontSize:isMobile?12.5:13, color:C.text2, lineHeight:1.5 }}>
+                Preparar cotizaciones, revisar margen y usar herramientas internas.
               </div>
             </div>
-            <span style={{ fontSize:18, color:C.text2, fontWeight:700 }}>→</span>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+              {["Requiere clave", "Uso interno"].map(t => (
+                <span key={t} style={{ fontSize:10.5, fontWeight:700, color:C.text2, background:C.panel, padding:"3px 7px", borderRadius:999 }}>{t}</span>
+              ))}
+            </div>
           </button>
         </div>
 
         {/* Footer */}
-        <div style={{ marginTop:isMobile?28:36, paddingTop:20, borderTop:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:10, color:C.text3, lineHeight:1.5 }}>
-            Nextcom Systems, Inc. · Trend Micro Platinum Partner · Panamá<br/>
-            ISO 9001:2015 · ISO 27001:2022
+        <div style={{ marginTop:isMobile?22:28, paddingTop:16, borderTop:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:10.5, color:C.text3, lineHeight:1.6 }}>
+            Nextcom Systems, Inc. · Trend Micro Platinum Partner · Panamá
+            {!isMobile && " · ISO 9001:2015 · ISO 27001:2022"}
           </div>
         </div>
       </div>
@@ -5485,7 +5559,12 @@ function PinModal({ onSuccess, onCancel }) {
       }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ fontSize:24 }}>🔐</div>
+            <div style={{
+              width:38, height:38, borderRadius:10, background:C.blueBg,
+              display:"flex", alignItems:"center", justifyContent:"center"
+            }}>
+              <LockKeyhole size={18} color={C.blue} strokeWidth={2.25} />
+            </div>
             <div>
               <div style={{ fontSize:16, fontWeight:700, color:C.text }}>Acceso interno Nextcom</div>
               <div style={{ fontSize:11, color:C.text3, marginTop:2 }}>Solo personal autorizado</div>
@@ -5514,8 +5593,9 @@ function PinModal({ onSuccess, onCancel }) {
             }}
           />
           {error && (
-            <div style={{ fontSize:12, color:C.red, marginTop:6, fontWeight:600 }}>
-              ⚠ Clave incorrecta. Intenta de nuevo.
+            <div style={{ fontSize:12, color:C.red, marginTop:6, fontWeight:600, display:"flex", alignItems:"center", gap:5 }}>
+              <AlertTriangle size={13} color={C.red} strokeWidth={2} />
+              <span>Clave incorrecta. Intenta de nuevo.</span>
             </div>
           )}
         </div>
@@ -5530,13 +5610,15 @@ function PinModal({ onSuccess, onCancel }) {
           style={{
             width:"100%", padding:"13px",
             background:C.blue, color:"#fff", border:"none", borderRadius:9,
-            fontSize:14, fontWeight:700, cursor:"pointer"
+            fontSize:14, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8
           }}>
-          Ingresar →
+          <span>Ingresar</span>
+          <ArrowRight size={15} color="#fff" strokeWidth={2.25} />
         </button>
 
-        <div style={{ marginTop:16, padding:"10px 14px", background:C.panel, borderRadius:7, fontSize:11, color:C.text2, lineHeight:1.5 }}>
-          💡 ¿No tienes la clave? Contacta a tu coordinador de ventas en Nextcom.
+        <div style={{ marginTop:16, padding:"10px 14px", background:C.panel, borderRadius:7, fontSize:11, color:C.text2, lineHeight:1.5, display:"flex", gap:8 }}>
+          <Info size={13} color={C.text3} strokeWidth={2} style={{ marginTop:1, flexShrink:0 }} />
+          <span>¿No tienes la clave? Contacta a tu coordinador de ventas en Nextcom.</span>
         </div>
       </div>
     </div>
