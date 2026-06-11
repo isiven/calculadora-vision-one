@@ -6,7 +6,10 @@ import { InternalTopbar } from "./InternalTopbar"
 
 export function InternalShell({ children, onLogout }) {
   const [activeSection, setActiveSection] = useState("calculator")
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return false
+    return window.matchMedia("(min-width: 1024px)").matches
+  })
 
   const showSidebar = () => setIsSidebarOpen(true)
   const hideSidebar = () => setIsSidebarOpen(false)

@@ -3,7 +3,11 @@ import {
   AlertTriangle, BarChart3, Download, FileText, Info, Mail, MessageSquare, Package,
   Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X
 } from "lucide-react";
+import { InternalCalculatorShell } from "@/components/internal/InternalCalculatorShell";
+import { InternalKpiStrip } from "@/components/internal/InternalKpiStrip";
+import { InternalPricingPanel } from "@/components/internal/InternalPricingPanel";
 import { InternalShell } from "@/components/internal/InternalShell";
+import { InternalWorkspaceSection } from "@/components/internal/InternalWorkspaceSection";
 
 const TRENDAI_LOGO = "data:image/jpeg;base64,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";
 
@@ -1888,78 +1892,33 @@ function InternalApp() {
 
       <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName }} />
 
-      <div className="no-print" style={{
-        display: isMobile ? "block" : "grid",
-        gridTemplateColumns: isMobile ? "none" : "272px 1fr",
-        minHeight: "100vh",
-        fontFamily: "system-ui,-apple-system,sans-serif",
-        background: C.bg,
-        color: C.text,
-        fontSize: 14,
-        paddingBottom: isMobile ? "calc(80px + env(safe-area-inset-bottom, 0px))" : 0
-      }}>
+      <InternalCalculatorShell isMobile={isMobile}>
 
       {!isMobile && (
-      <aside style={{ background:C.surface, borderRight:`1px solid ${C.border}`, display:"flex", flexDirection:"column", position:"sticky", top:0, height:"100vh", overflowY:"auto" }}>
-        <div style={{ padding:"22px 22px 18px", borderBottom:`1px solid ${C.border}`, background:"linear-gradient(180deg, #FAFAF9 0%, #fff 100%)" }}>
-          <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:44, width:"auto", display:"block", marginBottom:10 }} />
-          <div style={{ fontSize:11, fontWeight:600, color:C.text2, letterSpacing:".02em" }}>Vision One · Credit Calculator</div>
-          <div style={{ fontSize:10, color:C.text3, marginTop:1 }}>Jan 2026 edition</div>
-        </div>
-
-        <div style={{ padding:"14px 20px", borderBottom:`1px solid ${C.border}`, display:"flex", flexDirection:"column", gap:10 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em" }}>Precios por crédito</div>
-          {[
-            { label:"Precio al cliente", sub:"Lo que cobra Nextcom", val:salePrice, set:setSalePrice, accent:true },
-            { label:"Costo proveedor",   sub:"Lo que paga Nextcom",  val:costPrice, set:setCostPrice, accent:false },
-          ].map(f => (
-            <div key={f.label}>
-              <div style={{ fontSize:10, color:C.text3, marginBottom:3, fontWeight:600, textTransform:"uppercase", letterSpacing:".06em" }}>{f.label}</div>
-              <div style={{ display:"flex", alignItems:"center", gap:4, background:C.bg, borderRadius:6, padding:"6px 10px", border:`1px solid ${C.border}` }}>
-                <span style={{ fontSize:12, color:C.text3 }}>$</span>
-                <input type="number" value={f.val} step={0.005} min={0} onChange={e => f.set(parseFloat(e.target.value)||0)}
-                  style={{ ...mono, width:"100%", fontSize:15, fontWeight:600, color:f.accent?C.blue:C.text, background:"none", border:"none", outline:"none" }} />
-              </div>
-              <div style={{ fontSize:10, color:C.text3, marginTop:2 }}>{f.sub}</div>
-            </div>
-          ))}
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:mBg(perCrPct), borderRadius:6, padding:"6px 10px" }}>
-            <span style={{ fontSize:11, color:C.text2 }}>Margen / crédito</span>
-            <span style={{ ...mono, fontSize:12, fontWeight:700, color:mColor(perCrPct) }}>{fmtU(salePrice-costPrice)} · {perCrPct.toFixed(1)}%</span>
-          </div>
-        </div>
-
-        <div style={{ padding:"14px 20px", flex:1 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Resumen del negocio</div>
-          {[
-            { l:"Créditos totales",   v:fmt(totalCredits), c:C.blue },
-            { l:"Ingresos (cliente)", v:fmtMoney(totalRevenue), c:C.text },
-            { l:"Costo (proveedor)",  v:fmtU(totalCost) + " USD", c:C.text2 },
-            { l:"Margen bruto",       v:fmtU(totalMargin) + " USD", c:mColor(marginPct) },
-            { l:"Rentabilidad",       v:`${marginPct.toFixed(1)}%`, c:mColor(marginPct) },
-          ].map(m => (
-            <div key={m.l} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
-              <span style={{ fontSize:12, color:C.text2 }}>{m.l}</span>
-              <span style={{ ...mono, fontSize:13, fontWeight:600, color:m.c }}>{m.v}</span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ padding:"12px 20px", borderTop:`1px solid ${C.border}` }}>
-          <button onClick={async () => {
-              if (pdfLoading) return;
-              setPdfLoading(true);
-              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
-              catch(e){} finally { setPdfLoading(false); }
-            }} disabled={pdfLoading}
-            style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:7, padding:"10px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:7, fontSize:13, fontWeight:600, cursor: pdfLoading ? "wait" : "pointer", opacity: pdfLoading ? 0.7 : 1 }}>
-            {pdfLoading ? "⏳ Generando PDF..." : "⬇ Exportar análisis PDF"}
-          </button>
-        </div>
-        <div style={{ padding:"10px 20px", fontSize:11, color:C.text3, lineHeight:1.5 }}>
-          Nextcom Systems, Inc.<br/>Trend Micro Platinum Partner · Panamá
-        </div>
-      </aside>
+        <InternalPricingPanel
+          logoSrc={TRENDAI_LOGO}
+          salePrice={salePrice}
+          costPrice={costPrice}
+          onSalePriceChange={setSalePrice}
+          onCostPriceChange={setCostPrice}
+          perCreditLabel={`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`}
+          perCreditColor={mColor(perCrPct)}
+          perCreditBg={mBg(perCrPct)}
+          summaryItems={[
+            { label:"Créditos totales", value:fmt(totalCredits), color:C.blue },
+            { label:"Ingresos (cliente)", value:fmtMoney(totalRevenue), color:C.text },
+            { label:"Costo (proveedor)", value:fmtU(totalCost) + " USD", color:C.text2 },
+            { label:"Margen bruto", value:fmtU(totalMargin) + " USD", color:mColor(marginPct) },
+            { label:"Rentabilidad", value:`${marginPct.toFixed(1)}%`, color:mColor(marginPct) },
+          ]}
+          onExportPdf={async () => {
+            if (pdfLoading) return;
+            setPdfLoading(true);
+            try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+            catch(e){} finally { setPdfLoading(false); }
+          }}
+          pdfLoading={pdfLoading}
+        />
       )}
 
       {/* Mobile top header with logo + currency toggle + settings */}
@@ -1986,7 +1945,7 @@ function InternalApp() {
       </header>
       )}
 
-      <main style={{ padding: isMobile ? "14px 14px 20px" : "28px 34px", overflowY:"auto" }}>
+      <main style={{ padding: isMobile ? "14px 14px 20px" : "22px 24px", overflowY:"auto" }}>
 
         {/* Warning banner if prices are 0 */}
         {(salePrice === 0 || costPrice === 0) && (
@@ -2105,29 +2064,25 @@ function InternalApp() {
           </div>
         )}
 
-        <div style={{ display:"grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap:8, marginBottom:isMobile?14:20 }}>
-          {[
-            { l:"Créditos totales", v:fmt(totalCredits), c:C.blue, sub:null },
-            { l:`Ingresos${currency==="VES"?" (Bs.)":""}`, v:fmtMoney(totalRevenue), c:C.text, sub: currency==="VES" ? `$${totalRevenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} USD` : null },
-            { l:"Margen bruto", v:fmtMoney(totalMargin), c:mColor(marginPct), sub:`${marginPct.toFixed(1)}% rentabilidad` },
-            { l:"Líneas activas", v:activeLines, c:C.text, sub:`de ${lines.length} total` },
-          ].map(m => (
-            <div key={m.l} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:9, padding:"13px 15px" }}>
-              <div style={{ fontSize:11, color:C.text3, marginBottom:3 }}>{m.l}</div>
-              <div style={{ ...mono, fontSize:18, fontWeight:700, color:m.c, letterSpacing:"-.01em" }}>{m.v}</div>
-              {m.sub && <div style={{ fontSize:11, color:C.text3, marginTop:2 }}>{m.sub}</div>}
-            </div>
-          ))}
-        </div>
+        <InternalKpiStrip
+          metrics={[
+            { label:"Créditos totales", value:fmt(totalCredits), color:C.blue },
+            { label:`Ingresos${currency==="VES"?" (Bs.)":""}`, value:fmtMoney(totalRevenue), color:C.text, sub: currency==="VES" ? `$${totalRevenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} USD` : null },
+            { label:"Margen bruto", value:fmtMoney(totalMargin), color:mColor(marginPct), sub:`${marginPct.toFixed(1)}% rentabilidad` },
+            { label:"Líneas activas", value:activeLines, color:C.text, sub:`de ${lines.length} total` },
+          ]}
+        />
 
-        <div style={{ background: isMobile?"transparent":C.surface, border: isMobile?"none":`1px solid ${C.border}`, borderRadius:10, overflow:"hidden", boxShadow: isMobile?"none":"0 1px 2px rgba(0,0,0,.02)" }}>
+        <div style={{ height:isMobile?14:16 }} />
+
+        <InternalWorkspaceSection
+          title="Productos de la cotización"
+          description="Área central para construir la propuesta línea por línea."
+          action={!isMobile && <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>}
+        >
+        <div style={{ background: isMobile?"transparent":C.surface, border: isMobile?"none":`1px solid ${C.border}`, borderTop:"none", borderRadius:isMobile?0:"0 0 10px 10px", overflow:"hidden" }}>
           {!isMobile && (
           <>
-          <div style={{ padding:"11px 14px", background:C.panel, borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-            <div style={{ fontSize:13, fontWeight:600 }}>Productos de la cotización</div>
-            <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>
-          </div>
-
           <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px", gap:10, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
             {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
               <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
@@ -2155,12 +2110,15 @@ function InternalApp() {
             <span style={{ fontSize: isMobile?18:14 }}>＋</span> Agregar producto
           </button>
         </div>
+        </InternalWorkspaceSection>
 
-        <div style={{ marginTop:14, background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, overflow:"hidden" }}>
-          <div style={{ padding:"11px 14px", background:C.panel, borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontSize:13, fontWeight:600 }}>Soporte Platinum</span>
-            <span style={{ fontSize:11, color:C.text3 }}>Precio libre · línea especial sin créditos</span>
-          </div>
+        <div style={{ height:14 }} />
+
+        <InternalWorkspaceSection
+          title="Soporte Platinum"
+          description="Precio libre · línea especial sin créditos."
+        >
+        <div style={{ background:C.surface, overflow:"hidden", borderRadius:"0 0 10px 10px" }}>
           <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 130px 110px", gap:12, alignItems:"end", padding:"14px", background:soporteSale>0?"#FAFCFF":C.surface }}>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
@@ -2188,6 +2146,7 @@ function InternalApp() {
             </div>
           </div>
         </div>
+        </InternalWorkspaceSection>
 
         <p style={{ fontSize:11, color:C.text3, marginTop:12, textAlign:"center" }}>Créditos calculados para 12 meses · Trend Micro Vision One Jan 2026</p>
       </main>
@@ -2437,7 +2396,7 @@ function InternalApp() {
           </div>
         </div>
       )}
-    </div>
+    </InternalCalculatorShell>
 
     {/* ═══ ADVISOR — Asistente de IA Vision One (modo interno Nextcom) ═══ */}
     <Advisor
