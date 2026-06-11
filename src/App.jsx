@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  AlertTriangle, ArrowRight, BarChart3, Building2, CheckCircle2, ClipboardCheck,
+  AlertTriangle, ArrowRight, BarChart3, Building2, CheckCircle2,
   Download, FileText, Info, LockKeyhole, Mail, MessageSquare, Package,
   Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, UserRound, X
 } from "lucide-react";
@@ -3779,9 +3779,9 @@ function ClientApp() {
   };
 
   const clientSteps = [
-    { label: "Datos", detail: "Opcional", icon: UserRound },
-    { label: "Productos", detail: "Manual o IA", icon: Package },
-    { label: "Resultado", detail: "PDF o contacto", icon: ClipboardCheck },
+    { number: "01", label: "Datos" },
+    { number: "02", label: "Productos / documentos" },
+    { number: "03", label: "Resultado" },
   ];
 
   return (
@@ -3846,11 +3846,64 @@ function ClientApp() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 980, margin: "0 auto", padding: isMobile ? "18px 14px 80px" : "34px 32px 80px" }}>
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: isMobile ? 14 : 16, marginBottom: 18, boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+      <main style={{ maxWidth: 1020, margin: "0 auto", padding: isMobile ? "16px 14px 80px" : "26px 32px 80px" }}>
+        <section style={{
+          display:"grid",
+          gridTemplateColumns:isMobile ? "1fr" : "1fr auto",
+          gap:isMobile ? 12 : 18,
+          alignItems:"end",
+          marginBottom:16
+        }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:6 }}>
+              <FileText size={14} color={C.text3} strokeWidth={2} />
+              <span style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em" }}>
+                Solicitud cliente
+              </span>
+            </div>
+            <h1 style={{
+              fontSize:isMobile ? 22 : 27,
+              lineHeight:1.15,
+              margin:0,
+              fontWeight:720,
+              letterSpacing:0,
+              color:C.text
+            }}>
+              Estimación de créditos Vision One
+            </h1>
+            <p style={{ fontSize:isMobile ? 12.5 : 13.5, lineHeight:1.55, color:C.text2, margin:"7px 0 0", maxWidth:620 }}>
+              Registra productos, consumo o propuesta para preparar una cotización con el equipo Nextcom.
+            </p>
+          </div>
+
+          <div style={{
+            display:"flex",
+            alignItems:"center",
+            border:`1px solid ${C.border}`,
+            borderRadius:9,
+            background:C.surface,
+            overflow:"hidden"
+          }}>
+            {clientSteps.map((step, idx) => (
+              <div key={step.number} style={{
+                display:"flex",
+                alignItems:"center",
+                gap:7,
+                padding:isMobile ? "8px 9px" : "9px 12px",
+                borderLeft:idx === 0 ? "none" : `1px solid ${C.border}`,
+                whiteSpace:"nowrap"
+              }}>
+                <span style={{ ...mono, fontSize:10.5, fontWeight:700, color:idx === 0 ? C.blue : C.text3 }}>{step.number}</span>
+                {!isMobile && <span style={{ fontSize:11.5, fontWeight:600, color:idx === 0 ? C.text : C.text2 }}>{step.label}</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: isMobile ? 13 : 14, marginBottom: 14 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
             <UserRound size={14} color={C.text3} strokeWidth={2} />
-            <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: ".06em" }}>Información de contacto</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: ".06em" }}>Datos del cliente</div>
             <span style={{ fontSize:10.5, color:C.text3, background:C.panel, borderRadius:999, padding:"2px 7px" }}>Opcional</span>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr 1fr", gap: 10 }}>
@@ -3868,45 +3921,35 @@ function ClientApp() {
         {/* ═══════════════════════════════════════════════════════════════
              SELECTOR MANUAL — Sin gradientes, sin emojis. Tipografía hace el trabajo.
         ═══════════════════════════════════════════════════════════════ */}
-        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:16, padding:isMobile?"20px 18px":"26px 28px", marginBottom:22, boxShadow:"0 12px 30px rgba(15,23,42,.05)" }}>
-          <div style={{ marginBottom: isMobile ? 18 : 22 }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:isMobile?"16px":"18px 20px", marginBottom:16 }}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:16, marginBottom: isMobile ? 14 : 16 }}>
+            <div>
             <div style={{
               display:"inline-flex", alignItems:"center", gap:7,
-              fontSize: 11, color: C.blue, fontWeight: 700, textTransform: "uppercase",
+              fontSize: 11, color: C.text3, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: ".06em", marginBottom: 6
             }}>
-              <Shield size={13} color={C.blue} strokeWidth={2} />
-              Calculadora Vision One
+              <Package size={13} color={C.text3} strokeWidth={2} />
+              Productos
             </div>
-            <h1 style={{
-              fontSize: isMobile ? 24 : 34, fontWeight: 750, color: C.text,
+            <h2 style={{
+              fontSize: isMobile ? 18 : 20, fontWeight: 700, color: C.text,
               margin: 0, letterSpacing: 0, lineHeight: 1.12
             }}>
-              ¿Cuántos créditos necesitas?
-            </h1>
+              Productos y documentos
+            </h2>
             <p style={{
-              fontSize: isMobile ? 13 : 15, color: C.text2, margin: "8px 0 0",
-              lineHeight: 1.6, maxWidth: 620
+              fontSize: isMobile ? 12.5 : 13, color: C.text2, margin: "6px 0 0",
+              lineHeight: 1.55, maxWidth: 560
             }}>
-              Selecciona productos o carga documentos para estimar tu consumo anual de Trend Vision One con una guía simple de Nextcom.
+              Agrega productos manualmente o usa documentos de soporte para completar la estimación.
             </p>
-          </div>
-
-          <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(3, 1fr)", gap:10 }}>
-            {clientSteps.map((step, idx) => {
-              const Icon = step.icon;
-              return (
-                <div key={step.label} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 12px", background:"#FAFAF9", border:`1px solid ${C.border}`, borderRadius:10 }}>
-                  <div style={{ width:30, height:30, borderRadius:8, background:idx === 0 ? C.blueBg : C.surface, display:"flex", alignItems:"center", justifyContent:"center", border:`1px solid ${idx === 0 ? "#DBEAFE" : C.border}` }}>
-                    <Icon size={15} color={idx === 0 ? C.blue : C.text3} strokeWidth={2} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{step.label}</div>
-                    <div style={{ fontSize:11, color:C.text3, marginTop:1 }}>{step.detail}</div>
-                  </div>
-                </div>
-              );
-            })}
+            </div>
+            {!isMobile && (
+              <div style={{ fontSize:11, color:C.text3, border:`1px solid ${C.border}`, borderRadius:7, padding:"6px 9px", whiteSpace:"nowrap" }}>
+                Créditos anuales
+              </div>
+            )}
           </div>
         </div>
 
@@ -3936,23 +3979,28 @@ function ClientApp() {
           {lines.length === 0 ? (
             // Estado vacío
             <div style={{
-              padding: isMobile ? "30px 20px" : "42px 28px",
-              textAlign: "center",
-              background:"#FAFAF9"
+              padding: isMobile ? "18px" : "20px",
+              textAlign: "left",
+              background:"#FAFAF9",
+              display:"flex",
+              alignItems:"center",
+              gap:14
             }}>
               <div style={{
-                width: 44, height: 44, borderRadius: "50%",
+                width: 38, height: 38, borderRadius: 9,
                 background: C.surface, border: `1px solid ${C.border}`,
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                marginBottom: 12
+                flexShrink:0
               }}>
-                <Package size={20} color={C.blue} strokeWidth={1.75} />
+                <Package size={18} color={C.text3} strokeWidth={1.75} />
               </div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: C.text, marginBottom: 4 }}>
-                Aún no has agregado productos
-              </div>
-              <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.55, maxWidth: 380, margin: "0 auto" }}>
-                Empieza manualmente o usa los paneles de documentos para completar la estimación con IA.
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 650, color: C.text, marginBottom: 3 }}>
+                  Sin productos en la solicitud
+                </div>
+                <div style={{ fontSize: 12.5, color: C.text2, lineHeight: 1.5, maxWidth: 520 }}>
+                  Agrega una línea manual o carga un documento de consumo/propuesta para completar el análisis.
+                </div>
               </div>
             </div>
           ) : (
@@ -3995,29 +4043,28 @@ function ClientApp() {
              SECCIÓN: Atajos con IA — secundaria, discreta, eficiente
         ═══════════════════════════════════════════════════════════════ */}
         <div style={{
-          marginBottom: 14, padding: "14px 16px", border: `1px solid ${C.border}`,
-          background: C.surface, borderRadius: 12
+          marginBottom: 10, padding: "10px 2px 0"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <Sparkles size={14} color={C.blue} strokeWidth={2} />
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <Sparkles size={14} color={C.text3} strokeWidth={2} />
             <div style={{
-              fontSize: 11, color: C.blue, fontWeight: 700, textTransform: "uppercase",
+              fontSize: 11, color: C.text3, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: ".06em"
             }}>
-              Atajos inteligentes
+              Documentos de soporte
             </div>
           </div>
           <p style={{
             fontSize: 13, color: C.text2, margin: "0 0 4px",
             lineHeight: 1.55, maxWidth: 580
           }}>
-            Sube un reporte de consumo o una propuesta anterior para acelerar la estimación sin perder revisión humana.
+            Usa consumo o propuestas como insumo para el análisis. Revisa los resultados antes de solicitar cotización.
           </p>
         </div>
 
         <div style={{
-          display: "flex",
-          flexDirection: "column",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: 12,
           marginBottom: 24
         }}>
@@ -5389,135 +5436,204 @@ const PIN_STORAGE_KEY = "nextcom_pin_remembered";
 
 function WelcomeScreen({ onChooseClient, onChooseInternal }) {
   const isMobile = useIsMobile();
+  const accessItems = [
+    {
+      title: "Cliente externo",
+      actionLabel: "Solicitar estimación",
+      description: "Crear una solicitud de créditos y enviar contexto a Nextcom.",
+      meta: "Sin precios internos",
+      icon: UserRound,
+      onClick: onChooseClient,
+    },
+    {
+      title: "Equipo Nextcom",
+      actionLabel: "Abrir consola interna",
+      description: "Preparar análisis comercial, margen y cotización.",
+      meta: "Requiere clave",
+      icon: Building2,
+      onClick: onChooseInternal,
+    },
+  ];
+
   return (
     <div style={{
       minHeight:"100vh",
       background:"#F8FAFC",
-      display:"flex", alignItems:"center", justifyContent:"center",
-      padding: isMobile ? "20px 16px" : "40px",
+      display:"flex",
+      flexDirection:"column",
+      padding: isMobile ? "16px" : "24px",
       fontFamily:"system-ui,-apple-system,sans-serif"
     }}>
-      <div style={{
-        background:C.surface,
-        border:`1px solid ${C.border}`,
-        borderRadius: 18,
-        padding: isMobile ? "24px" : "34px",
-        maxWidth: 760, width:"100%",
-        boxShadow:"0 24px 60px rgba(15,23,42,.10)"
+      <header style={{
+        width:"100%",
+        maxWidth:1080,
+        margin:"0 auto",
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"space-between",
+        gap:14,
+        padding:isMobile ? "2px 0 16px" : "0 0 22px"
       }}>
-        {/* Header with logos */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isMobile?24:30, paddingBottom:18, borderBottom:`1px solid ${C.border}` }}>
-          <img src={NEXTCOM_LOGO} alt="Nextcom" style={{ height:isMobile?32:38, width:"auto" }} />
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ fontSize:10, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", display:isMobile?"none":"inline" }}>
-              Trend Micro Platinum Partner
-            </span>
-            <div style={{ height:28, width:1, background:C.border }} />
-            <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?30:36, width:"auto" }} />
+        <div style={{ display:"flex", alignItems:"center", gap:12, minWidth:0 }}>
+          <img src={NEXTCOM_LOGO} alt="Nextcom" style={{ height:isMobile?30:34, width:"auto", flexShrink:0 }} />
+          <div style={{ height:24, width:1, background:C.border }} />
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:C.text, whiteSpace:"nowrap" }}>Vision One Workspace</div>
+            <div style={{ fontSize:11, color:C.text3, marginTop:1 }}>Nextcom Systems</div>
           </div>
         </div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          {!isMobile && <span style={{ fontSize:11, color:C.text3 }}>Trend Vision One</span>}
+          <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?24:28, width:"auto" }} />
+        </div>
+      </header>
 
-        {/* Title */}
-        <div style={{ textAlign:"center", marginBottom:isMobile?24:30 }}>
+      <main style={{
+        width:"100%",
+        maxWidth:1080,
+        margin:"0 auto",
+        flex:1,
+        display:"grid",
+        gridTemplateColumns:isMobile ? "1fr" : "0.92fr 1.08fr",
+        gap:isMobile ? 14 : 18,
+        alignItems:"stretch"
+      }}>
+        <section style={{
+          background:C.surface,
+          border:`1px solid ${C.border}`,
+          borderRadius:12,
+          padding:isMobile ? "18px" : "24px",
+          display:"flex",
+          flexDirection:"column",
+          justifyContent:"space-between",
+          minHeight:isMobile ? "auto" : 340
+        }}>
+          <div>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:14 }}>
+              <Shield size={15} color={C.text3} strokeWidth={2} />
+              <span style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em" }}>
+                Workspace comercial
+              </span>
+            </div>
+            <h1 style={{
+              fontSize:isMobile ? 24 : 30,
+              lineHeight:1.13,
+              margin:"0 0 10px",
+              fontWeight:730,
+              letterSpacing:0,
+              color:C.text
+            }}>
+              Calculadora Vision One
+            </h1>
+            <p style={{ fontSize:isMobile ? 13 : 14, color:C.text2, lineHeight:1.62, margin:0, maxWidth:430 }}>
+              Calcula créditos, revisa consumo y prepara análisis comerciales para clientes Trend Vision One.
+            </p>
+          </div>
+
+          <div style={{ marginTop:isMobile ? 20 : 30 }}>
+            {[
+              ["Catálogo", "Créditos y unidades"],
+              ["Consumo", "Uso actual y proyección"],
+              ["Propuestas", "Cotización y análisis"],
+            ].map(([label, detail]) => (
+              <div key={label} style={{ display:"flex", alignItems:"baseline", justifyContent:"space-between", gap:12, padding:"8px 0", borderTop:`1px solid ${C.border}` }}>
+                <span style={{ fontSize:12, fontWeight:650, color:C.text }}>{label}</span>
+                <span style={{ fontSize:11, color:C.text3, textAlign:"right" }}>{detail}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section style={{
+          background:C.surface,
+          border:`1px solid ${C.border}`,
+          borderRadius:12,
+          overflow:"hidden",
+          boxShadow:"0 8px 24px rgba(15,23,42,.04)"
+        }}>
           <div style={{
-            display:"inline-flex", alignItems:"center", gap:7,
-            padding:"5px 10px", border:`1px solid ${C.border}`, borderRadius:999,
-            fontSize:11, fontWeight:700, color:C.text2, background:"#FAFAF9",
-            textTransform:"uppercase", letterSpacing:".06em", marginBottom:14
+            padding:isMobile ? "15px 16px" : "18px 20px",
+            borderBottom:`1px solid ${C.border}`,
+            display:"flex",
+            alignItems:"center",
+            justifyContent:"space-between",
+            gap:12
           }}>
-            <Shield size={13} color={C.blue} strokeWidth={2} />
-            Nextcom · Trend Vision One
-          </div>
-          <div style={{ fontSize: isMobile?26:34, fontWeight:750, letterSpacing:0, marginBottom:9, color:C.text, lineHeight:1.08 }}>
-            Calculadora Vision One
-          </div>
-          <div style={{ fontSize: isMobile?13:15, color:C.text2, lineHeight:1.55, maxWidth:520, margin:"0 auto" }}>
-            Estima créditos, analiza consumo y prepara conversaciones comerciales con una experiencia separada para clientes y equipo Nextcom.
-          </div>
-        </div>
-
-        {/* Two buttons */}
-        <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr", gap:12 }}>
-          {/* Cliente */}
-          <button onClick={onChooseClient}
-            style={{
-              padding: isMobile ? "18px" : "20px",
-              background:C.surface, color:C.text,
-              border:`1.5px solid ${C.blue}`, borderRadius:14, cursor:"pointer",
-              textAlign:"left", display:"flex", flexDirection:"column", gap:16,
-              boxShadow:"0 10px 28px rgba(30,64,175,.12)",
-              transition:"transform .1s, box-shadow .1s, border-color .1s"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 14px 34px rgba(30,64,175,.18)"; }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 10px 28px rgba(30,64,175,.12)"; e.currentTarget.style.transform = "scale(1)"; }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-              <div style={{
-                width:42, height:42, borderRadius:12, background:C.blueBg,
-                display:"flex", alignItems:"center", justifyContent:"center"
-              }}>
-                <UserRound size={21} color={C.blue} strokeWidth={2} />
-              </div>
-              <ArrowRight size={18} color={C.blue} strokeWidth={2.25} />
-            </div>
             <div>
-              <div style={{ fontSize:isMobile?16:18, fontWeight:750, marginBottom:5, color:C.text }}>Cliente externo</div>
-              <div style={{ fontSize:isMobile?12.5:13, color:C.text2, lineHeight:1.5 }}>
-                Estimar créditos, cargar documentos y solicitar una cotización formal.
+              <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Acceso</div>
+              <div style={{ fontSize:12, color:C.text3, marginTop:2 }}>Selecciona el espacio de trabajo.</div>
+            </div>
+            {!isMobile && (
+              <div style={{ fontSize:11, color:C.text3, border:`1px solid ${C.border}`, borderRadius:7, padding:"5px 8px" }}>
+                Enero 2026
               </div>
-            </div>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {["Sin precios internos", "PDF preliminar"].map(t => (
-                <span key={t} style={{ fontSize:10.5, fontWeight:700, color:C.blue, background:C.blueBg, padding:"3px 7px", borderRadius:999 }}>{t}</span>
-              ))}
-            </div>
-          </button>
-
-          {/* Nextcom interno */}
-          <button onClick={onChooseInternal}
-            style={{
-              padding: isMobile ? "18px" : "20px",
-              background:C.surface, color:C.text,
-              border:`1.5px solid ${C.border}`, borderRadius:12, cursor:"pointer",
-              textAlign:"left", display:"flex", flexDirection:"column", gap:16,
-              transition:"transform .1s, border-color .1s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = C.text2}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "scale(1)"; }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12 }}>
-              <div style={{
-                width:42, height:42, borderRadius:12, background:"#F5F5F4",
-                display:"flex", alignItems:"center", justifyContent:"center"
-              }}>
-                <Building2 size={21} color={C.text2} strokeWidth={2} />
-              </div>
-              <ArrowRight size={18} color={C.text2} strokeWidth={2.25} />
-            </div>
-            <div>
-              <div style={{ fontSize:isMobile?16:18, fontWeight:750, marginBottom:5, color:C.text }}>Equipo Nextcom</div>
-              <div style={{ fontSize:isMobile?12.5:13, color:C.text2, lineHeight:1.5 }}>
-                Preparar cotizaciones, revisar margen y usar herramientas internas.
-              </div>
-            </div>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {["Requiere clave", "Uso interno"].map(t => (
-                <span key={t} style={{ fontSize:10.5, fontWeight:700, color:C.text2, background:C.panel, padding:"3px 7px", borderRadius:999 }}>{t}</span>
-              ))}
-            </div>
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div style={{ marginTop:isMobile?22:28, paddingTop:16, borderTop:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:10.5, color:C.text3, lineHeight:1.6 }}>
-            Nextcom Systems, Inc. · Trend Micro Platinum Partner · Panamá
-            {!isMobile && " · ISO 9001:2015 · ISO 27001:2022"}
+            )}
           </div>
-        </div>
-      </div>
+
+          <div style={{ padding:isMobile ? "8px" : "10px" }}>
+            {accessItems.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.title}
+                  onClick={item.onClick}
+                  style={{
+                    width:"100%",
+                    padding:isMobile ? "13px" : "15px",
+                    background:C.surface,
+                    border:"none",
+                    borderBottom:idx === accessItems.length - 1 ? "none" : `1px solid ${C.border}`,
+                    borderRadius:8,
+                    cursor:"pointer",
+                    color:C.text,
+                    textAlign:"left",
+                    display:"grid",
+                    gridTemplateColumns:"38px 1fr auto",
+                    alignItems:"center",
+                    gap:12,
+                    transition:"background .12s ease"
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#FAFAF9"}
+                  onMouseLeave={e => e.currentTarget.style.background = C.surface}
+                >
+                  <span style={{
+                    width:36,
+                    height:36,
+                    borderRadius:9,
+                    background:idx === 0 ? C.blueBg : C.panel,
+                    display:"flex",
+                    alignItems:"center",
+                    justifyContent:"center"
+                  }}>
+                    <Icon size={17} color={idx === 0 ? C.blue : C.text2} strokeWidth={2} />
+                  </span>
+                  <span style={{ minWidth:0 }}>
+                    <span style={{ display:"flex", alignItems:"baseline", gap:8, flexWrap:"wrap" }}>
+                      <span style={{ fontSize:13.5, fontWeight:700, color:C.text }}>{item.actionLabel}</span>
+                      <span style={{ fontSize:11, color:C.text3 }}>{item.title}</span>
+                    </span>
+                    <span style={{ display:"block", fontSize:12, color:C.text2, lineHeight:1.45, marginTop:3 }}>{item.description}</span>
+                    <span style={{ display:"block", fontSize:11, color:C.text3, marginTop:5 }}>{item.meta}</span>
+                  </span>
+                  <ArrowRight size={16} color={C.text3} strokeWidth={2.25} />
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ padding:isMobile ? "12px 16px 15px" : "12px 20px 17px", borderTop:`1px solid ${C.border}`, background:"#FAFAF9" }}>
+            <div style={{ display:"flex", alignItems:"flex-start", gap:8, fontSize:11, color:C.text3, lineHeight:1.5 }}>
+              <Info size={13} color={C.text3} strokeWidth={2} style={{ marginTop:1, flexShrink:0 }} />
+              <span>Catálogo, consumo, propuestas y análisis asistido en un flujo separado para cliente y equipo Nextcom.</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer style={{ width:"100%", maxWidth:1080, margin:"16px auto 0", fontSize:10.5, color:C.text3, display:"flex", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+        <span>Nextcom Systems, Inc. · Panamá</span>
+        <span>Trend Micro Platinum Partner · ISO 27001:2022</span>
+      </footer>
     </div>
   );
 }
@@ -5547,31 +5663,35 @@ function PinModal({ onSuccess, onCancel }) {
   return (
     <div style={{
       position:"fixed", inset:0, zIndex:10000,
-      background:"rgba(0,0,0,0.7)", backdropFilter:"blur(4px)",
+      background:"rgba(15,23,42,0.48)", backdropFilter:"blur(4px)",
       display:"flex", alignItems:"center", justifyContent:"center",
       padding: isMobile ? 16 : 20
     }}>
       <div style={{
-        background:C.surface, borderRadius:14,
-        padding: isMobile ? "26px 22px" : "32px 36px",
+        background:C.surface,
+        border:`1px solid ${C.border}`,
+        borderRadius:12,
+        padding: isMobile ? "22px" : "26px",
         maxWidth:420, width:"100%",
-        boxShadow:"0 20px 60px rgba(0,0,0,.4)"
+        boxShadow:"0 18px 48px rgba(15,23,42,.22)"
       }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{
-              width:38, height:38, borderRadius:10, background:C.blueBg,
+              width:36, height:36, borderRadius:9, background:C.panel,
               display:"flex", alignItems:"center", justifyContent:"center"
             }}>
-              <LockKeyhole size={18} color={C.blue} strokeWidth={2.25} />
+              <LockKeyhole size={17} color={C.text2} strokeWidth={2.25} />
             </div>
             <div>
               <div style={{ fontSize:16, fontWeight:700, color:C.text }}>Acceso interno Nextcom</div>
-              <div style={{ fontSize:11, color:C.text3, marginTop:2 }}>Solo personal autorizado</div>
+              <div style={{ fontSize:11, color:C.text3, marginTop:2 }}>Consola comercial</div>
             </div>
           </div>
           <button onClick={onCancel}
-            style={{ width:30, height:30, borderRadius:7, border:`1px solid ${C.border}`, background:C.surface, fontSize:13, cursor:"pointer" }}>✕</button>
+            style={{ width:30, height:30, borderRadius:7, border:`1px solid ${C.border}`, background:C.surface, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <X size={14} color={C.text2} strokeWidth={2.25} />
+          </button>
         </div>
 
         <div style={{ marginBottom:14 }}>
@@ -5587,7 +5707,7 @@ function PinModal({ onSuccess, onCancel }) {
             style={{
               width:"100%", boxSizing:"border-box",
               fontSize:16, padding:"13px 15px",
-              border:`1.5px solid ${error ? C.red : C.border}`, borderRadius:9,
+              border:`1.5px solid ${error ? C.red : C.border}`, borderRadius:8,
               outline:"none", background:C.bg,
               ...mono, letterSpacing:"0.1em"
             }}
@@ -5609,14 +5729,14 @@ function PinModal({ onSuccess, onCancel }) {
         <button onClick={submit}
           style={{
             width:"100%", padding:"13px",
-            background:C.blue, color:"#fff", border:"none", borderRadius:9,
+            background:C.text, color:"#fff", border:"none", borderRadius:8,
             fontSize:14, fontWeight:700, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8
           }}>
-          <span>Ingresar</span>
+          <span>Acceder</span>
           <ArrowRight size={15} color="#fff" strokeWidth={2.25} />
         </button>
 
-        <div style={{ marginTop:16, padding:"10px 14px", background:C.panel, borderRadius:7, fontSize:11, color:C.text2, lineHeight:1.5, display:"flex", gap:8 }}>
+        <div style={{ marginTop:16, padding:"10px 12px", background:C.panel, borderRadius:7, fontSize:11, color:C.text2, lineHeight:1.5, display:"flex", gap:8 }}>
           <Info size={13} color={C.text3} strokeWidth={2} style={{ marginTop:1, flexShrink:0 }} />
           <span>¿No tienes la clave? Contacta a tu coordinador de ventas en Nextcom.</span>
         </div>
