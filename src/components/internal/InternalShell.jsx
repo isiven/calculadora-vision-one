@@ -6,25 +6,35 @@ import { InternalTopbar } from "./InternalTopbar"
 
 export function InternalShell({ children, onLogout }) {
   const [activeSection, setActiveSection] = useState("calculator")
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  const showSidebar = () => setIsSidebarOpen(true)
+  const hideSidebar = () => setIsSidebarOpen(false)
+  const toggleSidebar = () => setIsSidebarOpen((open) => !open)
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-950">
+    <div className="min-h-screen bg-white text-neutral-950">
       <div className="flex min-h-screen">
         <InternalSidebar
           activeSection={activeSection}
+          isOpen={isSidebarOpen}
+          onClose={hideSidebar}
           onSectionChange={setActiveSection}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <InternalTopbar
             activeSection={activeSection}
+            isSidebarOpen={isSidebarOpen}
+            onOpenSidebar={showSidebar}
             onSectionChange={setActiveSection}
+            onToggleSidebar={toggleSidebar}
             onLogout={onLogout}
           />
 
-          <main className="min-w-0 flex-1">
+          <main className="min-w-0 flex-1 bg-white">
             {activeSection === "calculator" ? (
-              <div className="bg-white">{children}</div>
+              children
             ) : (
               <InternalDashboardMock activeSection={activeSection} />
             )}

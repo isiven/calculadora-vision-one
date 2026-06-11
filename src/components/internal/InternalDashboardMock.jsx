@@ -72,14 +72,14 @@ export function InternalDashboardMock({ activeSection }) {
   }[activeSection]
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <section className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 bg-neutral-50/70 p-4 sm:p-5 lg:p-6">
+      <section className="rounded-lg border border-neutral-200/80 bg-white p-4 shadow-sm shadow-neutral-950/[0.03]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
               Mock local
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-neutral-950">
+            <h2 className="mt-2 text-xl font-semibold text-neutral-950">
               {sectionTitle}
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
@@ -87,7 +87,7 @@ export function InternalDashboardMock({ activeSection }) {
               calculadora. Estos datos sirven solo para validar dirección visual.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-600">
+          <div className="inline-flex items-center gap-2 rounded-md border border-neutral-200/80 bg-neutral-50 px-3 py-2 text-xs font-medium text-neutral-600">
             <CalendarDays className="h-4 w-4" aria-hidden="true" />
             Mes actual
           </div>
@@ -101,7 +101,7 @@ export function InternalDashboardMock({ activeSection }) {
           return (
             <article
               key={item.label}
-              className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm"
+              className="rounded-lg border border-neutral-200/80 bg-white p-4 shadow-sm shadow-neutral-950/[0.03]"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-100 text-neutral-700">
@@ -120,7 +120,7 @@ export function InternalDashboardMock({ activeSection }) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
-        <div className="rounded-lg border border-neutral-200 bg-white shadow-sm">
+        <div className="rounded-lg border border-neutral-200/80 bg-white shadow-sm shadow-neutral-950/[0.03]">
           <div className="border-b border-neutral-200 px-5 py-4">
             <h3 className="text-sm font-semibold text-neutral-950">
               Oportunidades destacadas
@@ -157,7 +157,7 @@ export function InternalDashboardMock({ activeSection }) {
           </div>
         </div>
 
-        <aside className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+        <aside className="rounded-lg border border-neutral-200/80 bg-white p-4 shadow-sm shadow-neutral-950/[0.03]">
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-100 text-neutral-700">
             <UserRound className="h-5 w-5" aria-hidden="true" />
           </div>
