@@ -1,5 +1,4 @@
 export function InternalPricingPanel({
-  logoSrc,
   salePrice,
   costPrice,
   onSalePriceChange,
@@ -29,64 +28,56 @@ export function InternalPricingPanel({
   ]
 
   return (
-    <aside className="sticky top-0 flex h-screen flex-col overflow-y-auto border-r border-neutral-200/80 bg-white">
-      <div className="border-b border-neutral-100 bg-neutral-50/70 px-5 py-5">
-        <img src={logoSrc} alt="TrendAI" className="mb-2 block h-9 w-auto" />
-        <div className="text-[11px] font-semibold text-neutral-700">
-          Vision One · Credit Calculator
-        </div>
-        <div className="mt-0.5 text-[10px] text-neutral-500">Jan 2026 edition</div>
-      </div>
-
-      <div className="border-b border-neutral-100 px-5 py-4">
-        <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+    <aside className="sticky top-0 hidden h-[calc(100vh-72px)] flex-col gap-5 overflow-y-auto bg-[#f7f9fc] px-6 py-7 lg:flex">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.03]">
+        <div className="mb-5 text-sm font-medium text-slate-800">
           Precios por crédito
         </div>
-        <div className="space-y-3">
+        <div className="space-y-5">
           {priceFields.map((field) => (
             <label key={field.label} className="block">
-              <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+              <div className="mb-2 text-xs font-medium text-slate-700">
                 {field.label}
               </div>
-              <div className="flex items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-2">
-                <span className="text-xs text-neutral-400">$</span>
+              <div className="flex h-11 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 shadow-inner shadow-slate-950/[0.02]">
+                <span className="text-sm text-slate-500">$</span>
                 <input
                   type="number"
                   value={field.value}
                   step={0.005}
                   min={0}
                   onChange={(event) => field.onChange(parseFloat(event.target.value) || 0)}
-                  className="w-full border-0 bg-transparent font-mono text-sm font-semibold text-neutral-950 outline-none"
+                  className="w-full border-0 bg-transparent font-mono text-sm font-semibold text-slate-950 outline-none"
                   style={{ color: field.accent ? "#1E40AF" : undefined }}
                 />
               </div>
-              <div className="mt-1 text-[10px] text-neutral-500">{field.sub}</div>
+              <div className="mt-2 text-xs text-slate-500">{field.sub}</div>
             </label>
           ))}
         </div>
 
         <div
-          className="mt-3 flex items-center justify-between rounded-md px-2.5 py-2"
+          className="mt-7 flex items-center justify-between rounded-lg px-3 py-3"
           style={{ background: perCreditBg }}
         >
-          <span className="text-xs text-neutral-600">Margen / crédito</span>
-          <span className="font-mono text-xs font-semibold" style={{ color: perCreditColor }}>
+          <span className="text-xs font-medium text-slate-700">Margen / crédito</span>
+          <span className="font-mono text-xs font-bold" style={{ color: perCreditColor }}>
             {perCreditLabel}
           </span>
         </div>
       </div>
 
-      <div className="flex-1 px-5 py-4">
-        <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-400">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.03]">
+        <div className="mb-4 text-sm font-medium text-slate-800">
           Resumen del negocio
         </div>
-        <div className="rounded-lg border border-neutral-200/80 bg-neutral-50/60 px-3">
+        <div className="divide-y divide-slate-100">
           {summaryItems.map((item) => (
             <div
               key={item.label}
-              className="flex items-center justify-between gap-3 border-b border-neutral-200/70 py-2.5 last:border-b-0"
+              className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
             >
-              <span className="text-xs text-neutral-600">{item.label}</span>
+              <span className="text-xs text-slate-700">{item.label}</span>
               <span className="whitespace-nowrap font-mono text-xs font-semibold" style={{ color: item.color }}>
                 {item.value}
               </span>
@@ -95,22 +86,14 @@ export function InternalPricingPanel({
         </div>
       </div>
 
-      <div className="border-t border-neutral-100 px-5 py-4">
-        <button
-          type="button"
-          onClick={onExportPdf}
-          disabled={pdfLoading}
-          className="flex w-full items-center justify-center rounded-md bg-neutral-950 px-3 py-2.5 text-sm font-semibold text-white transition-colors disabled:cursor-wait disabled:bg-neutral-400"
-        >
-          {pdfLoading ? "Generando PDF..." : "Exportar análisis PDF"}
-        </button>
-      </div>
-
-      <div className="px-5 pb-4 text-[11px] leading-5 text-neutral-500">
-        Nextcom Systems, Inc.
-        <br />
-        Trend Micro Platinum Partner · Panamá
-      </div>
+      <button
+        type="button"
+        onClick={onExportPdf}
+        disabled={pdfLoading}
+        className="mt-auto flex h-11 w-full items-center justify-center rounded-lg border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
+      >
+        {pdfLoading ? "Generando PDF..." : "Exportar análisis PDF"}
+      </button>
     </aside>
   )
 }

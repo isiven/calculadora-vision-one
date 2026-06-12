@@ -1135,19 +1135,19 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   return (
     <div style={{
       display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px",
-      alignItems:"center", gap:10, padding:"10px 14px",
-      background: active ? "#FAFCFF" : C.surface,
-      borderBottom:`1px solid ${C.border}`, position:"relative"
+      alignItems:"center", gap:16, padding:"16px 24px",
+      background: active ? "#F8FBFF" : "#fff",
+      borderBottom:"1px solid #E2E8F0", position:"relative"
     }}>
-      <div style={{ ...mono, fontSize:11, color:C.text3, textAlign:"center" }}>{String(idx+1).padStart(2,"0")}</div>
+      <div style={{ ...mono, fontSize:12, color:"#64748B", textAlign:"center" }}>{String(idx+1).padStart(2,"0")}</div>
 
       <div style={{ position:"relative" }} ref={triggerRef}>
         <button onClick={() => setPicking(!picking)}
-          style={{ width:"100%", textAlign:"left", background:"none", border:`1px solid ${prod ? "transparent" : C.border}`, borderRadius:6, padding:"6px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:8, minHeight:42 }}>
+          style={{ width:"100%", textAlign:"left", background:"#fff", border:`1px solid ${prod ? "#E2E8F0" : "#CBD5E1"}`, borderRadius:8, padding:"9px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:8, minHeight:44, boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
           {prod ? (
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:13, fontWeight:500, color:C.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{prod.name}</div>
-              <div style={{ fontSize:10, color:C.text3, marginTop:1, display:"flex", gap:8, alignItems:"center" }}>
+              <div style={{ fontSize:13, fontWeight:600, color:"#0F172A", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{prod.name}</div>
+              <div style={{ fontSize:10, color:"#64748B", marginTop:2, display:"flex", gap:8, alignItems:"center" }}>
                 <span>{prod.cat}</span>
                 <span>· {fmt(prod.credits)} cr/año/{prod.unit}</span>
                 {prod.sku && <span style={{ ...mono }}>· {prod.sku}</span>}
@@ -1159,8 +1159,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
               </div>
             </div>
           ) : (
-            <div style={{ color:C.text3, fontSize:13, display:"flex", alignItems:"center", gap:6 }}>
-              <span style={{ fontSize:14 }}>⊕</span> Buscar producto...
+            <div style={{ color:"#94A3B8", fontSize:13, display:"flex", alignItems:"center", gap:8 }}>
+              <Search size={14} /> Buscar producto del catálogo...
             </div>
           )}
         </button>
@@ -1169,17 +1169,17 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 
       <input type="date" value={line.startDate || ""} onChange={e=>onUpdate({...line, startDate:e.target.value})}
         title="Fecha de inicio"
-        style={{ ...mono, fontSize:12, color:C.text2, border:`1px solid ${C.border}`, borderRadius:6, padding:"7px 10px", background:"transparent", width:"100%", boxSizing:"border-box" }} />
+        style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 10px", background:"#fff", width:"100%", boxSizing:"border-box", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
 
       <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
         title="Fecha de vencimiento"
-        style={{ ...mono, fontSize:12, color:C.text2, border:`1px solid ${isProrated?C.amber:C.border}`, borderRadius:6, padding:"7px 10px", background:"transparent", width:"100%", boxSizing:"border-box" }} />
+        style={{ ...mono, fontSize:12, color:"#0F172A", border:`1px solid ${isProrated?C.amber:"#E2E8F0"}`, borderRadius:8, padding:"9px 10px", background:"#fff", width:"100%", boxSizing:"border-box", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
 
       <input type="number" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
         onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
-        style={{ ...mono, fontSize:13, fontWeight:500, textAlign:"right", padding:"6px 9px", border:`1px solid ${active?C.blue:C.border}`, borderRadius:5, background:active?"#fff":prod?C.surface:C.panel, color:C.text, outline:"none", width:"100%" }} />
+        style={{ ...mono, fontSize:13, fontWeight:600, textAlign:"right", padding:"9px 10px", border:`1px solid ${active?C.blue:"#E2E8F0"}`, borderRadius:8, background:prod?"#fff":"#F1F5F9", color:"#0F172A", outline:"none", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
 
-      <div style={{ ...mono, fontSize:13, fontWeight:600, textAlign:"right", color:active?C.blue:C.text3 }}>
+      <div style={{ ...mono, fontSize:13, fontWeight:700, textAlign:"right", color:active?C.blue:"#64748B" }}>
         {active ? (
           <div>
             <div>{fmt(proratedTotal)}</div>
@@ -1188,11 +1188,11 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
         ) : "—"}
       </div>
 
-      <div style={{ display:"flex", gap:2, justifyContent:"flex-end" }}>
+      <div style={{ display:"flex", gap:6, justifyContent:"flex-end" }}>
         <button onClick={() => onDuplicate(line.rowId)} disabled={!prod} title="Duplicar"
-          style={{ width:26,height:26,borderRadius:5,border:`1px solid ${C.border}`,background:"none",cursor:prod?"pointer":"not-allowed",fontSize:13,color:prod?C.text2:C.text3,display:"flex",alignItems:"center",justifyContent:"center",opacity:prod?1:0.4 }}>⊕</button>
+          style={{ width:34,height:34,borderRadius:8,border:"1px solid #E2E8F0",background:"#fff",cursor:prod?"pointer":"not-allowed",fontSize:13,color:prod?"#64748B":"#CBD5E1",display:"flex",alignItems:"center",justifyContent:"center",opacity:prod?1:0.5,boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>⊕</button>
         <button onClick={() => onDelete(line.rowId)} title="Eliminar"
-          style={{ width:26,height:26,borderRadius:5,border:`1px solid ${C.border}`,background:"none",cursor:"pointer",fontSize:12,color:C.red,display:"flex",alignItems:"center",justifyContent:"center" }}>✕</button>
+          style={{ width:34,height:34,borderRadius:8,border:"1px solid #E2E8F0",background:"#fff",cursor:"pointer",fontSize:12,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>✕</button>
       </div>
     </div>
   );
@@ -1757,12 +1757,28 @@ function InternalApp() {
     if (currency === "VES" && !rates.updatedAt) fetchRates();
   }, [currency]);
 
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("internal-currency-change", { detail: currency }));
+  }, [currency]);
+
+  useEffect(() => {
+    const toggleCurrency = () => setCurrency(current => current === "USD" ? "VES" : "USD");
+    window.addEventListener("internal-toggle-currency", toggleCurrency);
+    return () => window.removeEventListener("internal-toggle-currency", toggleCurrency);
+  }, []);
+
   // --- Import quote modal state ---
   const [importOpen, setImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState(null);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const openImport = () => setImportOpen(true);
+    window.addEventListener("internal-open-import", openImport);
+    return () => window.removeEventListener("internal-open-import", openImport);
+  }, []);
 
   const handleFileImport = async (file) => {
     if (!file) return;
@@ -1945,21 +1961,23 @@ function InternalApp() {
       </header>
       )}
 
-      <main style={{ padding: isMobile ? "14px 14px 20px" : "22px 24px", overflowY:"auto" }}>
+      <main style={{ padding: isMobile ? "14px 14px 20px" : "32px 32px 36px", overflowY:"auto", background:"#F7F9FC" }}>
 
         {/* Warning banner if prices are 0 */}
         {(salePrice === 0 || costPrice === 0) && (
           <div style={{
-            background:`linear-gradient(135deg, ${C.amberBg} 0%, #FEF3C7 100%)`,
-            border:`1.5px solid #FCD34D`,
+            background:"#FFFBEB",
+            border:`1px solid #FBBF24`,
             borderRadius:10,
             padding: isMobile ? "12px 14px" : "14px 18px",
-            marginBottom: isMobile ? 14 : 18,
+            marginBottom: isMobile ? 14 : 26,
             display:"flex",
             alignItems:"center",
             gap:12
           }}>
-            <div style={{ fontSize:isMobile?22:24 }}>⚠️</div>
+            <div style={{ width:28, height:28, borderRadius:8, background:"#FBBF24", color:"#92400E", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <AlertTriangle size={17} strokeWidth={2.4} />
+            </div>
             <div style={{ flex:1 }}>
               <div style={{ fontSize:isMobile?13:14, fontWeight:700, color:C.amber, marginBottom:2 }}>
                 Precios en cero — recuerda configurarlos antes de cotizar
@@ -1979,31 +1997,28 @@ function InternalApp() {
           </div>
         )}
 
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:isMobile?12:18, gap:14, flexWrap:"wrap" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:isMobile?12:24, gap:18, flexWrap:"wrap" }}>
           <div>
-            <div style={{ fontSize:isMobile?18:22, fontWeight:700, letterSpacing:"-.025em", marginBottom:3 }}>Nueva cotización</div>
-            {!isMobile && <div style={{ fontSize:13, color:C.text3 }}>Busca productos del catálogo y construye la propuesta línea por línea</div>}
+            <div style={{ fontSize:isMobile?18:24, fontWeight:750, letterSpacing:"-.03em", marginBottom:7, color:"#0F172A" }}>Nueva cotización</div>
+            {!isMobile && <div style={{ fontSize:14, color:"#64748B" }}>Busca productos del catálogo y construye la propuesta línea por línea</div>}
           </div>
           {!isMobile && (
-          <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
             {/* Currency toggle */}
-            <div style={{ display:"flex", background:C.panel, border:`1px solid ${C.border}`, borderRadius:7, padding:2 }}>
+            <div style={{ display:"flex", background:"#fff", border:"1px solid #E2E8F0", borderRadius:9, padding:3, boxShadow:"0 1px 2px rgba(15,23,42,.04)" }}>
               {[
                 { code:"USD", label:"🇵🇦 USD", sub:"Panamá" },
                 { code:"VES", label:"🇻🇪 Bs.", sub:"Venezuela" },
               ].map(c => (
                 <button key={c.code} onClick={() => setCurrency(c.code)}
-                  style={{ padding:"6px 12px", fontSize:12, fontWeight:currency===c.code?700:500, background:currency===c.code?C.surface:"transparent", color:currency===c.code?C.text:C.text2, border:"none", borderRadius:5, cursor:"pointer", boxShadow: currency===c.code ? "0 1px 2px rgba(0,0,0,.06)" : "none" }}>
+                  style={{ padding:"7px 12px", fontSize:12, fontWeight:currency===c.code?700:500, background:currency===c.code?"#F1F5F9":"transparent", color:currency===c.code?"#0F172A":"#64748B", border:"none", borderRadius:6, cursor:"pointer" }}>
                   {c.label}
                 </button>
               ))}
             </div>
             <input type="text" placeholder="Nombre del cliente (opcional)" value={clientName} onChange={e=>setClientName(e.target.value)}
-              style={{ fontSize:12, padding:"7px 12px", border:`1px solid ${C.border}`, borderRadius:6, background:C.surface, color:C.text, width:200, outline:"none" }} />
-            <button onClick={() => setImportOpen(true)} style={{ fontSize:12, color:"#fff", background:C.blue, border:"none", borderRadius:6, padding:"7px 12px", cursor:"pointer", fontWeight:600, display:"flex", alignItems:"center", gap:5 }}>
-              ✨ Importar cotización
-            </button>
-            <button onClick={clearAll} style={{ fontSize:12, color:C.text2, background:C.surface, border:`1px solid ${C.border}`, borderRadius:6, padding:"6px 12px", cursor:"pointer" }}>Limpiar</button>
+              style={{ fontSize:13, padding:"9px 12px", border:"1px solid #E2E8F0", borderRadius:9, background:"#fff", color:"#0F172A", width:230, outline:"none", boxShadow:"0 1px 2px rgba(15,23,42,.04)" }} />
+            <button onClick={clearAll} style={{ fontSize:13, color:"#475569", background:"#fff", border:"1px solid #E2E8F0", borderRadius:9, padding:"9px 13px", cursor:"pointer", fontWeight:600, boxShadow:"0 1px 2px rgba(15,23,42,.04)" }}>Limpiar</button>
           </div>
           )}
         </div>
@@ -2078,14 +2093,14 @@ function InternalApp() {
         <InternalWorkspaceSection
           title="Productos de la cotización"
           description="Área central para construir la propuesta línea por línea."
-          action={!isMobile && <div style={{ fontSize:11, color:C.text3 }}>⊕ duplica · ✕ elimina</div>}
+          action={!isMobile && <div style={{ display:"flex", gap:18, fontSize:12, color:"#64748B" }}><span>Duplicar</span><span>Eliminar</span></div>}
         >
-        <div style={{ background: isMobile?"transparent":C.surface, border: isMobile?"none":`1px solid ${C.border}`, borderTop:"none", borderRadius:isMobile?0:"0 0 10px 10px", overflow:"hidden" }}>
+        <div style={{ background: isMobile?"transparent":"#fff", overflow:"hidden" }}>
           {!isMobile && (
           <>
-          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px", gap:10, padding:"6px 14px", background:C.surface, borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px", gap:16, padding:"12px 24px", background:"#F8FAFC", borderBottom:"1px solid #E2E8F0" }}>
             {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
-              <div key={i} style={{ fontSize:10, fontWeight:600, color:C.text3, textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
+              <div key={i} style={{ fontSize:10, fontWeight:800, color:"#64748B", textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}
           </div>
           </>
@@ -2103,7 +2118,7 @@ function InternalApp() {
 
           <button onClick={addLine} style={{
             width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            padding: isMobile?"14px":"11px", background: isMobile?C.blueBg:C.surface, border: isMobile?`1.5px dashed ${C.blue}`:"none", borderTop: isMobile?`1.5px dashed ${C.blue}`:`1px dashed ${C.border}`,
+            padding: isMobile?"14px":"18px", background: isMobile?C.blueBg:"#fff", border: isMobile?`1.5px dashed ${C.blue}`:"none", borderTop: isMobile?`1.5px dashed ${C.blue}`:"1px solid #E2E8F0",
             borderRadius: isMobile?10:0, marginTop: isMobile?4:0,
             cursor:"pointer", color:C.blue, fontSize: isMobile?14:12, fontWeight:600
           }}>
@@ -2118,29 +2133,29 @@ function InternalApp() {
           title="Soporte Platinum"
           description="Precio libre · línea especial sin créditos."
         >
-        <div style={{ background:C.surface, overflow:"hidden", borderRadius:"0 0 10px 10px" }}>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 130px 110px", gap:12, alignItems:"end", padding:"14px", background:soporteSale>0?"#FAFCFF":C.surface }}>
+        <div style={{ background:"#fff", overflow:"hidden" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"24px", background:soporteSale>0?"#F8FBFF":"#fff" }}>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
               { l:"Costo proveedor",   v:soporteCost, set:setSoporteCost },
             ].map(f => (
               <div key={f.l}>
-                <div style={{ fontSize:10, color:C.text3, marginBottom:4, fontWeight:600, textTransform:"uppercase", letterSpacing:".06em" }}>{f.l}</div>
-                <div style={{ display:"flex", alignItems:"center", gap:4, border:`1px solid ${C.border}`, borderRadius:6, padding:"6px 10px", background:C.surface }}>
-                  <span style={{ color:C.text3, fontSize:13 }}>$</span>
+                <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>{f.l}</div>
+                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 12px", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+                  <span style={{ color:"#64748B", fontSize:13 }}>$</span>
                   <input type="number" min={0} step={0.01} value={f.v||""} placeholder="0.00" onChange={e => f.set(parseFloat(e.target.value)||0)}
-                    style={{ ...mono, fontSize:13, fontWeight:500, width:"100%", border:"none", outline:"none", background:"transparent", color:C.text }} />
+                    style={{ ...mono, fontSize:13, fontWeight:600, width:"100%", border:"none", outline:"none", background:"transparent", color:"#0F172A" }} />
                 </div>
               </div>
             ))}
             <div>
-              <div style={{ fontSize:10, color:C.text3, marginBottom:4, fontWeight:600, textTransform:"uppercase", letterSpacing:".06em" }}>Vencimiento</div>
+              <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Vencimiento</div>
               <input type="date" value={soporteDate} onChange={e => setSoporteDate(e.target.value)}
-                style={{ ...mono, fontSize:11, color:C.text2, border:`1px solid ${C.border}`, borderRadius:6, padding:"6px 10px", background:C.surface, width:"100%" }} />
+                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 12px", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
             </div>
             <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:10, color:C.text3, marginBottom:4, fontWeight:600, textTransform:"uppercase", letterSpacing:".06em" }}>Margen</div>
-              <div style={{ ...mono, fontSize:15, fontWeight:700, color:soporteSale>soporteCost?C.green:C.text3 }}>
+              <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Margen</div>
+              <div style={{ ...mono, fontSize:15, fontWeight:700, color:soporteSale>soporteCost?C.green:"#64748B" }}>
                 {soporteSale > 0 ? fmtU(soporteSale - soporteCost) : "—"}
               </div>
             </div>
@@ -5545,7 +5560,10 @@ export default function App() {
   }
   if (mode === "internal") {
     return (
-      <InternalShell onLogout={() => {
+      <InternalShell
+        nextcomLogo={NEXTCOM_LOGO}
+        trendLogo={TRENDAI_LOGO}
+        onLogout={() => {
         try { localStorage.removeItem(PIN_STORAGE_KEY); } catch (e) {}
         goWelcome();
       }}>

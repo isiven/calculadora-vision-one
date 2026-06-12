@@ -1,20 +1,20 @@
 export function InternalKpiStrip({ metrics }) {
   return (
-    <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((metric) => (
         <article
           key={metric.label}
-          className="rounded-lg border border-neutral-200/80 bg-white px-4 py-3 shadow-sm shadow-neutral-950/[0.03]"
+          className="min-h-[112px] rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm shadow-slate-950/[0.03]"
         >
-          <div className="text-[11px] font-medium text-neutral-500">{metric.label}</div>
+          <div className="text-xs font-medium text-slate-500">{metric.label}</div>
           <div
-            className="mt-1 font-mono text-lg font-semibold tracking-normal"
+            className="mt-5 font-mono text-2xl font-bold tracking-normal"
             style={{ color: metric.color }}
           >
             {metric.value}
           </div>
           {metric.sub ? (
-            <div className="mt-1 text-[11px] leading-4 text-neutral-500">{metric.sub}</div>
+            <div className="mt-2 text-xs leading-4 text-slate-500">{metric.sub}</div>
           ) : null}
         </article>
       ))}

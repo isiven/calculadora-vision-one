@@ -4,7 +4,7 @@ import { InternalDashboardMock } from "./InternalDashboardMock"
 import { InternalSidebar } from "./InternalSidebar"
 import { InternalTopbar } from "./InternalTopbar"
 
-export function InternalShell({ children, onLogout }) {
+export function InternalShell({ children, onLogout, nextcomLogo, trendLogo }) {
   const [activeSection, setActiveSection] = useState("calculator")
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return false
@@ -16,13 +16,15 @@ export function InternalShell({ children, onLogout }) {
   const toggleSidebar = () => setIsSidebarOpen((open) => !open)
 
   return (
-    <div className="min-h-screen bg-white text-neutral-950">
+    <div className="min-h-screen bg-[#f7f9fc] text-slate-950">
       <div className="flex min-h-screen">
         <InternalSidebar
           activeSection={activeSection}
           isOpen={isSidebarOpen}
           onClose={hideSidebar}
           onSectionChange={setActiveSection}
+          nextcomLogo={nextcomLogo}
+          trendLogo={trendLogo}
         />
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -35,7 +37,7 @@ export function InternalShell({ children, onLogout }) {
             onLogout={onLogout}
           />
 
-          <main className="min-w-0 flex-1 bg-white">
+          <main className="min-w-0 flex-1 bg-[#f7f9fc]">
             {activeSection === "calculator" ? (
               children
             ) : (

@@ -2,8 +2,9 @@ import {
   BarChart3,
   BriefcaseBusiness,
   Calculator,
-  FileSearch,
-  ShieldCheck,
+  ClipboardList,
+  PieChart,
+  Settings,
   Users,
   X,
 } from "lucide-react"
@@ -12,13 +13,13 @@ import { cn } from "@/lib/utils"
 const sections = [
   { id: "calculator", label: "Calculadora", icon: Calculator },
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { id: "saved", label: "Análisis guardados", icon: FileSearch },
-  { id: "closed", label: "Negocios cerrados", icon: BriefcaseBusiness },
+  { id: "saved", label: "Cotizaciones", icon: ClipboardList },
   { id: "clients", label: "Clientes", icon: Users },
-  { id: "admin", label: "Usuarios/Admin", icon: ShieldCheck },
+  { id: "closed", label: "Reportes", icon: PieChart },
+  { id: "admin", label: "Configuración", icon: Settings },
 ]
 
-export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChange }) {
+export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChange, nextcomLogo, trendLogo }) {
   const handleSectionChange = (sectionId) => {
     onSectionChange(sectionId)
     onClose()
@@ -37,25 +38,32 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-neutral-200/80 bg-white/95 shadow-xl shadow-neutral-950/10 transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:shadow-none",
+          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col bg-[#071b33] text-white shadow-2xl shadow-slate-950/30 transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:shadow-none",
           isOpen
             ? "translate-x-0 lg:w-60"
-            : "-translate-x-full lg:w-0 lg:overflow-hidden lg:border-r-0"
+            : "-translate-x-full lg:w-0 lg:overflow-hidden"
         )}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-4 py-4">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
-              Nextcom
+        <div className="flex min-h-[96px] items-start justify-between gap-3 px-5 py-6">
+          {nextcomLogo ? (
+            <img
+              src={nextcomLogo}
+              alt="Nextcom Systems"
+              className="block h-11 w-auto max-w-[150px] object-contain"
+              style={{ filter: "brightness(0) invert(1)" }}
+            />
+          ) : (
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-white">nextcom</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-300">
+                Systems
+              </div>
             </div>
-            <div className="mt-1 truncate text-sm font-semibold text-neutral-950">
-              Vision One Console
-            </div>
-          </div>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-300 hover:bg-white/10 hover:text-white lg:hidden"
             aria-label="Ocultar menú"
             title="Ocultar menú"
           >
@@ -63,7 +71,7 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
           </button>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-0.5 px-2 py-3">
+        <nav className="flex flex-1 flex-col gap-2 px-4 py-4">
           {sections.map((section) => {
             const Icon = section.icon
             const isActive = activeSection === section.id
@@ -74,16 +82,16 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
                 type="button"
                 onClick={() => handleSectionChange(section.id)}
                 className={cn(
-                  "flex h-9 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-sm font-medium transition-colors",
+                  "flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-neutral-100 text-neutral-950"
-                    : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-950/25"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white"
                 )}
               >
                 <Icon
                   className={cn(
-                    "h-4 w-4 shrink-0",
-                    isActive ? "text-neutral-900" : "text-neutral-400"
+                    "h-5 w-5 shrink-0",
+                    isActive ? "text-white" : "text-slate-300"
                   )}
                   aria-hidden="true"
                 />
@@ -93,8 +101,34 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
           })}
         </nav>
 
-        <div className="border-t border-neutral-100 px-4 py-3 text-xs leading-5 text-neutral-400">
-          Navegación mock. Sin usuarios, permisos ni persistencia real.
+        <div className="mx-4 border-t border-white/10 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 text-red-400">
+              <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white">Trend Vision One</div>
+              <div className="text-[11px] text-slate-400">Credit Calculator</div>
+            </div>
+          </div>
+          {trendLogo ? (
+            <img
+              src={trendLogo}
+              alt="TrendAI"
+              className="mt-4 block h-7 w-auto max-w-[150px] object-contain opacity-90"
+            />
+          ) : null}
+        </div>
+
+        <div className="border-t border-white/10 px-5 py-4 text-xs text-slate-300">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex w-full items-center gap-2 text-left hover:text-white"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+            Colapsar
+          </button>
         </div>
       </aside>
     </>
