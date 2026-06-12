@@ -127,24 +127,20 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
             "rounded-xl border border-white/10 bg-white/[0.04] transition-all duration-200",
             isOpen ? "p-3" : "flex h-11 items-center justify-center p-0"
           )}>
-            <div className={cn("flex items-center", isOpen ? "gap-3" : "gap-0")}>
-              <div className={cn(
-                "flex h-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/95 shadow-sm shadow-slate-950/10",
-                isOpen ? "w-14 px-2" : "w-9 px-1.5"
-              )}>
-                {trendLogo ? (
-                  <img
-                    src={trendLogo}
-                    alt=""
-                    className="h-auto max-h-6 w-full object-contain"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <span className="h-4 w-4 rounded-full bg-red-600" aria-hidden="true" />
-                )}
-              </div>
+            <div className={cn(isOpen ? "flex flex-col items-start gap-2" : "flex items-center justify-center")}>
+              {trendLogo ? (
+                <img
+                  src={trendLogo}
+                  alt=""
+                  className={cn(
+                    "block object-contain",
+                    isOpen ? "h-8 w-full max-w-[136px] object-left" : "h-5 max-w-9"
+                  )}
+                  aria-hidden="true"
+                />
+              ) : null}
               <div className={cn("min-w-0 transition-all duration-150", isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0")}>
-                <div className="text-xs font-semibold text-white">Trend Vision One</div>
+                <div className="text-xs font-semibold text-white">Vision One</div>
                 <div className="mt-0.5 text-[11px] text-slate-400">Credit Calculator</div>
               </div>
             </div>
