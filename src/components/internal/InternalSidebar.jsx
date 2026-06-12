@@ -45,7 +45,7 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
             : "-translate-x-full lg:w-0 lg:overflow-hidden"
         )}
       >
-        <div className="flex min-h-[96px] items-start justify-between gap-3 px-5 pb-5 pt-7">
+        <div className="flex h-[116px] items-start justify-between gap-3 px-5 pb-5 pt-7" style={{ boxSizing: "border-box" }}>
           {nextcomLogo ? (
             <img
               src={nextcomLogo}
@@ -83,9 +83,9 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
                 type="button"
                 onClick={() => handleSectionChange(section.id)}
                 className={cn(
-                  "flex h-10 w-full appearance-none items-center gap-3 rounded-lg border-0 bg-transparent px-3 text-left text-[14px] font-medium transition-colors",
+                  "flex h-11 w-full appearance-none items-center gap-3 rounded-lg border-0 bg-transparent px-3 text-left text-[14px] font-medium transition-colors",
                   isActive
-                    ? "bg-blue-600 text-white shadow-[0_10px_24px_rgba(37,99,235,0.24)]"
+                    ? "bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)]"
                     : "text-slate-300/90 hover:bg-white/[0.07] hover:text-white"
                 )}
               >
@@ -114,16 +114,16 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onSectionChang
               </div>
             </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="mx-4 mb-5 flex h-9 appearance-none items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-xs text-slate-400 hover:bg-white/[0.07] hover:text-white"
-        >
-          <LogOut className="h-4 w-4 rotate-180" aria-hidden="true" />
-          Colapsar
-        </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-4 flex h-9 w-full appearance-none items-center gap-2 rounded-lg border-0 bg-transparent px-2 text-left text-xs text-slate-400 hover:bg-white/[0.07] hover:text-white"
+          >
+            <LogOut className="h-4 w-4 rotate-180" aria-hidden="true" />
+            Colapsar
+          </button>
+        </div>
       </aside>
     </>
   )

@@ -28,7 +28,7 @@ export function InternalPricingPanel({
   ]
 
   return (
-    <aside className="sticky top-0 hidden h-[calc(100vh-72px)] flex-col gap-4 overflow-y-auto bg-[#f6f8fb] px-5 py-7 lg:flex">
+    <aside className="hidden min-w-0 flex-col gap-4 lg:flex">
       <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="mb-5 text-sm font-medium text-slate-800">
           Precios por crédito
@@ -90,7 +90,7 @@ export function InternalPricingPanel({
         type="button"
         onClick={onExportPdf}
         disabled={pdfLoading}
-        className="mt-auto flex h-11 w-full items-center justify-center rounded-lg border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-blue-50 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
+        className="mt-20 flex h-11 w-full items-center justify-center rounded-lg border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-blue-50 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
       >
         {pdfLoading ? "Generando PDF..." : "Exportar análisis PDF"}
       </button>

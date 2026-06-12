@@ -1134,8 +1134,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   // Desktop table-row layout
   return (
     <div style={{
-      display:"grid", gridTemplateColumns:"36px minmax(240px,1fr) 140px 140px 88px 100px 64px",
-      alignItems:"center", gap:14, padding:"12px 20px",
+      display:"grid", gridTemplateColumns:"36px minmax(300px,1fr) 132px 132px 88px 96px 60px",
+      alignItems:"center", gap:12, padding:"12px 20px",
       background: active ? "#F8FBFF" : "#fff",
       borderBottom:"1px solid #E2E8F0", position:"relative"
     }}>
@@ -1190,9 +1190,9 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 
       <div style={{ display:"flex", gap:6, justifyContent:"flex-end" }}>
         <button onClick={() => onDuplicate(line.rowId)} disabled={!prod} title="Duplicar"
-          style={{ width:32,height:32,borderRadius:7,border:"1px solid #E2E8F0",background:"#fff",cursor:prod?"pointer":"not-allowed",fontSize:13,color:prod?"#64748B":"#CBD5E1",display:"flex",alignItems:"center",justifyContent:"center",opacity:prod?1:0.5,boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>⊕</button>
+          style={{ width:32,height:32,borderRadius:7,border:"1px solid #E2E8F0",background:"#fff",cursor:prod?"pointer":"not-allowed",fontSize:13,color:prod?"#64748B":"#CBD5E1",display:"flex",alignItems:"center",justifyContent:"center",opacity:prod?1:0.5,boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}><Plus size={14} /></button>
         <button onClick={() => onDelete(line.rowId)} title="Eliminar"
-          style={{ width:32,height:32,borderRadius:7,border:"1px solid #E2E8F0",background:"#fff",cursor:"pointer",fontSize:12,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>✕</button>
+          style={{ width:32,height:32,borderRadius:7,border:"1px solid #E2E8F0",background:"#fff",cursor:"pointer",fontSize:12,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}><X size={14} /></button>
       </div>
     </div>
   );
@@ -1908,34 +1908,35 @@ function InternalApp() {
 
       <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName }} />
 
-      <InternalCalculatorShell isMobile={isMobile}>
-
-      {!isMobile && (
-        <InternalPricingPanel
-          logoSrc={TRENDAI_LOGO}
-          salePrice={salePrice}
-          costPrice={costPrice}
-          onSalePriceChange={setSalePrice}
-          onCostPriceChange={setCostPrice}
-          perCreditLabel={`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`}
-          perCreditColor={mColor(perCrPct)}
-          perCreditBg={mBg(perCrPct)}
-          summaryItems={[
-            { label:"Créditos totales", value:fmt(totalCredits), color:C.blue },
-            { label:"Ingresos (cliente)", value:fmtMoney(totalRevenue), color:C.text },
-            { label:"Costo (proveedor)", value:fmtU(totalCost) + " USD", color:C.text2 },
-            { label:"Margen bruto", value:fmtU(totalMargin) + " USD", color:mColor(marginPct) },
-            { label:"Rentabilidad", value:`${marginPct.toFixed(1)}%`, color:mColor(marginPct) },
-          ]}
-          onExportPdf={async () => {
-            if (pdfLoading) return;
-            setPdfLoading(true);
-            try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
-            catch(e){} finally { setPdfLoading(false); }
-          }}
-          pdfLoading={pdfLoading}
-        />
-      )}
+      <InternalCalculatorShell
+        isMobile={isMobile}
+        sidebar={!isMobile ? (
+          <InternalPricingPanel
+            logoSrc={TRENDAI_LOGO}
+            salePrice={salePrice}
+            costPrice={costPrice}
+            onSalePriceChange={setSalePrice}
+            onCostPriceChange={setCostPrice}
+            perCreditLabel={`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`}
+            perCreditColor={mColor(perCrPct)}
+            perCreditBg={mBg(perCrPct)}
+            summaryItems={[
+              { label:"Créditos totales", value:fmt(totalCredits), color:C.blue },
+              { label:"Ingresos (cliente)", value:fmtMoney(totalRevenue), color:C.text },
+              { label:"Costo (proveedor)", value:fmtU(totalCost) + " USD", color:C.text2 },
+              { label:"Margen bruto", value:fmtU(totalMargin) + " USD", color:mColor(marginPct) },
+              { label:"Rentabilidad", value:`${marginPct.toFixed(1)}%`, color:mColor(marginPct) },
+            ]}
+            onExportPdf={async () => {
+              if (pdfLoading) return;
+              setPdfLoading(true);
+              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+              catch(e){} finally { setPdfLoading(false); }
+            }}
+            pdfLoading={pdfLoading}
+          />
+        ) : null}
+      >
 
       {/* Mobile top header with logo + currency toggle + settings */}
       {isMobile && (
@@ -1961,7 +1962,7 @@ function InternalApp() {
       </header>
       )}
 
-      <main style={{ padding: isMobile ? "14px 14px 20px" : "28px 28px 34px 24px", overflowY:"auto", background:"#F6F8FB" }}>
+      <main style={{ padding: isMobile ? "14px 14px 20px" : 0, overflowY:isMobile?"auto":"visible", background:"transparent" }}>
 
         {/* Warning banner if prices are 0 */}
         {(salePrice === 0 || costPrice === 0) && (
@@ -2081,10 +2082,10 @@ function InternalApp() {
 
         <InternalKpiStrip
           metrics={[
-            { label:"Créditos totales", value:fmt(totalCredits), color:C.blue },
-            { label:`Ingresos${currency==="VES"?" (Bs.)":""}`, value:fmtMoney(totalRevenue), color:C.text, sub: currency==="VES" ? `$${totalRevenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} USD` : null },
-            { label:"Margen bruto", value:fmtMoney(totalMargin), color:mColor(marginPct), sub:`${marginPct.toFixed(1)}% rentabilidad` },
-            { label:"Líneas activas", value:activeLines, color:C.text, sub:`de ${lines.length} total` },
+            { label:"Créditos totales", value:fmt(totalCredits), color:C.blue, icon:Package },
+            { label:`Ingresos${currency==="VES"?" (Bs.)":""}`, value:fmtMoney(totalRevenue), color:C.text, sub: currency==="VES" ? `$${totalRevenue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} USD` : null, icon:TrendingUp },
+            { label:"Margen bruto", value:fmtMoney(totalMargin), color:mColor(marginPct), sub:`${marginPct.toFixed(1)}% rentabilidad`, icon:BarChart3 },
+            { label:"Líneas activas", value:activeLines, color:C.text, sub:`de ${lines.length} total`, icon:FileText },
           ]}
         />
 
@@ -2098,7 +2099,7 @@ function InternalApp() {
         <div style={{ background: isMobile?"transparent":"#fff", overflow:"hidden" }}>
           {!isMobile && (
           <>
-          <div style={{ display:"grid", gridTemplateColumns:"36px minmax(240px,1fr) 140px 140px 88px 100px 64px", gap:14, padding:"11px 20px", background:"#F8FAFC", borderBottom:"1px solid #E2E8F0" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"36px minmax(300px,1fr) 132px 132px 88px 96px 60px", gap:12, padding:"11px 20px", background:"#F8FAFC", borderBottom:"1px solid #E2E8F0" }}>
             {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
               <div key={i} style={{ fontSize:10, fontWeight:800, color:"#64748B", textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}

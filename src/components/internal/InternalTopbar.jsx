@@ -41,11 +41,11 @@ export function InternalTopbar({
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur">
-      <div className="flex h-[72px] items-center gap-3 px-5 lg:px-8">
+      <div className="flex h-[72px] items-center gap-2 px-5 lg:px-4">
         <button
           type="button"
           onClick={onToggleSidebar}
-          className={`hidden h-9 w-9 appearance-none items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900 ${isSidebarOpen ? "lg:hidden" : "lg:inline-flex"}`}
+          className="hidden h-8 w-8 appearance-none items-center justify-center rounded-lg border-0 bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:inline-flex"
           aria-label={isSidebarOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
           title={isSidebarOpen ? "Ocultar menú lateral" : "Mostrar menú lateral"}
         >
