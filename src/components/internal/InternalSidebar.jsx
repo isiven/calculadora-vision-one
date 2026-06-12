@@ -124,24 +124,21 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
         </nav>
 
         <div className={cn("border-t border-white/10 py-5 transition-all duration-200", isOpen ? "mx-4" : "mx-3")}>
-          <div className={cn(
-            "rounded-xl border border-white/10 bg-white/[0.04] transition-all duration-200",
-            isOpen ? "p-3" : "flex h-11 items-center justify-center p-0"
-          )}>
-            <div className={cn(isOpen ? "flex flex-col items-start gap-2" : "flex items-center justify-center")}>
-              <img
-                src={trendAiSidebarLogo}
-                alt=""
-                className={cn(
-                  "block object-contain",
-                  isOpen ? "h-9 w-full max-w-[150px] object-left" : "h-6 max-w-10"
-                )}
-                aria-hidden="true"
-              />
-              <div className={cn("min-w-0 transition-all duration-150", isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0")}>
-                <div className="text-xs font-semibold text-white">Vision One</div>
-                <div className="mt-0.5 text-[11px] text-slate-400">Credit Calculator</div>
-              </div>
+          <div className={cn("flex transition-all duration-200", isOpen ? "flex-col items-center gap-2.5" : "items-center justify-center")}>
+            <img
+              src={trendAiSidebarLogo}
+              alt=""
+              className={cn(
+                "block object-contain",
+                isOpen ? "h-10 w-full max-w-[154px]" : "h-6 max-w-10"
+              )}
+              aria-hidden="true"
+            />
+            <div className={cn(
+              "whitespace-nowrap text-center text-[11px] font-medium text-slate-300 transition-all duration-150",
+              isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0"
+            )}>
+              Vision One · Credit Calculator
             </div>
           </div>
 
