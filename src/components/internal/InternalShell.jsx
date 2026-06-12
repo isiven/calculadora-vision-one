@@ -22,6 +22,7 @@ export function InternalShell({ children, onLogout, nextcomLogo, trendLogo }) {
           activeSection={activeSection}
           isOpen={isSidebarOpen}
           onClose={hideSidebar}
+          onToggleSidebar={toggleSidebar}
           onSectionChange={setActiveSection}
           nextcomLogo={nextcomLogo}
           trendLogo={trendLogo}
