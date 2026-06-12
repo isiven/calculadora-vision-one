@@ -3,6 +3,7 @@ import {
   AlertTriangle, BarChart3, Download, FileText, Info, Mail, MessageSquare, Package,
   Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X
 } from "lucide-react";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { InternalCalculatorShell } from "@/components/internal/InternalCalculatorShell";
 import { InternalKpiStrip } from "@/components/internal/InternalKpiStrip";
 import { InternalPricingPanel } from "@/components/internal/InternalPricingPanel";
@@ -576,6 +577,24 @@ function Advisor({ mode = "client", getContext, isMobile }) {
   };
 
   const quickPrompts = isInternal ? ADVISOR_QUICK_PROMPTS_INTERNAL : ADVISOR_QUICK_PROMPTS_CLIENT;
+  const widgetContext = (() => {
+    try {
+      return typeof getContext === "function" ? getContext() : {};
+    } catch (e) {
+      return {};
+    }
+  })();
+  const widgetProducts = Array.isArray(widgetContext.products) ? widgetContext.products : [];
+  const widgetCommercials = widgetContext.commercials || {};
+  const widgetMargin = Number(widgetCommercials.totalMargin);
+  const widgetSalePrice = Number(widgetCommercials.salePrice);
+  const widgetCostPrice = Number(widgetCommercials.costPrice);
+  const widgetHasZeroPrices = isInternal && (
+    !Number.isFinite(widgetSalePrice) ||
+    !Number.isFinite(widgetCostPrice) ||
+    widgetSalePrice <= 0 ||
+    widgetCostPrice <= 0
+  );
 
   // ─── Estilo del avatar y header según modo ─────────
   const accentColor = isInternal ? "#7C3AED" : "#0C0A09";
@@ -596,29 +615,16 @@ function Advisor({ mode = "client", getContext, isMobile }) {
         .advisor-md code { background: #F5F5F4; padding: 1px 5px; border-radius: 4px; font-family: 'SF Mono', monospace; font-size: 92%; }
       `}</style>
 
-      {/* Botón flotante */}
+      {/* Entry point flotante del asistente */}
       {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Abrir asistente Vision One"
-          style={{
-            position: "fixed",
-            bottom: isMobile ? 18 : 24,
-            right: isMobile ? 18 : 24,
-            zIndex: 100,
-            width: 56, height: 56,
-            borderRadius: "50%",
-            background: accentColor,
-            border: "none",
-            cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.1)",
-            transition: "transform .15s ease",
-          }}
-          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-          <Sparkles size={22} color="#fff" strokeWidth={2} />
-        </button>
+        <AssistantWidget
+          mode={mode}
+          isMobile={isMobile}
+          hasProducts={widgetProducts.length > 0}
+          hasZeroPrices={widgetHasZeroPrices}
+          margin={Number.isFinite(widgetMargin) ? widgetMargin : null}
+          onOpen={() => setOpen(true)}
+        />
       )}
 
       {/* Panel del chat */}
