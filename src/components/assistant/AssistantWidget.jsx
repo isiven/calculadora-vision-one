@@ -3,18 +3,12 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { AssistantAvatar } from "./AssistantAvatar"
 import { AssistantBubble } from "./AssistantBubble"
 
-const GENERAL_MESSAGES = [
-  "Puedo ayudarte a importar una cotización.",
+const SHORT_MESSAGES = [
+  "Agrega un producto o importa una cotización para empezar.",
   "Puedo revisar el margen de este negocio.",
+  "Puedo ayudarte a importar una cotización.",
   "También analizo consumo y propuestas.",
-  "Puedo ayudarte a explicar los créditos.",
-  "¿Quieres que revise esta cotización contigo?",
 ]
-
-function prefersReducedMotion() {
-  if (typeof window === "undefined") return false
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
-}
 
 function getDelay(min, max) {
   return Math.round(min + Math.random() * (max - min))
@@ -37,24 +31,19 @@ export function AssistantWidget({
   const bubbleVisible = bubblePhase !== "hidden"
 
   const messages = useMemo(() => {
-    const contextualMessages = []
     const hasMarginValue = margin !== null && margin !== undefined && margin !== ""
     const numericMargin = Number(margin)
+    const hasLowMargin = hasMarginValue && Number.isFinite(numericMargin) && numericMargin <= 0
 
     if (!hasProducts) {
-      contextualMessages.push("Agrega un producto o importa una cotización para empezar.")
-    }
-    if (hasZeroPrices) {
-      contextualMessages.push("Recuerda configurar precio al cliente y costo proveedor.")
-    }
-    if (hasProducts) {
-      contextualMessages.push("Puedo ayudarte a revisar si la cotización está completa.")
-    }
-    if (hasMarginValue && Number.isFinite(numericMargin) && numericMargin <= 0) {
-      contextualMessages.push("El margen está en cero. Puedo ayudarte a revisarlo.")
+      return SHORT_MESSAGES
     }
 
-    return [...contextualMessages, ...GENERAL_MESSAGES]
+    if (hasZeroPrices || hasLowMargin) {
+      return [SHORT_MESSAGES[1], ...SHORT_MESSAGES.filter((message) => message !== SHORT_MESSAGES[1])]
+    }
+
+    return [SHORT_MESSAGES[2], SHORT_MESSAGES[1], SHORT_MESSAGES[3], SHORT_MESSAGES[0]]
   }, [hasProducts, hasZeroPrices, margin])
 
   const clearTimers = () => {
@@ -166,27 +155,21 @@ export function AssistantWidget({
           padding-bottom: env(safe-area-inset-bottom, 0px);
         }
         .assistant-widget__button {
-          width: 72px;
-          height: 72px;
+          display: inline-flex;
+          width: 76px;
+          height: 76px;
+          align-items: center;
+          justify-content: center;
           padding: 0;
           border: 0;
-          border-radius: 24px;
-          background:
-            radial-gradient(circle at 32% 20%, rgba(255,255,255,0.42), transparent 30%),
-            linear-gradient(145deg, #eef5ff 0%, #dbeafe 48%, #bfdbfe 100%);
-          box-shadow:
-            0 18px 38px rgba(15, 23, 42, 0.22),
-            0 3px 10px rgba(15, 23, 42, 0.12),
-            inset 0 1px 0 rgba(255, 255, 255, 0.85);
+          border-radius: 22px;
+          background: transparent;
+          box-shadow: none;
           cursor: pointer;
-          transition: transform 150ms ease, box-shadow 150ms ease;
+          transition: transform 150ms ease;
         }
         .assistant-widget__button:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 22px 44px rgba(15, 23, 42, 0.25),
-            0 4px 12px rgba(15, 23, 42, 0.14),
-            inset 0 1px 0 rgba(255, 255, 255, 0.88);
         }
         .assistant-widget__button:active {
           transform: translateY(0) scale(0.98);
@@ -197,9 +180,9 @@ export function AssistantWidget({
         }
         @media (max-width: 640px) {
           .assistant-widget__button {
-            width: 64px;
-            height: 64px;
-            border-radius: 22px;
+            width: 66px;
+            height: 66px;
+            border-radius: 20px;
           }
         }
         @media (prefers-reduced-motion: reduce) {
@@ -220,7 +203,7 @@ export function AssistantWidget({
         }}
       >
         <AssistantBubble
-          message={messages[bubbleIndex] || GENERAL_MESSAGES[0]}
+          message={messages[bubbleIndex] || SHORT_MESSAGES[0]}
           visible={bubbleVisible}
           exiting={bubblePhase === "exiting"}
           isMobile={isMobile}

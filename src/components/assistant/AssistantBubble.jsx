@@ -10,17 +10,18 @@ export function AssistantBubble({ message, visible, exiting, isMobile, onClose }
       <style>{`
         .assistant-bubble {
           position: absolute;
-          right: 82px;
-          bottom: 17px;
-          width: min(310px, calc(100vw - 132px));
-          min-height: 46px;
-          padding: 11px 36px 11px 14px;
-          border-radius: 15px;
+          right: 4px;
+          bottom: 78px;
+          width: min(260px, calc(100vw - 48px));
+          min-height: 40px;
+          padding: 10px 34px 10px 13px;
+          box-sizing: border-box;
+          border-radius: 13px;
           border: 1px solid rgba(226, 232, 240, 0.95);
           background: rgba(255, 255, 255, 0.97);
           color: #0f172a;
-          font-size: 12.5px;
-          line-height: 1.42;
+          font-size: 13px;
+          line-height: 1.35;
           font-weight: 500;
           box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.08);
           backdrop-filter: blur(12px);
@@ -33,13 +34,14 @@ export function AssistantBubble({ message, visible, exiting, isMobile, onClose }
         .assistant-bubble::after {
           content: "";
           position: absolute;
-          right: -6px;
-          bottom: 20px;
+          right: 25px;
+          bottom: -6px;
           width: 12px;
           height: 12px;
           transform: rotate(45deg);
-          border-top: 1px solid rgba(226, 232, 240, 0.95);
+          border-top: 0;
           border-right: 1px solid rgba(226, 232, 240, 0.95);
+          border-bottom: 1px solid rgba(226, 232, 240, 0.95);
           background: rgba(255, 255, 255, 0.97);
         }
         .assistant-bubble__message {
@@ -69,8 +71,8 @@ export function AssistantBubble({ message, visible, exiting, isMobile, onClose }
         }
         .assistant-bubble--mobile {
           right: 0;
-          bottom: 76px;
-          width: min(280px, calc(100vw - 28px));
+          bottom: 74px;
+          width: min(246px, calc(100vw - 28px));
           font-size: 12px;
         }
         .assistant-bubble--mobile::after {
