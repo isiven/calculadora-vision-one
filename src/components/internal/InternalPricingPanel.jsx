@@ -28,8 +28,8 @@ export function InternalPricingPanel({
   ]
 
   return (
-    <aside className="sticky top-0 hidden h-[calc(100vh-72px)] flex-col gap-5 overflow-y-auto bg-[#f7f9fc] px-6 py-7 lg:flex">
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.03]">
+    <aside className="sticky top-0 hidden h-[calc(100vh-72px)] flex-col gap-4 overflow-y-auto bg-[#f6f8fb] px-5 py-7 lg:flex">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="mb-5 text-sm font-medium text-slate-800">
           Precios por crédito
         </div>
@@ -39,7 +39,7 @@ export function InternalPricingPanel({
               <div className="mb-2 text-xs font-medium text-slate-700">
                 {field.label}
               </div>
-              <div className="flex h-11 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 shadow-inner shadow-slate-950/[0.02]">
+              <div className="flex h-10 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 shadow-inner shadow-slate-950/[0.02]">
                 <span className="text-sm text-slate-500">$</span>
                 <input
                   type="number"
@@ -51,13 +51,13 @@ export function InternalPricingPanel({
                   style={{ color: field.accent ? "#1E40AF" : undefined }}
                 />
               </div>
-              <div className="mt-2 text-xs text-slate-500">{field.sub}</div>
+              <div className="mt-2 text-[11px] text-slate-500">{field.sub}</div>
             </label>
           ))}
         </div>
 
         <div
-          className="mt-7 flex items-center justify-between rounded-lg px-3 py-3"
+          className="mt-7 flex items-center justify-between rounded-md px-3 py-3"
           style={{ background: perCreditBg }}
         >
           <span className="text-xs font-medium text-slate-700">Margen / crédito</span>
@@ -67,7 +67,7 @@ export function InternalPricingPanel({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.03]">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="mb-4 text-sm font-medium text-slate-800">
           Resumen del negocio
         </div>
@@ -90,7 +90,7 @@ export function InternalPricingPanel({
         type="button"
         onClick={onExportPdf}
         disabled={pdfLoading}
-        className="mt-auto flex h-11 w-full items-center justify-center rounded-lg border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
+        className="mt-auto flex h-11 w-full items-center justify-center rounded-lg border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-blue-50 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
       >
         {pdfLoading ? "Generando PDF..." : "Exportar análisis PDF"}
       </button>

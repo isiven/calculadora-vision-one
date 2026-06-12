@@ -1134,8 +1134,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
   // Desktop table-row layout
   return (
     <div style={{
-      display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px",
-      alignItems:"center", gap:16, padding:"16px 24px",
+      display:"grid", gridTemplateColumns:"36px minmax(240px,1fr) 140px 140px 88px 100px 64px",
+      alignItems:"center", gap:14, padding:"12px 20px",
       background: active ? "#F8FBFF" : "#fff",
       borderBottom:"1px solid #E2E8F0", position:"relative"
     }}>
@@ -1143,7 +1143,7 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 
       <div style={{ position:"relative" }} ref={triggerRef}>
         <button onClick={() => setPicking(!picking)}
-          style={{ width:"100%", textAlign:"left", background:"#fff", border:`1px solid ${prod ? "#E2E8F0" : "#CBD5E1"}`, borderRadius:8, padding:"9px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:8, minHeight:44, boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+          style={{ width:"100%", textAlign:"left", background:"#fff", border:`1px solid ${prod ? "#E2E8F0" : "#CBD5E1"}`, borderRadius:7, padding:"8px 11px", cursor:"pointer", display:"flex", alignItems:"center", gap:8, minHeight:40, boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
           {prod ? (
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ fontSize:13, fontWeight:600, color:"#0F172A", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{prod.name}</div>
@@ -1169,15 +1169,15 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 
       <input type="date" value={line.startDate || ""} onChange={e=>onUpdate({...line, startDate:e.target.value})}
         title="Fecha de inicio"
-        style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 10px", background:"#fff", width:"100%", boxSizing:"border-box", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
+        style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 10px", background:"#fff", width:"100%", boxSizing:"border-box", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
 
       <input type="date" value={line.date} onChange={e=>onUpdate({...line, date:e.target.value})}
         title="Fecha de vencimiento"
-        style={{ ...mono, fontSize:12, color:"#0F172A", border:`1px solid ${isProrated?C.amber:"#E2E8F0"}`, borderRadius:8, padding:"9px 10px", background:"#fff", width:"100%", boxSizing:"border-box", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
+        style={{ ...mono, fontSize:12, color:"#0F172A", border:`1px solid ${isProrated?C.amber:"#E2E8F0"}`, borderRadius:7, padding:"8px 10px", background:"#fff", width:"100%", boxSizing:"border-box", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
 
       <input type="number" min={0} step={1} value={line.qty||""} placeholder="0" disabled={!prod}
         onChange={e => onUpdate({...line, qty:parseInt(e.target.value)||0})}
-        style={{ ...mono, fontSize:13, fontWeight:600, textAlign:"right", padding:"9px 10px", border:`1px solid ${active?C.blue:"#E2E8F0"}`, borderRadius:8, background:prod?"#fff":"#F1F5F9", color:"#0F172A", outline:"none", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
+        style={{ ...mono, fontSize:13, fontWeight:600, textAlign:"right", padding:"8px 10px", border:`1px solid ${active?C.blue:"#E2E8F0"}`, borderRadius:7, background:prod?"#fff":"#F1F5F9", color:"#0F172A", outline:"none", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
 
       <div style={{ ...mono, fontSize:13, fontWeight:700, textAlign:"right", color:active?C.blue:"#64748B" }}>
         {active ? (
@@ -1190,9 +1190,9 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 
       <div style={{ display:"flex", gap:6, justifyContent:"flex-end" }}>
         <button onClick={() => onDuplicate(line.rowId)} disabled={!prod} title="Duplicar"
-          style={{ width:34,height:34,borderRadius:8,border:"1px solid #E2E8F0",background:"#fff",cursor:prod?"pointer":"not-allowed",fontSize:13,color:prod?"#64748B":"#CBD5E1",display:"flex",alignItems:"center",justifyContent:"center",opacity:prod?1:0.5,boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>⊕</button>
+          style={{ width:32,height:32,borderRadius:7,border:"1px solid #E2E8F0",background:"#fff",cursor:prod?"pointer":"not-allowed",fontSize:13,color:prod?"#64748B":"#CBD5E1",display:"flex",alignItems:"center",justifyContent:"center",opacity:prod?1:0.5,boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>⊕</button>
         <button onClick={() => onDelete(line.rowId)} title="Eliminar"
-          style={{ width:34,height:34,borderRadius:8,border:"1px solid #E2E8F0",background:"#fff",cursor:"pointer",fontSize:12,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>✕</button>
+          style={{ width:32,height:32,borderRadius:7,border:"1px solid #E2E8F0",background:"#fff",cursor:"pointer",fontSize:12,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>✕</button>
       </div>
     </div>
   );
@@ -1961,15 +1961,15 @@ function InternalApp() {
       </header>
       )}
 
-      <main style={{ padding: isMobile ? "14px 14px 20px" : "32px 32px 36px", overflowY:"auto", background:"#F7F9FC" }}>
+      <main style={{ padding: isMobile ? "14px 14px 20px" : "28px 28px 34px 24px", overflowY:"auto", background:"#F6F8FB" }}>
 
         {/* Warning banner if prices are 0 */}
         {(salePrice === 0 || costPrice === 0) && (
           <div style={{
             background:"#FFFBEB",
             border:`1px solid #FBBF24`,
-            borderRadius:10,
-            padding: isMobile ? "12px 14px" : "14px 18px",
+            borderRadius:8,
+            padding: isMobile ? "12px 14px" : "14px 16px",
             marginBottom: isMobile ? 14 : 26,
             display:"flex",
             alignItems:"center",
@@ -1997,15 +1997,15 @@ function InternalApp() {
           </div>
         )}
 
-        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:isMobile?12:24, gap:18, flexWrap:"wrap" }}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:isMobile?12:22, gap:18, flexWrap:"wrap" }}>
           <div>
-            <div style={{ fontSize:isMobile?18:24, fontWeight:750, letterSpacing:"-.03em", marginBottom:7, color:"#0F172A" }}>Nueva cotización</div>
-            {!isMobile && <div style={{ fontSize:14, color:"#64748B" }}>Busca productos del catálogo y construye la propuesta línea por línea</div>}
+            <div style={{ fontSize:isMobile?18:22, fontWeight:750, letterSpacing:"-.025em", marginBottom:7, color:"#0F172A" }}>Nueva cotización</div>
+            {!isMobile && <div style={{ fontSize:13, color:"#64748B" }}>Busca productos del catálogo y construye la propuesta línea por línea</div>}
           </div>
           {!isMobile && (
           <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
             {/* Currency toggle */}
-            <div style={{ display:"flex", background:"#fff", border:"1px solid #E2E8F0", borderRadius:9, padding:3, boxShadow:"0 1px 2px rgba(15,23,42,.04)" }}>
+            <div style={{ display:"none", background:"#fff", border:"1px solid #E2E8F0", borderRadius:9, padding:3, boxShadow:"0 1px 2px rgba(15,23,42,.04)" }}>
               {[
                 { code:"USD", label:"🇵🇦 USD", sub:"Panamá" },
                 { code:"VES", label:"🇻🇪 Bs.", sub:"Venezuela" },
@@ -2017,8 +2017,8 @@ function InternalApp() {
               ))}
             </div>
             <input type="text" placeholder="Nombre del cliente (opcional)" value={clientName} onChange={e=>setClientName(e.target.value)}
-              style={{ fontSize:13, padding:"9px 12px", border:"1px solid #E2E8F0", borderRadius:9, background:"#fff", color:"#0F172A", width:230, outline:"none", boxShadow:"0 1px 2px rgba(15,23,42,.04)" }} />
-            <button onClick={clearAll} style={{ fontSize:13, color:"#475569", background:"#fff", border:"1px solid #E2E8F0", borderRadius:9, padding:"9px 13px", cursor:"pointer", fontWeight:600, boxShadow:"0 1px 2px rgba(15,23,42,.04)" }}>Limpiar</button>
+              style={{ fontSize:13, padding:"8px 11px", border:"1px solid #E2E8F0", borderRadius:8, background:"#fff", color:"#0F172A", width:220, outline:"none", boxShadow:"0 1px 2px rgba(15,23,42,.04)" }} />
+            <button onClick={clearAll} style={{ fontSize:13, color:"#475569", background:"#fff", border:"1px solid #E2E8F0", borderRadius:8, padding:"8px 12px", cursor:"pointer", fontWeight:600, boxShadow:"0 1px 2px rgba(15,23,42,.04)" }}>Limpiar</button>
           </div>
           )}
         </div>
@@ -2098,7 +2098,7 @@ function InternalApp() {
         <div style={{ background: isMobile?"transparent":"#fff", overflow:"hidden" }}>
           {!isMobile && (
           <>
-          <div style={{ display:"grid", gridTemplateColumns:"34px 1fr 150px 150px 72px 110px 60px", gap:16, padding:"12px 24px", background:"#F8FAFC", borderBottom:"1px solid #E2E8F0" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"36px minmax(240px,1fr) 140px 140px 88px 100px 64px", gap:14, padding:"11px 20px", background:"#F8FAFC", borderBottom:"1px solid #E2E8F0" }}>
             {["#","Producto","Inicio","Vencimiento","Cant.","Créditos",""].map((h,i) => (
               <div key={i} style={{ fontSize:10, fontWeight:800, color:"#64748B", textAlign:i>=4&&i<6?"right":i===0?"center":"left", textTransform:"uppercase", letterSpacing:".06em" }}>{h}</div>
             ))}
@@ -2117,9 +2117,9 @@ function InternalApp() {
           ))}
 
           <button onClick={addLine} style={{
-            width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:6,
-            padding: isMobile?"14px":"18px", background: isMobile?C.blueBg:"#fff", border: isMobile?`1.5px dashed ${C.blue}`:"none", borderTop: isMobile?`1.5px dashed ${C.blue}`:"1px solid #E2E8F0",
-            borderRadius: isMobile?10:0, marginTop: isMobile?4:0,
+            display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+            padding: isMobile?"14px":"14px", background: isMobile?C.blueBg:"#fff", border: isMobile?`1.5px dashed ${C.blue}`:"1px dashed #CBD5E1",
+            borderRadius: isMobile?10:8, margin: isMobile?"4px 0 0":"14px 20px 18px", width:isMobile?"100%":"calc(100% - 40px)",
             cursor:"pointer", color:C.blue, fontSize: isMobile?14:12, fontWeight:600
           }}>
             <span style={{ fontSize: isMobile?18:14 }}>＋</span> Agregar producto
@@ -2134,14 +2134,14 @@ function InternalApp() {
           description="Precio libre · línea especial sin créditos."
         >
         <div style={{ background:"#fff", overflow:"hidden" }}>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"24px", background:soporteSale>0?"#F8FBFF":"#fff" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"22px 20px", background:soporteSale>0?"#F8FBFF":"#fff" }}>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
               { l:"Costo proveedor",   v:soporteCost, set:setSoporteCost },
             ].map(f => (
               <div key={f.l}>
                 <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>{f.l}</div>
-                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 12px", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 11px", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
                   <span style={{ color:"#64748B", fontSize:13 }}>$</span>
                   <input type="number" min={0} step={0.01} value={f.v||""} placeholder="0.00" onChange={e => f.set(parseFloat(e.target.value)||0)}
                     style={{ ...mono, fontSize:13, fontWeight:600, width:"100%", border:"none", outline:"none", background:"transparent", color:"#0F172A" }} />
@@ -2151,7 +2151,7 @@ function InternalApp() {
             <div>
               <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Vencimiento</div>
               <input type="date" value={soporteDate} onChange={e => setSoporteDate(e.target.value)}
-                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 12px", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
+                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 11px", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
             </div>
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Margen</div>

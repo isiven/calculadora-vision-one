@@ -1,14 +1,14 @@
 export function InternalKpiStrip({ metrics }) {
   return (
-    <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((metric) => (
         <article
           key={metric.label}
-          className="min-h-[112px] rounded-xl border border-slate-200 bg-white px-5 py-5 shadow-sm shadow-slate-950/[0.03]"
+          className="min-h-[98px] rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
         >
           <div className="text-xs font-medium text-slate-500">{metric.label}</div>
           <div
-            className="mt-5 font-mono text-2xl font-bold tracking-normal"
+            className="mt-4 font-mono text-[22px] font-bold leading-none tracking-normal"
             style={{ color: metric.color }}
           >
             {metric.value}

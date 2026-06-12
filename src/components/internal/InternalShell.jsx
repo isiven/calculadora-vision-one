@@ -16,7 +16,7 @@ export function InternalShell({ children, onLogout, nextcomLogo, trendLogo }) {
   const toggleSidebar = () => setIsSidebarOpen((open) => !open)
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-slate-950">
+    <div className="min-h-screen bg-[#f6f8fb] font-sans text-slate-950">
       <div className="flex min-h-screen">
         <InternalSidebar
           activeSection={activeSection}
@@ -37,7 +37,7 @@ export function InternalShell({ children, onLogout, nextcomLogo, trendLogo }) {
             onLogout={onLogout}
           />
 
-          <main className="min-w-0 flex-1 bg-[#f7f9fc]">
+          <main className="min-w-0 flex-1 bg-[#f6f8fb]">
             {activeSection === "calculator" ? (
               children
             ) : (
