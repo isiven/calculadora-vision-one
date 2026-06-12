@@ -9,7 +9,7 @@ import {
   PanelLeftOpen,
   X,
 } from "lucide-react"
-import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.svg"
+import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png"
 import { cn } from "@/lib/utils"
 
 const sections = [
