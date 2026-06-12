@@ -9,6 +9,7 @@ import {
   PanelLeftOpen,
   X,
 } from "lucide-react"
+import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.svg"
 import { cn } from "@/lib/utils"
 
 const sections = [
@@ -20,7 +21,7 @@ const sections = [
   { id: "admin", label: "Configuración", icon: Settings },
 ]
 
-export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSidebar, onSectionChange, nextcomLogo, trendLogo }) {
+export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSidebar, onSectionChange, nextcomLogo }) {
   const handleSectionChange = (sectionId) => {
     onSectionChange(sectionId)
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
@@ -128,17 +129,15 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
             isOpen ? "p-3" : "flex h-11 items-center justify-center p-0"
           )}>
             <div className={cn(isOpen ? "flex flex-col items-start gap-2" : "flex items-center justify-center")}>
-              {trendLogo ? (
-                <img
-                  src={trendLogo}
-                  alt=""
-                  className={cn(
-                    "block object-contain",
-                    isOpen ? "h-8 w-full max-w-[136px] object-left" : "h-5 max-w-9"
-                  )}
-                  aria-hidden="true"
-                />
-              ) : null}
+              <img
+                src={trendAiSidebarLogo}
+                alt=""
+                className={cn(
+                  "block object-contain",
+                  isOpen ? "h-9 w-full max-w-[150px] object-left" : "h-6 max-w-10"
+                )}
+                aria-hidden="true"
+              />
               <div className={cn("min-w-0 transition-all duration-150", isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0")}>
                 <div className="text-xs font-semibold text-white">Vision One</div>
                 <div className="mt-0.5 text-[11px] text-slate-400">Credit Calculator</div>
