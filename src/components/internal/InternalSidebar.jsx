@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  BriefcaseBusiness,
   Calculator,
   ClipboardList,
   LogOut,
@@ -129,8 +128,17 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
             isOpen ? "p-3" : "flex h-11 items-center justify-center p-0"
           )}>
             <div className={cn("flex items-center", isOpen ? "gap-3" : "gap-0")}>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
-                <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/95">
+                {trendLogo ? (
+                  <img
+                    src={trendLogo}
+                    alt=""
+                    className="h-5 max-w-7 object-contain"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span className="text-[11px] font-bold text-[#081b32]" aria-hidden="true">AI</span>
+                )}
               </div>
               <div className={cn("min-w-0 transition-all duration-150", isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0")}>
                 <div className="text-xs font-semibold text-white">Trend Vision One</div>
