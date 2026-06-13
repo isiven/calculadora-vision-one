@@ -124,18 +124,25 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
         </nav>
 
         <div className={cn("border-t border-white/10 py-5 transition-all duration-200", isOpen ? "mx-4" : "mx-3")}>
-          <div className={cn("flex transition-all duration-200", isOpen ? "flex-col items-center gap-2.5" : "items-center justify-center")}>
-            <img
-              src={trendAiSidebarLogo}
-              alt=""
+          <div className={cn("flex transition-all duration-200", isOpen ? "flex-col items-center gap-2" : "items-center justify-center")}>
+            <div
               className={cn(
-                "block object-contain",
-                isOpen ? "h-10 w-full max-w-[154px]" : "h-6 max-w-10"
+                "flex items-center overflow-hidden transition-all duration-200",
+                isOpen ? "h-[42px] w-[190px] justify-center" : "h-8 w-9 justify-start"
               )}
               aria-hidden="true"
-            />
+            >
+              <img
+                src={trendAiSidebarLogo}
+                alt=""
+                className={cn(
+                  "block object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.22)]",
+                  isOpen ? "h-auto w-[184px] max-w-full" : "h-8 w-auto max-w-none"
+                )}
+              />
+            </div>
             <div className={cn(
-              "whitespace-nowrap text-center text-[11px] font-medium text-slate-300 transition-all duration-150",
+              "whitespace-nowrap text-center text-[11px] font-medium leading-none text-slate-300 transition-all duration-150",
               isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0"
             )}>
               Vision One · Credit Calculator
