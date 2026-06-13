@@ -2414,52 +2414,82 @@ function InternalApp() {
 
       {/* IMPORT QUOTE MODAL */}
       {importOpen && (
-        <div style={{ position:"fixed", inset:0, zIndex:10000, background:"rgba(0,0,0,0.55)", display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile?0:20 }}
+        <div style={{ position:"fixed", inset:0, zIndex:10000, background:"rgba(15, 23, 42, 0.58)", backdropFilter:"blur(10px)", display:"flex", alignItems:"center", justifyContent:"center", padding: isMobile?0:24 }}
           onClick={() => { if (!importing) { setImportOpen(false); setImportResult(null); setImportError(null); } }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background: C.surface, borderRadius: isMobile?"16px 16px 0 0":12,
-            width: isMobile?"100%":"100%", maxWidth: isMobile?"none":620,
-            maxHeight: isMobile?"92vh":"85vh", overflow:"auto",
+            background: C.surface, borderRadius: isMobile?"22px 22px 0 0":24,
+            width: isMobile?"100%":"100%", maxWidth: isMobile?"none":740,
+            maxHeight: isMobile?"92vh":"86vh", overflow:"auto",
             position: isMobile?"fixed":"relative", bottom: isMobile?0:"auto", left:0, right:0,
-            boxShadow:"0 20px 60px rgba(0,0,0,0.25)"
+            border:`1px solid ${C.border}`,
+            boxShadow:"0 28px 90px rgba(15, 23, 42, 0.28)"
           }}>
-            {isMobile && <div style={{ width:40, height:4, background:C.border, borderRadius:2, margin:"12px auto 0" }} />}
-            <div style={{ padding:"20px 22px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-              <div>
-                <div style={{ fontSize:17, fontWeight:700, letterSpacing:"-.01em" }}>✨ Importar cotización</div>
-                <div style={{ fontSize:12, color:C.text3, marginTop:3 }}>PDF, Word, Excel, imagen o email. La IA extrae los productos automáticamente.</div>
+            {isMobile && <div style={{ width:42, height:4, background:C.border, borderRadius:999, margin:"12px auto 0" }} />}
+            <div style={{ padding:isMobile?"18px 18px 16px":"24px 28px 20px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:16 }}>
+              <div style={{ display:"flex", gap:14, alignItems:"flex-start", minWidth:0 }}>
+                <div style={{
+                  width:44, height:44, borderRadius:14, background:"#F1F7FF",
+                  border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"center",
+                  color:C.blue, flex:"0 0 auto"
+                }}>
+                  <FileText size={21} strokeWidth={2.2} />
+                </div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontSize:20, fontWeight:750, letterSpacing:"-.025em", color:C.text }}>Importar cotización</div>
+                  <div style={{ fontSize:13, color:C.text2, marginTop:5, lineHeight:1.45, maxWidth:520 }}>
+                    Carga una propuesta o archivo de referencia para detectar productos y créditos.
+                  </div>
+                </div>
               </div>
               {!importing && (
                 <button onClick={() => { setImportOpen(false); setImportResult(null); setImportError(null); }}
-                  style={{ width:32, height:32, borderRadius:8, border:`1px solid ${C.border}`, background:C.surface, fontSize:14, cursor:"pointer" }}>✕</button>
+                  aria-label="Cerrar importación"
+                  style={{ width:36, height:36, borderRadius:999, border:`1px solid ${C.border}`, background:C.panel, color:C.text2, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flex:"0 0 auto" }}>
+                  <X size={16} />
+                </button>
               )}
             </div>
 
-            <div style={{ padding:"20px 22px" }}>
+            <div style={{ padding:isMobile?"18px":"24px 28px 28px" }}>
               {!importResult && !importing && (
                 <>
                   <div
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = C.blue; e.currentTarget.style.background = C.blueBg; }}
-                    onDragLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.surface; }}
+                    onDragLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "#F8FAFC"; }}
                     onDrop={e => {
                       e.preventDefault();
                       e.currentTarget.style.borderColor = C.border;
-                      e.currentTarget.style.background = C.surface;
+                      e.currentTarget.style.background = "#F8FAFC";
                       const file = e.dataTransfer.files[0];
                       if (file) handleFileImport(file);
                     }}
                     style={{
-                      border:`2px dashed ${C.border}`, borderRadius:10, padding:"36px 20px",
-                      textAlign:"center", cursor:"pointer", background:C.surface,
-                      transition:"all 0.15s"
+                      border:`1.5px dashed ${C.border}`, borderRadius:18, padding:isMobile?"28px 18px":"34px 28px",
+                      textAlign:"center", cursor:"pointer", background:"#F8FAFC",
+                      transition:"all 0.15s ease", position:"relative", overflow:"hidden"
                     }}>
-                    <div style={{ fontSize:36, marginBottom:10 }}>📎</div>
-                    <div style={{ fontSize:14, fontWeight:600, color:C.text, marginBottom:4 }}>
-                      {isMobile ? "Toca para seleccionar archivo" : "Arrastra un archivo aquí o haz clic para seleccionar"}
+                    <div style={{
+                      width:58, height:58, borderRadius:18, margin:"0 auto 16px",
+                      background:C.surface, border:`1px solid ${C.border}`, boxShadow:"0 12px 24px rgba(15, 23, 42, 0.06)",
+                      display:"flex", alignItems:"center", justifyContent:"center", color:C.blue
+                    }}>
+                      <Upload size={24} strokeWidth={2.2} />
                     </div>
-                    <div style={{ fontSize:11, color:C.text3 }}>
-                      PDF · JPG · PNG · DOCX · XLSX · TXT (máx. 30 MB)
+                    <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:6, letterSpacing:"-.01em" }}>
+                      Arrastra el archivo aquí o selecciónalo desde tu equipo.
+                    </div>
+                    <div style={{ fontSize:12, color:C.text2, lineHeight:1.5, maxWidth:420, margin:"0 auto 18px" }}>
+                      Soporta propuestas, reportes o documentos comerciales compatibles.
+                    </div>
+                    <button type="button" style={{
+                      border:"none", borderRadius:10, background:C.blue, color:"#fff", padding:"10px 16px",
+                      fontSize:13, fontWeight:700, cursor:"pointer", boxShadow:"0 10px 22px rgba(37, 99, 235, 0.22)"
+                    }}>
+                      Seleccionar archivo
+                    </button>
+                    <div style={{ fontSize:11, color:C.text3, marginTop:14 }}>
+                      PDF, JPG, PNG, DOCX, XLSX, TXT o CSV
                     </div>
                   </div>
                   <input ref={fileInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx,.xls,.txt,.csv,application/pdf,image/*"
@@ -2467,88 +2497,122 @@ function InternalApp() {
                     onChange={e => e.target.files[0] && handleFileImport(e.target.files[0])} />
 
                   {importError && (
-                    <div style={{ marginTop:14, padding:"11px 14px", background:"#FEF2F2", border:`1px solid #FCA5A5`, borderRadius:8, fontSize:12, color:C.red }}>
-                      ⚠ {importError}
+                    <div style={{ marginTop:16, padding:"13px 14px", background:"#FEF2F2", border:`1px solid #FECACA`, borderRadius:12, fontSize:12, color:C.red, display:"flex", gap:10, alignItems:"flex-start", lineHeight:1.45 }}>
+                      <AlertTriangle size={16} style={{ flex:"0 0 auto", marginTop:1 }} />
+                      <div>
+                        <div style={{ fontWeight:700, marginBottom:2 }}>No pudimos importar el archivo</div>
+                        <div>{importError}</div>
+                      </div>
                     </div>
                   )}
 
-                  <div style={{ marginTop:14, padding:"11px 14px", background:C.panel, borderRadius:8, fontSize:11, color:C.text2, lineHeight:1.5 }}>
-                    <strong>Funciona con:</strong> cotizaciones de Nextcom, Trend Micro, otros partners, emails con listas de productos, fotos de cotizaciones, etc. La IA reconoce SKUs (VORN0034, VONN0309...) y nombres de productos.
+                  <div style={{ marginTop:16, padding:"13px 14px", background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, fontSize:12, color:C.text2, lineHeight:1.5, display:"flex", gap:10, alignItems:"flex-start" }}>
+                    <Info size={15} style={{ flex:"0 0 auto", color:C.blue, marginTop:2 }} />
+                    <div>
+                      <strong style={{ color:C.text }}>Revisión asistida por IA.</strong> La extracción puede reconocer SKUs, nombres de productos y vigencias, pero debe revisarse antes de aplicarla.
+                    </div>
                   </div>
                 </>
               )}
 
               {importing && (
-                <div style={{ textAlign:"center", padding:"50px 20px" }}>
-                  <div style={{ fontSize:36, marginBottom:14 }}>🤖</div>
-                  <div style={{ fontSize:15, fontWeight:600, color:C.text, marginBottom:4 }}>Analizando cotización...</div>
-                  <div style={{ fontSize:12, color:C.text3 }}>Claude está leyendo el documento y extrayendo las líneas (puede tardar 5–15 segundos)</div>
+                <div style={{ textAlign:"center", padding:isMobile?"44px 20px":"56px 36px" }}>
+                  <div style={{
+                    width:64, height:64, borderRadius:22, margin:"0 auto 18px",
+                    background:"#F1F7FF", border:`1px solid ${C.border}`,
+                    display:"flex", alignItems:"center", justifyContent:"center", color:C.blue,
+                    boxShadow:"0 14px 30px rgba(15, 23, 42, 0.08)"
+                  }}>
+                    <Sparkles size={26} strokeWidth={2.1} />
+                  </div>
+                  <div style={{ fontSize:17, fontWeight:750, color:C.text, marginBottom:6, letterSpacing:"-.015em" }}>Analizando cotización...</div>
+                  <div style={{ fontSize:13, color:C.text2, lineHeight:1.55, maxWidth:430, margin:"0 auto" }}>
+                    Estamos detectando productos, créditos, fechas y condiciones comerciales. Esto puede tardar unos segundos.
+                  </div>
                 </div>
               )}
 
               {importResult && !importing && (
                 <div>
-                  <div style={{ padding:"12px 14px", background: importResult.confidence === "high" ? C.greenBg : importResult.confidence === "medium" ? C.amberBg : "#FEF2F2", borderRadius:8, marginBottom:14 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color: importResult.confidence === "high" ? C.green : importResult.confidence === "medium" ? C.amber : C.red, marginBottom:2 }}>
-                      {importResult.confidence === "high" ? "✓ Extracción exitosa" : importResult.confidence === "medium" ? "⚠ Revisa los resultados" : "⚠ Confianza baja — verifica manualmente"}
+                  <div style={{ padding:"14px 16px", background: importResult.confidence === "high" ? C.greenBg : importResult.confidence === "medium" ? C.amberBg : "#FEF2F2", border:`1px solid ${importResult.confidence === "high" ? "#BBF7D0" : importResult.confidence === "medium" ? "#FDE68A" : "#FECACA"}`, borderRadius:14, marginBottom:16, display:"flex", gap:12, alignItems:"flex-start" }}>
+                    <Shield size={18} style={{ color: importResult.confidence === "high" ? C.green : importResult.confidence === "medium" ? C.amber : C.red, flex:"0 0 auto", marginTop:1 }} />
+                    <div>
+                      <div style={{ fontSize:13, fontWeight:750, color: importResult.confidence === "high" ? C.green : importResult.confidence === "medium" ? C.amber : C.red, marginBottom:3 }}>
+                        {importResult.confidence === "high" ? "Extracción exitosa" : importResult.confidence === "medium" ? "Revisa los resultados" : "Confianza baja - verifica manualmente"}
+                      </div>
+                      {importResult.notes && <div style={{ fontSize:12, color:C.text2, lineHeight:1.45 }}>{importResult.notes}</div>}
                     </div>
-                    {importResult.notes && <div style={{ fontSize:11, color:C.text2 }}>{importResult.notes}</div>}
                   </div>
 
-                  {importResult.clientName && (
-                    <div style={{ fontSize:12, marginBottom:8 }}>
-                      <span style={{ color:C.text3 }}>Cliente:</span> <strong>{importResult.clientName}</strong>
-                      {importResult.quoteNumber && <span style={{ color:C.text3 }}> · Cot. #{importResult.quoteNumber}</span>}
-                      {importResult.isRenewal && <span style={{ marginLeft:6, fontSize:10, background:C.blueBg, color:C.blue, padding:"1px 6px", borderRadius:3, fontWeight:700 }}>RENOVACIÓN</span>}
+                  <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1.1fr .9fr", gap:12, marginBottom:16 }}>
+                    <div style={{ border:`1px solid ${C.border}`, borderRadius:14, background:C.surface, padding:14 }}>
+                      <div style={{ fontSize:10, fontWeight:800, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Cliente detectado</div>
+                      <div style={{ fontSize:14, fontWeight:750, color:C.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                        {importResult.clientName || "Pendiente de revisión"}
+                      </div>
+                      <div style={{ marginTop:7, display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
+                        {importResult.quoteNumber && <span style={{ fontSize:11, color:C.text2, background:C.panel, border:`1px solid ${C.border}`, borderRadius:999, padding:"3px 8px" }}>Cot. #{importResult.quoteNumber}</span>}
+                        {importResult.isRenewal && <span style={{ fontSize:11, background:C.blueBg, color:C.blue, padding:"3px 8px", borderRadius:999, fontWeight:800 }}>Renovación</span>}
+                      </div>
                     </div>
-                  )}
-
-                  {(importResult.startDate || importResult.endDate) && (
-                    <div style={{ fontSize:12, color:C.text2, marginBottom:12 }}>
-                      Vigencia: <span style={{ ...mono }}>{importResult.startDate || "—"} → {importResult.endDate || "—"}</span>
+                    <div style={{ border:`1px solid ${C.border}`, borderRadius:14, background:C.surface, padding:14 }}>
+                      <div style={{ fontSize:10, fontWeight:800, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Vigencia</div>
+                      <div style={{ fontSize:13, color:C.text2, display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                        <span style={{ ...mono, color:C.text }}>{importResult.startDate || "Sin inicio"}</span>
+                        <ChevronRight size={14} color={C.text3} />
+                        <span style={{ ...mono, color:C.text }}>{importResult.endDate || "Sin vencimiento"}</span>
+                      </div>
                     </div>
-                  )}
-
-                  <div style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>
-                    {importResult.lines.length} líneas detectadas
                   </div>
-                  <div style={{ border:`1px solid ${C.border}`, borderRadius:8, overflow:"hidden", marginBottom:14, maxHeight:260, overflowY:"auto" }}>
+
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, marginBottom:8 }}>
+                    <div style={{ fontSize:11, fontWeight:800, color:C.text3, textTransform:"uppercase", letterSpacing:".08em" }}>
+                      {importResult.lines.length} líneas detectadas
+                    </div>
+                    <div style={{ fontSize:11, color:C.text3 }}>Solo se aplican productos reconocidos</div>
+                  </div>
+                  <div style={{ border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden", marginBottom:16, maxHeight:280, overflowY:"auto", background:C.surface }}>
                     {importResult.lines.map((l, i) => (
-                      <div key={i} style={{ padding:"10px 12px", borderBottom: i < importResult.lines.length - 1 ? `1px solid ${C.border}` : "none", display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, background: l.prodId ? C.surface : C.panel }}>
+                      <div key={i} style={{ padding:"12px 14px", borderBottom: i < importResult.lines.length - 1 ? `1px solid ${C.border}` : "none", display:"grid", gridTemplateColumns:"minmax(0, 1fr) auto", gap:12, alignItems:"center", background: l.prodId ? C.surface : "#F8FAFC" }}>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:12, fontWeight:500, color: l.prodId ? C.text : C.text3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                          <div style={{ fontSize:13, fontWeight:650, color: l.prodId ? C.text : C.text3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                             {l.productName}
                           </div>
-                          <div style={{ fontSize:10, color:C.text3, marginTop:1, ...mono }}>
+                          <div style={{ fontSize:11, color:C.text3, marginTop:4, display:"flex", gap:7, alignItems:"center", flexWrap:"wrap" }}>
                             {l.sku && <span>{l.sku} · </span>}
                             {l.prodId ? (
-                              <span style={{ color:C.green }}>✓ reconocido</span>
+                              <span style={{ color:C.green, fontWeight:700 }}>Reconocido</span>
                             ) : (
-                              <span style={{ color:C.red }}>✗ no mapeado — se omitirá</span>
+                              <span style={{ color:C.red, fontWeight:700 }}>No mapeado - se omitirá</span>
                             )}
                           </div>
                         </div>
-                        <div style={{ ...mono, fontSize:13, fontWeight:700, color:C.blue, whiteSpace:"nowrap" }}>
-                          {l.quantity}
+                        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                          <div style={{ fontSize:10, fontWeight:800, color:C.text3, textTransform:"uppercase", letterSpacing:".06em" }}>Cant.</div>
+                          <div style={{ ...mono, minWidth:42, textAlign:"center", fontSize:13, fontWeight:800, color:C.blue, whiteSpace:"nowrap", background:C.blueBg, borderRadius:999, padding:"5px 8px" }}>
+                            {l.quantity}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {importResult.soportePlatinum?.present && (
-                    <div style={{ fontSize:12, color:C.text2, marginBottom:12, padding:"8px 12px", background:C.panel, borderRadius:6 }}>
-                      + Soporte Platinum: <strong style={{ ...mono }}>${importResult.soportePlatinum.price?.toLocaleString() || 0}</strong>
+                    <div style={{ fontSize:12, color:C.text2, marginBottom:16, padding:"12px 14px", background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
+                      <span style={{ fontWeight:700, color:C.text }}>Soporte Platinum detectado</span>
+                      <strong style={{ ...mono, color:C.text }}>${importResult.soportePlatinum.price?.toLocaleString() || 0}</strong>
                     </div>
                   )}
 
-                  <div style={{ display:"flex", gap:8 }}>
+                  <div style={{ display:"flex", gap:10, flexDirection:isMobile?"column":"row" }}>
                     <button onClick={() => { setImportResult(null); }}
-                      style={{ flex:1, padding:"11px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:500, color:C.text2 }}>
+                      style={{ flex:1, padding:"12px 14px", background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, cursor:"pointer", fontSize:13, fontWeight:700, color:C.text2 }}>
                       Probar otro archivo
                     </button>
                     <button onClick={applyImportResult}
-                      style={{ flex:2, padding:"11px", background:C.blue, color:"#fff", border:"none", borderRadius:8, cursor:"pointer", fontSize:13, fontWeight:700 }}>
-                      Aplicar a la calculadora →
+                      style={{ flex:2, padding:"12px 14px", background:C.blue, color:"#fff", border:"none", borderRadius:10, cursor:"pointer", fontSize:13, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", gap:8, boxShadow:"0 12px 24px rgba(37, 99, 235, 0.22)" }}>
+                      Aplicar a cotización
+                      <ChevronRight size={15} />
                     </button>
                   </div>
                 </div>
