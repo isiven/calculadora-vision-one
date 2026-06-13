@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  AlertTriangle, BarChart3, Download, FileText, Info, Mail, MessageSquare, Package,
+  AlertTriangle, BarChart3, ChevronRight, Download, FileText, Info, Mail, MessageSquare, Package,
   Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X
 } from "lucide-react";
+import { AssistantAvatar } from "@/components/assistant/AssistantAvatar";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { InternalCalculatorShell } from "@/components/internal/InternalCalculatorShell";
 import { InternalKpiStrip } from "@/components/internal/InternalKpiStrip";
@@ -485,11 +486,11 @@ const ADVISOR_QUICK_PROMPTS_CLIENT = [
 ];
 
 const ADVISOR_QUICK_PROMPTS_INTERNAL = [
-  "Argumentos para defender una subida de tier",
-  "Cómo responder: 'es muy caro'",
+  "Defender una subida de tier",
+  "Cómo responder: es muy caro",
   "Upsell típicos en banca",
   "Health check checklist",
-  "Diferencia partner-led vs marketplace",
+  "Partner-led vs marketplace",
 ];
 
 function Advisor({ mode = "client", getContext, isMobile }) {
@@ -596,23 +597,177 @@ function Advisor({ mode = "client", getContext, isMobile }) {
     widgetCostPrice <= 0
   );
 
-  // ─── Estilo del avatar y header según modo ─────────
-  const accentColor = isInternal ? "#7C3AED" : "#0C0A09";
-  const accentBg = isInternal ? "#F5F3FF" : "#F5F5F4";
-  const modeLabel = isInternal ? "Modo Nextcom · IA experta" : "by Nextcom · IA experta";
+  // ─── Estilo del panel Advisor según modo ─────────
+  const accentColor = isInternal ? "#0F4C81" : "#002F45";
+  const accentBg = isInternal ? "#F1F7FB" : "#F5F7FA";
+  const modeLabel = isInternal ? "Modo Nextcom · IA experta" : "Modo cliente · IA experta";
+  const introText = isInternal
+    ? "Puedo ayudarte a preparar reuniones, defender renovaciones, identificar oportunidades de upsell y responder objeciones comerciales."
+    : "Puedo ayudarte a entender créditos, revisar módulos, explicar resultados y preparar una conversación con Nextcom.";
 
   return (
     <>
       <style>{`
-        @keyframes advisor-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes advisor-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+        @keyframes advisor-fade-in { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes advisor-dot { 0%,80%,100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+        .advisor-panel {
+          --advisor-accent: ${accentColor};
+          --advisor-accent-bg: ${accentBg};
+          color: #0f172a;
+        }
+        .advisor-header-button,
+        .advisor-suggestion-row,
+        .advisor-send-button {
+          font: inherit;
+        }
+        .advisor-header-button {
+          border: 1px solid transparent;
+          background: transparent;
+          color: #64748b;
+          cursor: pointer;
+          transition: background .16s ease, border-color .16s ease, color .16s ease;
+        }
+        .advisor-header-button:hover {
+          background: #f8fafc;
+          border-color: #e2e8f0;
+          color: #0f172a;
+        }
+        .advisor-close-button {
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+        }
+        .advisor-clear-button {
+          min-height: 32px;
+          border-radius: 999px;
+          padding: 0 10px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        .advisor-suggestion-row {
+          width: 100%;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          color: #334155;
+          cursor: pointer;
+          border-radius: 14px;
+          padding: 10px 12px;
+          display: grid;
+          grid-template-columns: 30px 1fr 18px;
+          align-items: center;
+          gap: 10px;
+          text-align: left;
+          transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+        }
+        .advisor-suggestion-row:hover {
+          border-color: #bfdbfe;
+          background: #f8fbff;
+          box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+          transform: translateY(-1px);
+        }
+        .advisor-suggestion-icon {
+          width: 30px;
+          height: 30px;
+          border-radius: 10px;
+          background: var(--advisor-accent-bg);
+          color: var(--advisor-accent);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .advisor-message-row {
+          display: flex;
+          gap: 9px;
+          margin-bottom: 14px;
+        }
+        .advisor-message-row--user {
+          justify-content: flex-end;
+        }
+        .advisor-message-row--assistant {
+          justify-content: flex-start;
+        }
+        .advisor-message-bubble {
+          max-width: min(82%, 430px);
+          border-radius: 18px;
+          padding: 11px 13px;
+          font-size: 13px;
+          line-height: 1.55;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+        .advisor-message-bubble--assistant {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          color: #0f172a;
+          box-shadow: 0 10px 24px rgba(15, 23, 42, .045);
+        }
+        .advisor-message-bubble--user {
+          background: var(--advisor-accent);
+          color: #ffffff;
+          box-shadow: 0 12px 22px rgba(15, 76, 129, .18);
+        }
+        .advisor-input {
+          transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+        }
+        .advisor-input:focus {
+          border-color: #93c5fd;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, .12);
+        }
+        .advisor-send-button {
+          width: 44px;
+          height: 44px;
+          border: none;
+          border-radius: 14px;
+          background: var(--advisor-accent);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: transform .16s ease, background .16s ease, opacity .16s ease;
+        }
+        .advisor-send-button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          background: #0b3f6d;
+        }
+        .advisor-send-button:disabled {
+          background: #e2e8f0;
+          cursor: not-allowed;
+          transform: none;
+        }
         .advisor-md p { margin: 0 0 8px 0; }
         .advisor-md p:last-child { margin-bottom: 0; }
-        .advisor-md strong { font-weight: 600; color: #0C0A09; }
+        .advisor-md strong { font-weight: 650; color: #0f172a; }
         .advisor-md ul, .advisor-md ol { margin: 6px 0 8px 0; padding-left: 18px; }
         .advisor-md li { margin: 2px 0; }
-        .advisor-md code { background: #F5F5F4; padding: 1px 5px; border-radius: 4px; font-family: 'SF Mono', monospace; font-size: 92%; }
+        .advisor-md code { background: #f1f5f9; padding: 1px 5px; border-radius: 5px; font-family: 'SF Mono', monospace; font-size: 92%; }
+        @media (max-width: 640px) {
+          .advisor-panel {
+            border-radius: 0 !important;
+          }
+          .advisor-suggestion-row {
+            grid-template-columns: 28px 1fr 16px;
+            padding: 9px 10px;
+          }
+          .advisor-message-bubble {
+            max-width: 84%;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .advisor-panel,
+          .advisor-suggestion-row,
+          .advisor-send-button {
+            animation: none !important;
+            transition: none !important;
+          }
+          .advisor-suggestion-row:hover,
+          .advisor-send-button:hover:not(:disabled) {
+            transform: none !important;
+          }
+        }
       `}</style>
 
       {/* Entry point flotante del asistente */}
@@ -629,18 +784,18 @@ function Advisor({ mode = "client", getContext, isMobile }) {
 
       {/* Panel del chat */}
       {open && (
-        <div style={{
+        <div className="advisor-panel" style={{
           position: "fixed",
           bottom: isMobile ? 0 : 24,
           right: isMobile ? 0 : 24,
           left: isMobile ? 0 : "auto",
           top: isMobile ? 0 : "auto",
-          width: isMobile ? "100%" : 380,
-          height: isMobile ? "100%" : "min(620px, calc(100vh - 48px))",
+          width: isMobile ? "100%" : "min(620px, calc(100vw - 48px))",
+          height: isMobile ? "100%" : "min(720px, calc(100vh - 48px))",
           background: "#FFFFFF",
-          borderRadius: isMobile ? 0 : 14,
-          border: `1px solid #E7E5E4`,
-          boxShadow: "0 25px 50px rgba(0,0,0,0.18), 0 10px 20px rgba(0,0,0,0.08)",
+          borderRadius: isMobile ? 0 : 24,
+          border: "1px solid rgba(226, 232, 240, .95)",
+          boxShadow: "0 28px 70px rgba(15, 23, 42, .22), 0 10px 28px rgba(15, 23, 42, .12)",
           zIndex: 100,
           display: "flex",
           flexDirection: "column",
@@ -649,56 +804,39 @@ function Advisor({ mode = "client", getContext, isMobile }) {
         }}>
           {/* Header */}
           <div style={{
-            padding: "12px 16px",
-            borderBottom: `1px solid #F5F5F4`,
+            padding: isMobile ? "16px 18px" : "18px 20px",
+            borderBottom: "1px solid #e2e8f0",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             background: "#fff",
             flexShrink: 0,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: "50%",
-                background: accentColor,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <Sparkles size={15} color="#fff" strokeWidth={2.25} />
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <AssistantAvatar state={loading ? "thinking" : "idle"} size={46} mode={mode} isActive />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#0C0A09", lineHeight: 1.2 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", lineHeight: 1.2 }}>
                   Vision One Advisor
                 </div>
-                <div style={{ fontSize: 11, color: "#78716C", lineHeight: 1.2, marginTop: 1 }}>
+                <div style={{ fontSize: 12, color: "#64748b", lineHeight: 1.35, marginTop: 3, fontWeight: 500 }}>
                   {modeLabel}
                 </div>
               </div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {messages.length > 0 && (
                 <button
+                  className="advisor-header-button advisor-clear-button"
                   onClick={clearChat}
                   title="Borrar conversación"
-                  style={{
-                    background: "transparent", border: "none", color: "#A8A29E",
-                    cursor: "pointer", padding: 6, borderRadius: 6,
-                    display: "flex", alignItems: "center"
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#F5F5F4"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <span style={{ fontSize: 11 }}>Limpiar</span>
+                  type="button">
+                  Limpiar
                 </button>
               )}
               <button
+                className="advisor-header-button advisor-close-button"
                 onClick={() => setOpen(false)}
                 title="Cerrar"
-                style={{
-                  background: "transparent", border: "none", color: "#A8A29E",
-                  cursor: "pointer", padding: 6, borderRadius: 6,
-                  display: "flex", alignItems: "center"
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = "#F5F5F4"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                <X size={16} strokeWidth={2} />
+                type="button">
+                <X size={17} strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -709,50 +847,67 @@ function Advisor({ mode = "client", getContext, isMobile }) {
             style={{
               flex: 1,
               overflowY: "auto",
-              padding: "16px",
-              background: "#FFFFFF",
+              padding: isMobile ? "16px" : "18px 20px",
+              background: "#f8fafc",
             }}>
             {messages.length === 0 ? (
               <>
                 <div style={{
                   background: accentBg,
-                  borderRadius: 12,
-                  padding: "12px 14px",
-                  fontSize: 13,
-                  color: "#0C0A09",
+                  border: "1px solid #dbeafe",
+                  borderRadius: 18,
+                  padding: isMobile ? "14px" : "16px",
+                  color: "#0f172a",
                   lineHeight: 1.55,
-                  marginBottom: 14,
+                  marginBottom: 16,
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
                 }}>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                    Hola, soy tu asesor Vision One.
+                  <div style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    background: "#ffffff",
+                    border: "1px solid #dbeafe",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: accentColor,
+                    flexShrink: 0,
+                  }}>
+                    <Sparkles size={16} strokeWidth={2.2} />
                   </div>
-                  <div style={{ color: "#57534E" }}>
-                    {isInternal
-                      ? "Estoy en modo Nextcom — puedo ayudarte a preparar reuniones, defender renovaciones, identificar oportunidades de upsell y resolver objeciones."
-                      : "Puedes preguntarme cualquier cosa sobre Trend Vision One: créditos, TrendAI Flex, módulos, consola, casos de uso, o pedirme que explique lo que tienes en la calculadora."}
+                  <div>
+                    <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 14 }}>
+                      Hola, soy tu asesor Vision One.
+                    </div>
+                    <div style={{ color: "#475569", fontSize: 13 }}>
+                      {introText}
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ fontSize: 11, color: "#A8A29E", fontWeight: 500, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>
+                <div className="advisor-message-row advisor-message-row--assistant" style={{ marginBottom: 16 }}>
+                  <div style={{ flexShrink: 0, marginTop: 2 }}>
+                    <AssistantAvatar state="idle" size={30} mode={mode} />
+                  </div>
+                  <div className="advisor-message-bubble advisor-message-bubble--assistant">
+                    ¿Sobre qué tema te gustaría trabajar hoy?
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>
                   Sugerencias para empezar
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {quickPrompts.map((q, i) => (
-                    <button key={i} onClick={() => sendMessage(q)}
-                      style={{
-                        textAlign: "left",
-                        background: "#fff",
-                        border: "1px solid #E7E5E4",
-                        color: "#57534E",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                        fontSize: 12.5,
-                        cursor: "pointer",
-                        transition: "border-color .15s, color .15s",
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "#A8A29E"; e.currentTarget.style.color = "#0C0A09"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "#E7E5E4"; e.currentTarget.style.color = "#57534E"; }}>
-                      {q}
+                    <button key={i} className="advisor-suggestion-row" onClick={() => sendMessage(q)} type="button">
+                      <span className="advisor-suggestion-icon">
+                        <MessageSquare size={14} strokeWidth={2.1} />
+                      </span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{q}</span>
+                      <ChevronRight size={16} color="#94a3b8" strokeWidth={2} />
                     </button>
                   ))}
                 </div>
@@ -760,22 +915,13 @@ function Advisor({ mode = "client", getContext, isMobile }) {
             ) : (
               <>
                 {messages.map((msg, i) => (
-                  <div key={i} style={{
-                    marginBottom: 12,
-                    display: "flex",
-                    justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
-                  }}>
-                    <div style={{
-                      maxWidth: "85%",
-                      background: msg.role === "user" ? accentColor : "#F5F5F4",
-                      color: msg.role === "user" ? "#fff" : "#0C0A09",
-                      borderRadius: 12,
-                      padding: "9px 12px",
-                      fontSize: 13,
-                      lineHeight: 1.55,
-                      whiteSpace: "pre-wrap",
-                      wordWrap: "break-word",
-                    }}>
+                  <div key={i} className={`advisor-message-row advisor-message-row--${msg.role}`}>
+                    {msg.role === "assistant" && (
+                      <div style={{ flexShrink: 0, marginTop: 2 }}>
+                        <AssistantAvatar state="idle" size={30} mode={mode} />
+                      </div>
+                    )}
+                    <div className={`advisor-message-bubble advisor-message-bubble--${msg.role}`}>
                       {msg.role === "assistant" ? (
                         <div className="advisor-md" dangerouslySetInnerHTML={{ __html: renderSimpleMarkdown(msg.content) }} />
                       ) : (
@@ -787,16 +933,14 @@ function Advisor({ mode = "client", getContext, isMobile }) {
 
                 {/* Loading indicator */}
                 {loading && (
-                  <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 12 }}>
-                    <div style={{
-                      background: "#F5F5F4",
-                      borderRadius: 12,
-                      padding: "11px 14px",
-                      display: "flex", alignItems: "center", gap: 4,
-                    }}>
-                      <span style={{ width: 6, height: 6, background: "#A8A29E", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0s" }}></span>
-                      <span style={{ width: 6, height: 6, background: "#A8A29E", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0.16s" }}></span>
-                      <span style={{ width: 6, height: 6, background: "#A8A29E", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0.32s" }}></span>
+                  <div className="advisor-message-row advisor-message-row--assistant">
+                    <div style={{ flexShrink: 0, marginTop: 2 }}>
+                      <AssistantAvatar state="thinking" size={30} mode={mode} isActive />
+                    </div>
+                    <div className="advisor-message-bubble advisor-message-bubble--assistant" style={{ display: "flex", alignItems: "center", gap: 5, width: 58 }}>
+                      <span style={{ width: 6, height: 6, background: "#94a3b8", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0s" }}></span>
+                      <span style={{ width: 6, height: 6, background: "#94a3b8", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0.16s" }}></span>
+                      <span style={{ width: 6, height: 6, background: "#94a3b8", borderRadius: "50%", animation: "advisor-dot 1.4s infinite ease-in-out", animationDelay: "0.32s" }}></span>
                     </div>
                   </div>
                 )}
@@ -805,9 +949,9 @@ function Advisor({ mode = "client", getContext, isMobile }) {
                 {error && (
                   <div style={{
                     background: "#FEF2F2",
-                    border: "1px solid #FCA5A5",
-                    borderRadius: 8,
-                    padding: "8px 12px",
+                    border: "1px solid #fecaca",
+                    borderRadius: 14,
+                    padding: "10px 12px",
                     fontSize: 12,
                     color: "#991B1B",
                     marginBottom: 12,
@@ -823,65 +967,60 @@ function Advisor({ mode = "client", getContext, isMobile }) {
 
           {/* Input area */}
           <form onSubmit={handleSubmit} style={{
-            padding: "10px 12px",
-            borderTop: `1px solid #F5F5F4`,
-            display: "flex", gap: 6,
+            padding: isMobile ? "12px 14px 10px" : "14px 16px 10px",
+            borderTop: "1px solid #e2e8f0",
             background: "#fff",
             flexShrink: 0,
           }}>
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={loading ? "Esperando respuesta..." : "Pregunta lo que quieras..."}
-              disabled={loading}
-              rows={1}
-              style={{
-                flex: 1,
-                resize: "none",
-                border: "1px solid #E7E5E4",
-                borderRadius: 8,
-                padding: "8px 12px",
-                fontSize: 13,
-                fontFamily: "inherit",
-                color: "#0C0A09",
-                outline: "none",
-                lineHeight: 1.4,
-                minHeight: 36,
-                maxHeight: 100,
-                background: loading ? "#F5F5F4" : "#fff",
-              }}
-            />
-            <button
-              type="submit"
-              disabled={loading || !input.trim()}
-              aria-label="Enviar"
-              style={{
-                background: input.trim() && !loading ? accentColor : "#E7E5E4",
-                border: "none",
-                borderRadius: 8,
-                padding: "0 12px",
-                cursor: input.trim() && !loading ? "pointer" : "not-allowed",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "background .15s",
-              }}>
-              <Send size={14} color={input.trim() && !loading ? "#fff" : "#A8A29E"} strokeWidth={2.25} />
-            </button>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+              <textarea
+                ref={inputRef}
+                className="advisor-input"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={loading ? "Esperando respuesta..." : "Pregunta lo que quieras..."}
+                disabled={loading}
+                rows={1}
+                style={{
+                  flex: 1,
+                  resize: "none",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 14,
+                  padding: "12px 14px",
+                  fontSize: 13,
+                  fontFamily: "inherit",
+                  color: "#0f172a",
+                  outline: "none",
+                  lineHeight: 1.4,
+                  minHeight: 44,
+                  maxHeight: 112,
+                  background: loading ? "#f8fafc" : "#fff",
+                }}
+              />
+              <button
+                className="advisor-send-button"
+                type="submit"
+                disabled={loading || !input.trim()}
+                aria-label="Enviar">
+                <Send size={16} color={input.trim() && !loading ? "#fff" : "#94a3b8"} strokeWidth={2.3} />
+              </button>
+            </div>
+            <div style={{
+              marginTop: 9,
+              color: "#94a3b8",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              fontSize: 10.5,
+              lineHeight: 1.35,
+              textAlign: "center",
+            }}>
+              <Info size={12} strokeWidth={2} />
+              <span>La IA puede cometer errores. Verifica información crítica con Nextcom.</span>
+            </div>
           </form>
-
-          {/* Disclaimer footer */}
-          <div style={{
-            padding: "6px 14px 8px",
-            background: "#fff",
-            fontSize: 10,
-            color: "#A8A29E",
-            textAlign: "center",
-            borderTop: "1px solid #F5F5F4",
-            flexShrink: 0,
-          }}>
-            La IA puede cometer errores. Verifica información crítica con Nextcom.
-          </div>
         </div>
       )}
     </>
