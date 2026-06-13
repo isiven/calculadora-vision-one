@@ -1,6 +1,5 @@
 import {
   BarChart3,
-  BriefcaseBusiness,
   Calculator,
   ClipboardList,
   LogOut,
@@ -10,6 +9,7 @@ import {
   PanelLeftOpen,
   X,
 } from "lucide-react"
+import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png"
 import { cn } from "@/lib/utils"
 
 const sections = [
@@ -21,7 +21,7 @@ const sections = [
   { id: "admin", label: "Configuración", icon: Settings },
 ]
 
-export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSidebar, onSectionChange, nextcomLogo, trendLogo }) {
+export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSidebar, onSectionChange, nextcomLogo }) {
   const handleSectionChange = (sectionId) => {
     onSectionChange(sectionId)
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
@@ -124,18 +124,21 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
         </nav>
 
         <div className={cn("border-t border-white/10 py-5 transition-all duration-200", isOpen ? "mx-4" : "mx-3")}>
-          <div className={cn(
-            "rounded-xl border border-white/10 bg-white/[0.04] transition-all duration-200",
-            isOpen ? "p-3" : "flex h-11 items-center justify-center p-0"
-          )}>
-            <div className={cn("flex items-center", isOpen ? "gap-3" : "gap-0")}>
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
-                <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <div className={cn("min-w-0 transition-all duration-150", isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0")}>
-                <div className="text-xs font-semibold text-white">Trend Vision One</div>
-                <div className="mt-0.5 text-[11px] text-slate-400">Credit Calculator</div>
-              </div>
+          <div className={cn("flex transition-all duration-200", isOpen ? "flex-col items-center gap-2.5" : "items-center justify-center")}>
+            <img
+              src={trendAiSidebarLogo}
+              alt=""
+              className={cn(
+                "block object-contain",
+                isOpen ? "h-10 w-full max-w-[154px]" : "h-6 max-w-10"
+              )}
+              aria-hidden="true"
+            />
+            <div className={cn(
+              "whitespace-nowrap text-center text-[11px] font-medium text-slate-300 transition-all duration-150",
+              isOpen ? "w-auto opacity-100" : "hidden w-0 overflow-hidden opacity-0"
+            )}>
+              Vision One · Credit Calculator
             </div>
           </div>
 
