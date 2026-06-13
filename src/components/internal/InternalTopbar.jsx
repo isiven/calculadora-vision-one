@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react"
-import { Bell, ChevronDown, LogOut, Menu, Search, Upload } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Bell, Check, ChevronDown, DollarSign, LogOut, Menu, Search, Upload } from "lucide-react"
 
 import { internalShellSections } from "./InternalSidebar"
+import { cn } from "@/lib/utils"
 
 export function InternalTopbar({
   activeSection,
@@ -15,6 +16,8 @@ export function InternalTopbar({
     "Consola interna"
   const isCalculator = activeSection === "calculator"
   const [currency, setCurrency] = useState("USD")
+  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false)
+  const currencyMenuRef = useRef(null)
 
   useEffect(() => {
     const updateCurrency = (event) => {
@@ -27,6 +30,27 @@ export function InternalTopbar({
     return () => window.removeEventListener("internal-currency-change", updateCurrency)
   }, [])
 
+  useEffect(() => {
+    if (!currencyMenuOpen) return undefined
+
+    const closeCurrencyMenu = (event) => {
+      if (currencyMenuRef.current?.contains(event.target)) return
+      setCurrencyMenuOpen(false)
+    }
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setCurrencyMenuOpen(false)
+    }
+
+    document.addEventListener("mousedown", closeCurrencyMenu)
+    document.addEventListener("keydown", closeOnEscape)
+
+    return () => {
+      document.removeEventListener("mousedown", closeCurrencyMenu)
+      document.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [currencyMenuOpen])
+
   const openImport = () => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("internal-open-import"))
@@ -37,6 +61,13 @@ export function InternalTopbar({
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("internal-toggle-currency"))
     }
+  }
+
+  const selectCurrency = (nextCurrency) => {
+    if (nextCurrency !== currency) {
+      toggleCurrency()
+    }
+    setCurrencyMenuOpen(false)
   }
 
   return (
@@ -82,14 +113,56 @@ export function InternalTopbar({
         </label>
 
         {isCalculator ? (
-          <button
-            type="button"
-            onClick={toggleCurrency}
-            className="hidden h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-slate-50 md:inline-flex"
-          >
-            {currency}
-            <ChevronDown className="h-4 w-4 text-slate-500" aria-hidden="true" />
-          </button>
+          <div ref={currencyMenuRef} className="relative hidden md:block">
+            <button
+              type="button"
+              onClick={() => setCurrencyMenuOpen((open) => !open)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] font-medium text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-slate-300 hover:bg-white hover:text-slate-950"
+              aria-haspopup="menu"
+              aria-expanded={currencyMenuOpen}
+            >
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <DollarSign className="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+              <span className="text-slate-500">Moneda:</span>
+              <span className="font-semibold text-slate-950">{currency}</span>
+              <ChevronDown className={cn("h-4 w-4 text-slate-500 transition-transform", currencyMenuOpen && "rotate-180")} aria-hidden="true" />
+            </button>
+
+            {currencyMenuOpen ? (
+              <div
+                className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.14)]"
+                role="menu"
+              >
+                {[
+                  { code: "USD", label: "Dólares" },
+                  { code: "VES", label: "Bolívares" },
+                ].map((option) => {
+                  const isSelected = currency === option.code
+
+                  return (
+                    <button
+                      key={option.code}
+                      type="button"
+                      onClick={() => selectCurrency(option.code)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 border-0 bg-transparent px-3 py-2.5 text-left text-[13px] hover:bg-slate-50",
+                        isSelected ? "text-blue-700" : "text-slate-700"
+                      )}
+                      role="menuitemradio"
+                      aria-checked={isSelected}
+                    >
+                      <span className="min-w-0">
+                        <span className="font-semibold text-slate-950">{option.code}</span>
+                        <span className="ml-2 text-slate-500">{option.label}</span>
+                      </span>
+                      {isSelected ? <Check className="h-4 w-4 shrink-0 text-blue-600" aria-hidden="true" /> : null}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         {isCalculator ? (
