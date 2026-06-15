@@ -1749,7 +1749,7 @@ function downloadReport(data) {
   const supportMargin = soporteSale - soporteCost;
   const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
   const supportHTML = soporteSale > 0 ? `
-    <section class="section">
+    <section class="section avoid-break">
       <div class="section-heading">
         <div>
           <div class="eyebrow">Soporte Platinum</div>
@@ -1758,21 +1758,21 @@ function downloadReport(data) {
         <div class="status-pill">Precio fijo</div>
       </div>
       <div class="support-grid">
-        <div class="support-card">
+        <div class="support-card avoid-break">
           <div class="label">Total soporte</div>
           <div class="value">${fmtView(soporteSale)}</div>
           ${isVES ? `<div class="subvalue">${fmtUSDsm(soporteSale)}</div>` : ""}
         </div>
-        <div class="support-card">
+        <div class="support-card avoid-break">
           <div class="label">Costo soporte</div>
           <div class="value muted">${fmtUSDsm(soporteCost)}</div>
         </div>
-        <div class="support-card">
+        <div class="support-card avoid-break">
           <div class="label">Margen soporte</div>
           <div class="value" style="color:${mC(supportMarginPct)}">${fmtUSDsm(supportMargin)}</div>
           <div class="subvalue">${supportMarginPct.toFixed(1)}%</div>
         </div>
-        <div class="support-card">
+        <div class="support-card avoid-break">
           <div class="label">Vencimiento</div>
           <div class="value small">${soporteDate || "Sin fecha"}</div>
         </div>
@@ -1799,7 +1799,7 @@ function downloadReport(data) {
     { l:"Rentabilidad", v:`${marginPct.toFixed(1)}%`, c:mC(marginPct) },
     { l:"Lineas activas", v:active.length.toLocaleString("en-US"), c:"#0F172A" },
   ].map(k => `
-    <div class="metric-card">
+    <div class="metric-card avoid-break">
       <div class="metric-label">${k.l}</div>
       <div class="metric-value" style="color:${k.c}">${k.v}</div>
       ${k.s ? `<div class="metric-sub">${k.s}</div>` : ""}
@@ -1812,11 +1812,13 @@ function downloadReport(data) {
 <title>Análisis Vision One${clientName ? " - " + clientName : ""}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:24px 28px}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:22px 26px}
   .container{max-width:920px;margin:0 auto}
   .mono{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace}
-  .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:18px}
-  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:22px 24px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+  .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
+  .pdf-section-break{break-before:page;page-break-before:always;margin-top:72px}
+  .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:16px}
+  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:20px 22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
   .hero:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:999px;background:rgba(255,255,255,.07)}
   .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:1}
   .brand-left{display:flex;align-items:center;gap:16px}
@@ -1825,45 +1827,45 @@ function downloadReport(data) {
   .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
   .trendai-logo{display:block;width:148px;max-height:38px;object-fit:contain}
   .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .hero h1{font-size:27px;line-height:1.12;letter-spacing:-.035em;margin-top:18px;margin-bottom:8px;position:relative;z-index:1}
+  .hero h1{font-size:27px;line-height:1.12;letter-spacing:-.035em;margin-top:16px;margin-bottom:8px;position:relative;z-index:1}
   .hero p{font-size:13px;color:#D8F3FF;max-width:610px;line-height:1.5;position:relative;z-index:1}
   .confidential{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
-  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px}
-  .meta-card,.metric-card,.support-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:13px 14px}
+  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .meta-card,.metric-card,.support-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
   .label,.metric-label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
   .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
   .meta-sub,.subvalue,.metric-sub{font-size:10px;color:#94A3B8;margin-top:4px}
-  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
+  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
   .metric-card{min-height:78px}
   .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:15px;font-weight:850;letter-spacing:-.02em}
-  .section{margin-top:18px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
-  .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:15px 16px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .section{margin-top:16px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
+  .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:13px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
   .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
   h2{font-size:15px;letter-spacing:-.02em;color:#0F172A}
   .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
   table{width:100%;border-collapse:collapse}
   th{padding:10px 8px;text-align:left;font-size:9px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.07em;background:#082F49}
   th.num{text-align:right}
-  .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px}
+  .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 15px}
   .value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;color:#0F172A}
   .value.small{font-size:12px}
   .value.muted{color:#475569}
-  .note{margin:0 16px 16px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:11px 12px;color:#475569;font-size:11px;line-height:1.45}
-  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+  .note{margin:0 15px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569;font-size:11px;line-height:1.45}
+  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .pl-card{border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;background:#fff}
   .pl-title{background:#082F49;color:#fff;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:-.01em}
-  .observations{border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:16px}
+  .observations{border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:14px}
   .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
-  .footer{margin-top:20px;padding-top:14px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
+  .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
   .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
   @page{margin:12mm 10mm;size:A4}
-  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card{break-inside:avoid}}
+  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
 </style>
 </head>
 <body>
   <div class="container pdf-content">
     <div class="top-rule"></div>
-    <section class="hero">
+    <section class="hero avoid-break">
       <div class="brand-row">
         <div class="brand-left">
           <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
@@ -1881,30 +1883,30 @@ function downloadReport(data) {
       <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
     </section>
 
-    <section class="doc-meta">
-      <div class="meta-card">
+    <section class="doc-meta avoid-break">
+      <div class="meta-card avoid-break">
         <div class="label">Cliente</div>
         <div class="meta-value">${clientName || "Cliente no especificado"}</div>
       </div>
-      <div class="meta-card">
+      <div class="meta-card avoid-break">
         <div class="label">Fecha de emisión</div>
         <div class="meta-value">${today}</div>
       </div>
-      <div class="meta-card">
+      <div class="meta-card avoid-break">
         <div class="label">Moneda</div>
         <div class="meta-value">${currency}</div>
         ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
       </div>
-      <div class="meta-card">
+      <div class="meta-card avoid-break">
         <div class="label">Soporte Platinum</div>
         <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
         ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
       </div>
     </section>
 
-    <section class="metrics">${metricCards}</section>
+    <section class="metrics avoid-break">${metricCards}</section>
 
-    <section class="section">
+    <section class="section avoid-break">
       <div class="section-heading">
         <div>
           <div class="eyebrow">Datos comerciales</div>
@@ -1917,7 +1919,7 @@ function downloadReport(data) {
           {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
           {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
           {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
-        ].map(k => `<div class="support-card"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
+        ].map(k => `<div class="support-card avoid-break"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
       </div>
     </section>
 
@@ -1956,12 +1958,12 @@ function downloadReport(data) {
 
     ${supportHTML}
 
-    <section class="analysis-grid">
-      <div class="pl-card">
+    <section class="analysis-grid avoid-break pdf-section-break">
+      <div class="pl-card avoid-break">
         <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
         <table>${plRows}</table>
       </div>
-      <div class="observations">
+      <div class="observations avoid-break">
         <div class="eyebrow">Notas internas</div>
         <h2>Observaciones</h2>
         <p>Sin observaciones adicionales registradas.</p>
@@ -1969,13 +1971,13 @@ function downloadReport(data) {
       </div>
     </section>
 
-    <footer class="footer">
+    <footer class="footer avoid-break">
       <div>
         <strong style="color:#0F172A">Nextcom Systems</strong><br>
         Documento generado por Calculadora Vision One<br>
         RUC 1253816-1-593861 DV 16 · +507 394-1405
       </div>
-      <div class="disclaimer">
+      <div class="disclaimer avoid-break">
         Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
       </div>
     </footer>
