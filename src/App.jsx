@@ -1717,125 +1717,261 @@ function downloadReport(data) {
     const prorated = Math.round(l.qty * p.credits * (months / 12));
     return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
   });
+  const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
 
   const rowsHTML = active.map((l, i) => `
-    <tr>
-      <td style="padding:8px 10px;font-size:11px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4">${String(i+1).padStart(2,"0")}</td>
-      <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E7E5E4">
-        ${l.prod.name}<br>
-        <span style="font-size:10px;color:#A8A29E;${l.prod.sku ? "font-family:'SF Mono',monospace" : ""}">${l.prod.sku ? `${l.prod.sku} · ${l.prod.cat}` : l.prod.cat}</span>
-        ${l.isProrated ? `<br><span style="font-size:9px;color:#B45309;background:#FFFBEB;padding:1px 5px;border-radius:3px;font-family:'SF Mono',monospace;display:inline-block;margin-top:2px">⚠ ${l.months}m prorrateado</span>` : ""}
+    <tr style="background:${i % 2 === 0 ? "#FFFFFF" : "#F8FAFC"}">
+      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:12px;font-weight:700;color:#0F172A;line-height:1.35">${l.prod.name}</div>
+        ${l.isProrated ? `<div style="display:inline-block;margin-top:5px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.02em">${l.months} meses prorrateado</div>` : ""}
       </td>
-      <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace;line-height:1.4">
-        ${l.startDate || "—"}<br>
-        <span style="color:#A8A29E">→ ${l.date || "—"}</span>
+      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:10px;color:#475569;line-height:1.35">${l.prod.cat}</div>
+        <div style="font-size:10px;color:#64748B;font-family:'SF Mono',monospace;margin-top:3px">${l.prod.sku || "Sin SKU"}</div>
       </td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4">${l.qty.toLocaleString()}</td>
-      <td style="padding:8px 10px;font-size:11px;font-family:'SF Mono',monospace;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">${fmt(l.prod.credits)} cr/año</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">
+      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#475569;font-family:'SF Mono',monospace;line-height:1.45">
+        ${l.startDate || "Sin inicio"}<br>
+        <span style="color:#94A3B8">${l.date || "Sin fin"}</span>
+      </td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">${l.qty.toLocaleString()}</td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">
         ${fmt(l.prorated)}
-        ${l.isProrated ? `<br><span style="font-size:9px;color:#A8A29E;font-weight:400">base: ${fmt(l.baseTotal)}</span>` : ""}
+        ${l.isProrated ? `<br><span style="font-size:9px;color:#94A3B8">base ${fmt(l.baseTotal)}</span>` : ""}
       </td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#1D4ED8">${fmtView(salePrice)}</td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#475569">${fmtUSDsm(costPrice)}</td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
+      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
 
-  const sopRow = soporteSale > 0 ? `
-    <tr>
-      <td style="padding:8px 10px;font-size:11px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4">${String(active.length+1).padStart(2,"0")}</td>
-      <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E7E5E4">Soporte Platinum Trend Micro<br><span style="font-size:10px;color:#A8A29E">Servicio profesional · Precio fijo</span></td>
-      <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace">${soporteDate || "—"}</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4">1</td>
-      <td style="padding:8px 10px;font-size:11px;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">servicio</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">${fmtU(soporteSale)}</td>
-    </tr>` : "";
+  const supportMargin = soporteSale - soporteCost;
+  const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
+  const supportHTML = soporteSale > 0 ? `
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Soporte Platinum</div>
+          <h2>Servicio profesional asociado</h2>
+        </div>
+        <div class="status-pill">Precio fijo</div>
+      </div>
+      <div class="support-grid">
+        <div class="support-card">
+          <div class="label">Total soporte</div>
+          <div class="value">${fmtView(soporteSale)}</div>
+          ${isVES ? `<div class="subvalue">${fmtUSDsm(soporteSale)}</div>` : ""}
+        </div>
+        <div class="support-card">
+          <div class="label">Costo soporte</div>
+          <div class="value muted">${fmtUSDsm(soporteCost)}</div>
+        </div>
+        <div class="support-card">
+          <div class="label">Margen soporte</div>
+          <div class="value" style="color:${mC(supportMarginPct)}">${fmtUSDsm(supportMargin)}</div>
+          <div class="subvalue">${supportMarginPct.toFixed(1)}%</div>
+        </div>
+        <div class="support-card">
+          <div class="label">Vencimiento</div>
+          <div class="value small">${soporteDate || "Sin fecha"}</div>
+        </div>
+      </div>
+      <div class="note">Condicion referencial: servicio profesional de precio fijo sin consumo de creditos Vision One.</div>
+    </section>` : "";
 
   const plRows = [
-    { l:"Ingresos por créditos", v:fmtU(totalCredits*salePrice), c:"#0C0A09", bold:false, bg:"#fff" },
-    { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0C0A09", bold:false, bg:"#fff" },
-    { l:"Total ingresos",        v:fmtU(totalRevenue), c:"#0C0A09", bold:true, bg:"#FAFAF9" },
-    { l:"Costo créditos",        v:`(${fmtU(totalCredits*costPrice)})`, c:"#DC2626", bold:false, bg:"#fff" },
+    { l:"Ingresos por creditos", v:fmtU(totalCredits*salePrice), c:"#0F172A", bold:false, bg:"#fff" },
+    { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0F172A", bold:false, bg:"#fff" },
+    { l:"Total ingresos",        v:fmtU(totalRevenue), c:"#0F172A", bold:true, bg:"#F8FAFC" },
+    { l:"Costo creditos",        v:`(${fmtU(totalCredits*costPrice)})`, c:"#DC2626", bold:false, bg:"#fff" },
     { l:"Costo soporte",         v:`(${fmtU(soporteCost)})`, c:"#DC2626", bold:false, bg:"#fff" },
     { l:"Total costos",          v:`(${fmtU(totalCost)})`, c:"#DC2626", bold:true, bg:"#FEF2F2" },
-    { l:"MARGEN BRUTO",          v:fmtU(totalMargin), c:mC(marginPct), bold:true, bg:marginPct>=20?"#ECFDF5":marginPct>0?"#FFFBEB":"#FEF2F2", big:true },
+    { l:"Margen bruto",          v:fmtU(totalMargin), c:mC(marginPct), bold:true, bg:marginPct>=20?"#ECFDF5":marginPct>0?"#FFFBEB":"#FEF2F2", big:true },
     { l:"Rentabilidad",          v:`${marginPct.toFixed(1)}%`, c:mC(marginPct), bold:true, bg:"#fff" },
-  ].map(m => `<tr style="background:${m.bg};border-top:1px solid #E7E5E4"><td style="padding:8px 14px;font-size:${m.big?13:12}px;font-weight:${m.bold?700:400}">${m.l}</td><td style="padding:8px 14px;font-size:${m.big?15:13}px;font-weight:${m.bold?700:400};font-family:'SF Mono',monospace;text-align:right;color:${m.c}">${m.v}</td></tr>`).join("");
+  ].map(m => `<tr style="background:${m.bg};border-top:1px solid #E2E8F0"><td style="padding:10px 16px;font-size:${m.big?13:12}px;font-weight:${m.bold?800:500};color:#334155">${m.l}</td><td style="padding:10px 16px;font-size:${m.big?15:13}px;font-weight:${m.bold?800:600};font-family:'SF Mono',monospace;text-align:right;color:${m.c}">${m.v}</td></tr>`).join("");
 
-  const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
+  const metricCards = [
+    { l:"Creditos totales", v:fmt(totalCredits), c:"#1D4ED8" },
+    { l:"Total venta", v:fmtView(totalRevenue), c:"#0F172A", s:isVES ? fmtUSDsm(totalRevenue) : "" },
+    { l:"Costo proveedor", v:fmtUSDsm(totalCost), c:"#475569" },
+    { l:"Margen bruto", v:fmtUSDsm(totalMargin), c:mC(marginPct) },
+    { l:"Rentabilidad", v:`${marginPct.toFixed(1)}%`, c:mC(marginPct) },
+    { l:"Lineas activas", v:active.length.toLocaleString("en-US"), c:"#0F172A" },
+  ].map(k => `
+    <div class="metric-card">
+      <div class="metric-label">${k.l}</div>
+      <div class="metric-value" style="color:${k.c}">${k.v}</div>
+      ${k.s ? `<div class="metric-sub">${k.s}</div>` : ""}
+    </div>`).join("");
 
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Análisis Vision One${clientName ? " — " + clientName : ""}</title>
+<title>Análisis Vision One${clientName ? " - " + clientName : ""}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,-apple-system,sans-serif;color:#0C0A09;background:#fff;font-size:13px;padding:24px 28px}
-  .container{max-width:780px;margin:0 auto}
-  @page{margin:14mm 12mm;size:A4}
-  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}}
-  .no-print{display:none}
-  @media screen{.print-toolbar{display:flex;position:sticky;top:0;background:#0C0A09;color:#fff;padding:12px 20px;margin:-24px -28px 24px;align-items:center;justify-content:space-between;z-index:100}.print-toolbar button{background:#fff;color:#0C0A09;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px}}
-  @media print{.print-toolbar{display:none}}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:24px 28px}
+  .container{max-width:920px;margin:0 auto}
+  .mono{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace}
+  .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:18px}
+  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:22px 24px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden}
+  .hero:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:999px;background:rgba(255,255,255,.07)}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:16px}
+  .brand-mark{background:#fff;border-radius:14px;padding:9px 11px;display:flex;align-items:center;justify-content:center;min-width:126px;height:48px}
+  .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
+  .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .hero h1{font-size:27px;line-height:1.12;letter-spacing:-.035em;margin-top:18px;margin-bottom:8px;position:relative;z-index:1}
+  .hero p{font-size:13px;color:#D8F3FF;max-width:610px;line-height:1.5;position:relative;z-index:1}
+  .confidential{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
+  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+  .meta-card,.metric-card,.support-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:13px 14px}
+  .label,.metric-label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
+  .meta-sub,.subvalue,.metric-sub{font-size:10px;color:#94A3B8;margin-top:4px}
+  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:18px}
+  .metric-card{min-height:78px}
+  .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:15px;font-weight:850;letter-spacing:-.02em}
+  .section{margin-top:18px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
+  .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:15px 16px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
+  h2{font-size:15px;letter-spacing:-.02em;color:#0F172A}
+  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+  table{width:100%;border-collapse:collapse}
+  th{padding:10px 8px;text-align:left;font-size:9px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.07em;background:#082F49}
+  th.num{text-align:right}
+  .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px}
+  .value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;color:#0F172A}
+  .value.small{font-size:12px}
+  .value.muted{color:#475569}
+  .note{margin:0 16px 16px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:11px 12px;color:#475569;font-size:11px;line-height:1.45}
+  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+  .pl-card{border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;background:#fff}
+  .pl-title{background:#082F49;color:#fff;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:-.01em}
+  .observations{border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:16px}
+  .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
+  .footer{margin-top:20px;padding-top:14px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
+  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  @page{margin:12mm 10mm;size:A4}
+  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card{break-inside:avoid}}
 </style>
 </head>
 <body>
   <div class="container pdf-content">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #0C0A09">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="display:flex;flex-direction:column;gap:4">
-          <img src="${TRENDAI_LOGO}" alt="TrendAI" style="height:36px;width:auto" />
-          <div style="font-size:11px;color:#A8A29E">${clientName ? `Cliente: ${clientName} · ` : ""}Análisis de Rentabilidad · Uso Interno${isVES ? " · 🇻🇪 Venezuela" : " · 🇵🇦 Panamá"}</div>
+    <div class="top-rule"></div>
+    <section class="hero">
+      <div class="brand-row">
+        <div class="brand-left">
+          <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
+          <div>
+            <div class="brand-text">Trend Vision One / TrendAI</div>
+            <div style="font-size:11px;color:#E0F2FE;margin-top:4px">Reporte interno de rentabilidad y dimensionamiento</div>
+          </div>
         </div>
+        <div class="confidential">Confidencial · Uso interno</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:11px;color:#A8A29E">Generado</div>
-        <div style="font-size:13px;font-weight:600">${today}</div>
-        <div style="display:inline-block;margin-top:4px;background:#FEF3C7;color:#B45309;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em">CONFIDENCIAL · USO INTERNO</div>
+      <h1>Análisis de Créditos Vision One</h1>
+      <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
+    </section>
+
+    <section class="doc-meta">
+      <div class="meta-card">
+        <div class="label">Cliente</div>
+        <div class="meta-value">${clientName || "Cliente no especificado"}</div>
       </div>
-    </div>
-
-    ${isVES ? `
-    <div style="background:#EFF6FF;border:1px solid #C7D9EF;border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:11px;color:#1E40AF">
-        <strong>Tasa aplicada:</strong> ${rateSource.toUpperCase()} · <span style="font-family:'SF Mono',monospace">Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</span> por USD
+      <div class="meta-card">
+        <div class="label">Fecha de emisión</div>
+        <div class="meta-value">${today}</div>
       </div>
-      <div style="font-size:10px;color:#57534E">Rentabilidad calculada siempre en USD · Ingresos mostrados en Bs. para el cliente</div>
-    </div>
-    ` : ""}
+      <div class="meta-card">
+        <div class="label">Moneda</div>
+        <div class="meta-value">${currency}</div>
+        ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
+      </div>
+      <div class="meta-card">
+        <div class="label">Soporte Platinum</div>
+        <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
+        ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
+      </div>
+    </section>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-      ${[
-        {l:"Precio al cliente",v:fmtU(salePrice),c:"#1E40AF"},
-        {l:"Costo proveedor",v:fmtU(costPrice),c:"#0C0A09"},
-        {l:"Margen / crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
-      ].map(k => `<div style="background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;padding:10px 12px"><div style="font-size:10px;color:#A8A29E;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">${k.l}</div><div style="font-family:'SF Mono',monospace;font-size:14px;font-weight:700;color:${k.c}">${k.v}</div></div>`).join("")}
-    </div>
+    <section class="metrics">${metricCards}</section>
 
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px">
-      ${[
-        {l:"Créditos",v:fmt(totalCredits),c:"#1E40AF"},
-        {l:isVES?"Ingresos (Bs.)":"Ingresos",v:fmtView(totalRevenue),c:"#0C0A09",sub:isVES?fmtUSDsm(totalRevenue):null},
-        {l:"Costo (USD)",v:fmtUSDsm(totalCost),c:"#57534E"},
-        {l:"Margen (USD)",v:fmtUSDsm(totalMargin),c:mC(marginPct)},
-        {l:"Rentab.",v:`${marginPct.toFixed(1)}%`,c:mC(marginPct)}
-      ].map(k => `<div style="border:1px solid #E7E5E4;border-radius:6px;padding:9px 11px;background:#fff"><div style="font-size:10px;color:#A8A29E;margin-bottom:2px">${k.l}</div><div style="font-family:'SF Mono',monospace;font-size:13px;font-weight:700;color:${k.c}">${k.v}</div>${k.sub?`<div style="font-size:9px;color:#A8A29E;font-family:'SF Mono',monospace;margin-top:2px">${k.sub}</div>`:""}</div>`).join("")}
-    </div>
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Datos comerciales</div>
+          <h2>Precios por crédito y supuestos del negocio</h2>
+        </div>
+        <div class="status-pill">${active.length} líneas activas</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px">
+        ${[
+          {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
+          {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
+          {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
+        ].map(k => `<div class="support-card"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
+      </div>
+    </section>
 
-    <div style="font-size:10px;font-weight:700;color:#A8A29E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Líneas del negocio</div>
-    <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4">
-      <thead><tr style="background:#F5F5F4">${["#","Producto","Vigencia (inicio → fin)","Cant.","Rate","Total cr / $"].map((h,i)=>`<th style="padding:8px 10px;text-align:${i>=3?"right":"left"};font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join("")}</tr></thead>
-      <tbody>${rowsHTML}${sopRow}</tbody>
-      <tfoot><tr style="background:#EFF6FF;border-top:2px solid #1E40AF"><td colspan="5" style="padding:10px;font-size:12px;font-weight:700;color:#1E40AF">TOTAL CRÉDITOS VISION ONE</td><td style="padding:10px;font-size:14px;font-weight:700;font-family:'SF Mono',monospace;text-align:right;color:#1E40AF">${fmt(totalCredits)}</td></tr></tfoot>
-    </table>
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Tabla de productos</div>
+          <h2>Detalle de líneas Vision One</h2>
+        </div>
+        <div class="status-pill">${fmt(totalCredits)} créditos</div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:22%">Producto</th>
+            <th style="width:14%">SKU / Categoría</th>
+            <th style="width:12%">Vigencia</th>
+            <th class="num" style="width:7%">Cant.</th>
+            <th class="num" style="width:9%">Créditos</th>
+            <th class="num" style="width:10%">Precio cliente</th>
+            <th class="num" style="width:10%">Costo prov.</th>
+            <th class="num" style="width:8%">Margen</th>
+            <th class="num" style="width:8%">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML || `<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748B;font-size:12px">No hay productos activos en este análisis.</td></tr>`}</tbody>
+        <tfoot>
+          <tr style="background:#E0F2FE;border-top:2px solid #082F49">
+            <td colspan="4" style="padding:12px;font-size:12px;font-weight:850;color:#075985;text-transform:uppercase;letter-spacing:.04em">Total créditos Vision One</td>
+            <td style="padding:12px;font-size:13px;font-weight:850;font-family:'SF Mono',monospace;text-align:right;color:#075985">${fmt(totalCredits)}</td>
+            <td colspan="4" style="padding:12px;font-size:12px;text-align:right;color:#075985;font-weight:750">Venta total: <span class="mono">${fmtView(totalRevenue)}</span></td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
 
-    <div style="margin-top:14px;border:1px solid #E7E5E4;border-radius:6px;overflow:hidden">
-      <div style="background:#0C0A09;padding:9px 14px"><div style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.01em">Análisis de Rentabilidad (P&L)</div></div>
-      <table style="width:100%;border-collapse:collapse">${plRows}</table>
-    </div>
+    ${supportHTML}
 
-    <div style="margin-top:16px;padding-top:10px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between">
-      <div style="font-size:10px;color:#A8A29E">Nextcom Systems, Inc. · RUC 1253816-1-593861 DV 16 · +507 394-1405</div>
-      <div style="font-size:10px;color:#A8A29E">Trend Micro Credit Calculator · Jan 2026</div>
-    </div>
+    <section class="analysis-grid">
+      <div class="pl-card">
+        <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
+        <table>${plRows}</table>
+      </div>
+      <div class="observations">
+        <div class="eyebrow">Notas internas</div>
+        <h2>Observaciones</h2>
+        <p>Sin observaciones adicionales registradas.</p>
+        <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>
+        <strong style="color:#0F172A">Nextcom Systems</strong><br>
+        Documento generado por Calculadora Vision One<br>
+        RUC 1253816-1-593861 DV 16 · +507 394-1405
+      </div>
+      <div class="disclaimer">
+        Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
+      </div>
+    </footer>
   </div>
 </body>
 </html>`;
