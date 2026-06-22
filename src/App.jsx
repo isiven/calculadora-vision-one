@@ -1901,8 +1901,11 @@ function downloadReport(data) {
           </div>
         </div>
       </section>`;
-  const scopeChunks = active.length > 0 ? Array.from({ length: Math.ceil(active.length / 4) }, (_, i) => active.slice(i * 4, i * 4 + 4)) : [[]];
-  const scopePagesHTML = active.length <= 4 ? `
+  const scopeProductsPerPage = 2;
+  const scopeChunks = active.length > 0 ? Array.from({ length: Math.ceil(active.length / scopeProductsPerPage) }, (_, i) => active.slice(i * scopeProductsPerPage, i * scopeProductsPerPage + scopeProductsPerPage)) : [[]];
+  const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
+  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage;
+  const scopePagesHTML = !scopeTailNeedsOwnPage ? `
     <section class="pdf-page scope-page">
       ${scopeHeroHTML}
       ${renderScopeProductSection(active, 0)}
@@ -1913,10 +1916,10 @@ function downloadReport(data) {
       ${chunkIndex === 0 ? scopeHeroHTML : `
       <section class="scope-hero scope-hero-compact avoid-break">
         <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
-        <h1>Alcance por producto</h1>
+        <h1>Alcance por ítem vendido - continuación</h1>
         <p>Continuación del detalle de productos incluidos en la propuesta.</p>
       </section>`}
-      ${renderScopeProductSection(chunk, chunkIndex * 4, chunkIndex, scopeChunks.length)}
+      ${renderScopeProductSection(chunk, chunkIndex * scopeProductsPerPage, chunkIndex, scopeChunks.length)}
     </section>`).join("")}
     <section class="pdf-page scope-page">
       <section class="scope-hero scope-hero-compact avoid-break">
@@ -2048,20 +2051,20 @@ function downloadReport(data) {
   .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
   .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
   .scope-card-header h2{font-size:14px}
-  .scope-card-body{padding:12px 15px}
-  .scope-item{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid #E2E8F0}
+  .scope-card-body{padding:14px 16px}
+  .scope-item{display:grid;grid-template-columns:38px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid #E2E8F0}
   .scope-item:last-child{border-bottom:0}
-  .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
-  .scope-item-title{font-size:12px;font-weight:800;color:#0F172A;line-height:1.25}
-  .scope-item-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
-  .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:2px 7px;font-size:9px;color:#475569;font-weight:700}
-  .scope-product-title{font-size:10.5px;font-weight:800;color:#075985;margin-top:8px}
-  .scope-summary{font-size:10.2px;line-height:1.42;color:#475569;margin-top:5px}
-  .scope-bullets{display:grid;grid-template-columns:1fr;gap:3px;margin-top:7px;list-style:none}
-  .scope-bullets li{position:relative;padding-left:12px;font-size:9.6px;line-height:1.35;color:#475569}
+  .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10.5px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+  .scope-item-title{font-size:13px;font-weight:800;color:#0F172A;line-height:1.28}
+  .scope-item-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:3px 8px;font-size:9.8px;color:#475569;font-weight:700}
+  .scope-product-title{font-size:11.2px;font-weight:800;color:#075985;margin-top:10px}
+  .scope-summary{font-size:11px;line-height:1.5;color:#475569;margin-top:6px}
+  .scope-bullets{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;list-style:none}
+  .scope-bullets li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.45;color:#475569}
   .scope-bullets li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#38BDF8}
-  .scope-business{margin-top:7px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:6px 8px;font-size:9.6px;line-height:1.35;color:#334155}
-  .scope-item-note{font-size:9.2px;line-height:1.35;color:#64748B;margin-top:6px}
+  .scope-business{margin-top:9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:7px 9px;font-size:10.4px;line-height:1.42;color:#334155}
+  .scope-item-note{font-size:9.8px;line-height:1.42;color:#64748B;margin-top:7px}
   .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
   .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;list-style:none}
   .support-list li,.consideration-list li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.4;color:#475569}
