@@ -11,6 +11,8 @@ import { InternalPricingPanel } from "@/components/internal/InternalPricingPanel
 import { InternalShell } from "@/components/internal/InternalShell";
 import { InternalWorkspaceSection } from "@/components/internal/InternalWorkspaceSection";
 import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png";
+import iso9001Logo from "@/assets/iso-9001.png";
+import iso27001Logo from "@/assets/iso-27001.png";
 
 const TRENDAI_LOGO = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCACbAZADASIAAhEBAxEB/8QAHQABAQADAQADAQAAAAAAAAAAAAgGBwkFAQIEA//EAFQQAAEDAwIDAwYHCQwHCQAAAAEAAgMEBQYHEQgSIRMxQRQiUWFxgQkyOHKRobIVFhhCUnN1grQ1NjdUV2KUorGz0tMXJHSDlaPRIyYzQ0VVhJLC/8QAGwEBAAEFAQAAAAAAAAAAAAAAAAUBAgQGBwP/xAAxEQEAAgECBAMHAwQDAAAAAAAAAQIDBBEFBiExEkFhE1FxgZGhsTLR8BQjQlKiwcL/2gAMAwEAAhEDEQA/ALLREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBF5VDfrfWZJcbBDKDWW+KGWdu/cJObl+z9YXqqkTE9l98dsc7WjbtPymN4+wi+sr2xxukfvytG52BJ+gLwbleb5ttZsYnqz4Pq6llMz/9P/qpNohdjw2yTtXb5zEfedmQItWX66a5MY59txnFuUdQxtY+V/8AWLAVrqt1z1Hxq6eQ5Ri1BFIOpikhkgc5vpa7mcCPWNwsa+rpT9UTHyTel5b1Wrj+xelp90XjdTCLXel+ruN5zIKBnPbbttv5HUOB7TbvMbh0dt6Oh9S2IvemSuSPFWd4RGr0efR5ZxZ6zW0eU/zqIiK9jCIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAsX1MzS2YNjM12r3B8pBZS0wOzqiXbo0erxJ8Asb1O1jx7DTLQxw1Fxu4BDadsbo2A+lz3Dbb5u5UrZzlt7zK+Pu17qe1l25YomdI4Wfksb4D6z4rA1Wuriia162/DceXuU8+vvXNqI8OLv62+Hp6/R7OFajXixakvzGqe6qkrJXfdGMHbto3EbtHo5dhy+jlAVnY/d7ffrPTXa1VLKmjqWB8UjfEeg+gjuI8CufSzfSrUq+YDXk0n+uWyZ3NUUMjtmuP5TD+I/19x8QVH6PWeyna/aW58zcrxxHHGXTREZKxtt2iYjtHpMeX0n0txFh2nWo+N5zTg2mWoZUtG8tPNC5roz4+cByn3FZip2l63jes7w5FqNNm02ScWas1tHlIsfz7EbRmePTWi7QNcHAmGYDz4H7dHtPgR9Y6FZAh7lW1YtG0rcObJgyRkxztaOsS5+3CmuOOZJPSOlfTXG21bmdpGdiySN2wc0+0bhW9pjkRyvA7RfpA1s1VTjtgO4SNJa/+sCpC1vkil1byZ0O3L5cWnb8oNaHfWCqW4ZYJIdHbSZAQJZJ5GfNMrtv7FD8P3rmtSO37S6ZznWuo4Vp9VeNrzMf8q7zH1h+/WXVbGNKbVQ3LJ4rjJBXTmCLyOFsjg4N5uoLhsNlq/8ADI0k/iuT/wBAj/zE468HyzOMMx6ixOx1V2qKe4vlmZBy7saYiATuR4qRPwe9Zv5P7t/y/wDEply5Xf4ZGkn8Vyf+gR/5ifhkaSfxXJ/6BH/mKF87wXLcGq6alyyx1VpmqozJCyfl3e0HYkbE+K/LhmK5DmN6bZsZtU9zuDo3SiCHbmLW956kdyC8vwyNJP4rk/8AQI/8xZ9ozrfhuq9xuFDi8N2jloIWTTGsp2xgtc4gbbOO53Cgb8HvWb+T+7f8v/EqS4EtN84wXJsmqctxuttENVRQsgfPy7PcJCSBsT4FBWqIiAiIgIiICIm49IQEREBERAREQFPNdxf6U0dbPRzUuTdpBI6N+1CzbdpIO3/aepUMVx7yz99N1/22b+8cg6v6ZZrZ9QsMo8ssLKtlvrDIIhVRhknmPLDuAT4tPislWlOCD5NeNfPq/wBpkW60H1mkjhifLK9rI2NLnOcdg0DqSVPE3GLpHHM+MQZJIGuID2ULOV2x7xvJ3Fe9xoZ0cK0QuUVNN2dxvZ+5tNsdiA8HtXe6MOG/pcFzSQdTtGNbMK1YqblS4wbjHUW9jJJYq2ARuc15IDm7OduARsfRuPStlLl7woZz94etlluE83Z2+uf9z67c7DspSAHH1NfyO9xXUIIC0pqLxNac4JmdwxS909+dcKBzGzGno2PjJcxrxsS8b9HDwW6z3LmPxl/KTy787T/s8SC9dF9YMU1Zhuk2LxXONtsdE2fy2Bse5kDi3l2c7f4h39y9m55pHb8ofYZrBeXOZSvrDVsEHYdizbmfuZOboSG7cu+57tuqmf4NH9ys5/P0X2ZlU92xqjuV2luU007ZJbZNbS1pHL2crmuLu743mjbwQeVjupGMX+vstDbJqmWou9DJWxsMJBgYzYFs2/8A4b9yRynrux3oWYLGbXhFltlxt1fRRmGoo2OD3sa0Gqc6GOHtJSB5zuSJg39SyZAREQEREBEXm5TeqPHcdr73cHctNRQulft3u27mj1k7AesqkzERvK/HS2S0UrG8z0h9Mnx2y5NbH22+W6Ctp3Dukb1YfS13e0+sKTNatKq7A6zy6jdJWWGd/LFO4efA490cm31O7j6j3/Wxa0ZpbMuqb3JWuq6arnMk9umeTCGnuaz8ggAAEejqCqms1wx/UTBhUMjZWWu5QmOaGQdWnucxw8HNP1gEeCjZnDromI6WhvmKvEuU8lL5J8WG3eI7b+fwn3eU/iEFu/QzRY5DBBkeVxyRWp+z6ajBLX1I8HOPe1h8AOrvUO/4wbRt51mr7LdmOnstnLakvcOlSx53hYfbseb5hHiqkY1rGBjGhrQNgANgAvDRaLeZtkjt5JTmnmv2VK4NFbraImbR5RPWIj1mPp8e357ZQUVsoo6K3UkFJTRDZkULAxrR6gF+lEU12cttabTvM9Redkt3pbDj9dea14bT0cDpn7nv5Rvt7Sdh716Kmvip1BZWTjB7TOHRQPElykYejpB1bF7u8+vYeBXhqM0Ycc2lLcE4Xfiesrgr272n3R5/tHq0dM+vv9/fIGumr7lVFwaOpdLI/u+lyu/DrNFj2LWyyQ7FlFTMh3H4xA6n3nc+9Tpwq4K+5312ZXCH/Ure4sog4dJJ9ti4epgP0n1KoVh8NwzWs5J82zc88Tplz00eLtj7/GfL5R+QgHvXxsPQF8opNoSGPhJQBnOK7D/0yX++WHcA3XiDpd//AG2q+yFmPwkv7+cV/Rkv98sO4BflB0v6NqvshB0X2HoC52a7a16qWLWPLbPac3utJQUl1nhp4GObyxsDujR5vcF0UK5VcSn8Peb/AKaqPtINn/hY5vQ6T22wW+tkqcodJOa+81kbXuZGXkxtjbtyl2x6uI2AA2BPUawh1f1Sr71BLU6hZM4yTMDg25SMbtzDpytIAHuX6uHnR+86vZZLbaOobQWyia2S4Vzmc4ia47Na1vTme7Y7DcDYEnuVjWPhB0mt0MPlH3dr6iPZxmlruTdw8dmNACDcOoma2DAMPqsnySr8noqZoADRvJM8/FjY38Zx8B7SdgCVBuqXFhqVlFxmjxusGLWrmIiipA107m+BfKRvv83lHtXr/CCZxU3nVGDDIJ3C3WCnYXxg9HVMrQ5zj6dmFjR6PO9K8zgy0dsGot5uN+zB7ZLJaXsjZRmbs/Kp3Au2cQQeRoG5A23Lh123Qayj1f1UjqBUN1EyntAd+t0lI39hdst16JcXeVWa5U9s1FcL5Z3uDH1zYg2rph+UeUASNHiCOb0E9xq+4aU6O11oNqnwrFRTFvKOypYo3t9Ye3ZwPrB3XPjiV06pdMtUquw2yqdU2qeJlZQPc8OeInkjkcR3lrmuG/iAD4oOmVfd6euwmpvdmrWT081vfU0lTC7drmmMua9p+grmh+EBrL3f6Qbz3flM/wAKpHgazGpvGieXYjWTGQ2KKSSm5j1bBNHIeUeoPa8/rKICgprO+LrM6rGLRZMSeKCpit0Edyu08TX1E9SIwJCxp3axvNv1IJPf5q09PrBqpNWeVyah5R2u++4ucrR9AO31LdnCHw5WnPrC7Ns3NQ+0PldFQUMMhj8p5Ds+R7x1DAd2gN2JIPXYddv6y8Kentxwmunwm0vsl9pYHS0pjqJJI6hzQT2b2vcfjbbcw2IJB6jog1Lw7cVmS2/IqOwakV4ulmqpGxC5StDZ6Qk7Bz3DYPZueu45gOu522N2NcHNDgQQe4hcadiHbHor/rtUK+2cCtBlkVS8Xae1x2uCbfZ4m5zTl+/5Qa1zt/SEGNcSfFdUWO9VWJ6aimlqKV5iq7vK0SsbIOhbC09HbHoXu3G++wPepiuWs2q9xqnVNTqHkvaO6kRV74mj2NYQB7gsGpoJquripqeN8s0zwyNjRuXOJ2AHrJKv3SXhGwG043TSZ1SzX69yxh9S3yl8UEDiOrGBhBdt3czid+/YdyCcdMOKLVDErpAbveJcmtXOO3pLgQ+Qt8eSXbna7bu3JHpC0ve6qOuvVbWxNc2OoqJJWtd3gOcSAfX1Vr8QPCbizcRrr9pxBU265UMTpzb3TumiqmNG7mt5yXNfsDt1IPdsN9xDvig6WcEHya8a+fV/tMi3WtKcEHya8a+fV/tMi2bqHk1HhuD3nKK8jsLZSPqC0nbncB5rB63O2aPaghLj7zj749XWY1Szc9DjkHYEA9DUybPlPuHI32tK/rwTaU02e/flcbtCDQttUlrp3ubuG1FQ0+ePWxo3/XCnq+XOsvV7rbvcJTLWVtRJUVDz+M97i5x+kldNuFHCfvF0Qsduni7OvrY/uhWgjY9rMA4NPrazkb+qg5kXi31dovFXa66Mw1dFO+nnYe9j2OLXD3EFdQ+GbN/v/wBGLDfJpe0ro4fI6709vF5rifnDlf8ArKMeO/CzjOtc15p4uSiyGAVrCO4TDzJh7dw1x+esw+Dqzn7n5dd8Dq5toLrF5ZRtJ6CeIbPA9bo+v+7QXOe5cx+Mv5SeXfnaf9niXTg9y5j8Zfyk8u/O0/7PEg3t8Gj+5Wc/n6L7MysJR78Gj+5Wc/n6L7MysJAREQEREBERAWhuMDIX01htWNQSbGuldU1AB7449g0ewudv+qt8qTOLapkl1Pp4HE8kFsiDf1nyErC195rgnbzbTybpq5+K0m3asTb6dvvO7T6qrhGs9dQ4LW3SpmkFPcqvmpoT8UNYOQvHrcdx7GhSoTs0kd4G6vLTKjgodO8epacARstsBG3iSwEn3klR/DKeLLNvc3XnzVzi0FcMf52+0dfzs95kELKiSobEwSyNa17wOrg3fYH2bn6V/REU65FMzPcRfzqZ4aaB89RNHDDG0ufJI4Na0DvJJ6ALQGr+vUMcU1lwWUSyuBZLdNvNZ6eyB+Mf5x6Dw37145s9MNd7SkuGcJ1XE8vs9PXf3z5R8Z/ksh181agxWklx+wTslv0zdpJGncUTT4n+efAeHefAGfdL8JumoGVNoIHSsp2u7WvrHed2TCep3Pe93XYeJ69wK+NO8IyDUG/ugoQ/sg/nra+bdzIt+pLj+M8+A7z47DqrGwPErPhmPxWezwckbfOlld1fM/xe8+JP1dwUZSl9bk8d+lYb7q9XpeVtJOl0s+LPbvPu9Z/8x859fRsFpoLFZqW0WynbT0dLGI4ox4Aen0k95PiSv3IimIiIjaHMb3te02tO8yIiKq1DHwkv7+cV/Rkv98sO4BflB0v6NqvshZj8JL+/nFf0ZL/fLDuAX5QdL+jar7IQdGCuVXEp/D3m/wCmqj7S6qlcquJT+HvN/wBNVH2kFZfBwU0LNKb/AFbWATS3sse7xLWwR8o93M76VUbvilTF8HJ/A7ev09J/cQqnUHLfiuEg4iM07Xfm+6HTf8nkZy/VssbwvTvPMwt81fiuMXS7UsMvYyy0sRc1r9geU+vYg+9bw+EGwWqs+ptPm0EDjbr7AyOWQDoypibylp9G7A0j07O9CxLhQ1vbpJf62lvFLPWY9dOTylsABlgkbuGytB2B6EhzdxuNj4bEMZ/0Hax/yfZF/Rj/ANV8O0M1hcd3aeZCfbSn/qriqOKfROK2eWMyeaZ/LuKaO3T9qT6Ni0Df2nb1qcsz4yM9qcmrJcUobXQWUvApIayl7WYNA23e4O23J3Ow6DfbrtuQzHg10+zXDKTUGpyrHLjZ4amziOE1UXJ2jgJCdvTsP7VGXiF0X4c84z/UXSDJcpzRtCylljmgtopqXsudrIndo89TuOYho9bXLnR4hB1M4W4Y4OHzCmRNDWm1seR63EuP1krZZ7lrjhj/AIAMJ/REP9hWxyg475G1rchuLWgBoq5QAPDzyqRzJsp+D2w8s35BfnF+3o7Wq2+vZTfk3747l/tcv2yrW07wufPeAKHH6KLta/s6mpomDvdNFVPe1o9bti39ZBJWhppW6y4Y6t5fJxfaPn5u7btm966zBcbGPnpKpsjHSQzwvBaRu1zHA/UQQrk0o4xsWnxynpNQaSvobxBG1ktVSwdtDUkDbn2B5mOPeRsR6D4IKsnfHHC98zmtja0l5d3AeO/uXHa9Pp5LzWvpABTuqJDEP5pcdvq2VccQ/Fna75iVbi2ndLXtdcIjBVXOqYIuSJw2c2Jm5PMR05jtsCdhv1EeeKDpZwQfJrxr59X+0yLXPwi2ceQYlZ8CpJdp7pL5bWAHqIIjswH1Ok6/7tbF4IiBw042SdgH1fX/AOTIob4ls4OoGsl9vsUvaULJvJKDr07CLzWkfOPM/wDWQYJYqunoL1Q11XRMrqenqI5ZaZ7y1szWuBLCR1AO22/rVi27jhpBABW6cyteB/5F1Bb9cfRad0L4ccj1XwuryW33qhtccVWaWCOrieROWtBc7mbvsAXAdx8fQshqeDTVaOYtiuGLzMHc8Vsrd/cY0Hh8Sev8GsVmt1tOGx2l9vqTNDVGuM0mzm8rmbcjQAfNPtaFqjTzJazDs4s2UUJPb2ysjqA0Hbna0+cz2Obu33qhbJwU59UOabvk2O0Ee/ndiZZ3AezlaD9KnXNsersSy+641chtV2yrkppCBsHFriA4eojYj1FB1zslyo7zZaK72+UTUdbTsqIJB3Oje0OafoIXNPjL+Unl352n/Z4lVvAPnAyTR92OVU3PXY5P5OAT1NO/d8R9x52+xoUpcZfyk8u/O0/7PEg3t8Gj+5Wc/n6L7MysJR78Gj+5Wc/n6L7MysJAREQEREBERAUycYdmkhyOzX5rD2NTSupXuHg9ji4b+1rj9BVNrHtQ8St2a4tU2K47sbJs+GZo3dDIPivHs9HiCR4rH1WH22Kax3TXL/Eq8N19M9/09p+E/t3QaqP0J1nslFjdLjOWVJoZKJgipqx4JjkjHxWvI+K4Dpv3EALTud6d5Xh1bJFdLZNJStO0dbTsL4JB6eYfF9jtisRL2A7F7QfnBQOPJk0199urseu0Gi47pYrNvFXvE1ntP87xK6Z9SMChg7d+X2Xk236VbXH6Ad1g2X8QuI2yN8dhhqb3U/iua0wwg+tzhufcFLdstlyucwittuq62QnYNp4HSH+qFsjENCc5vj2SV9NFY6U976x28m3qjb139pCzY1uoy9MdWqW5U4Lw6fHrM0zHumYj7R1n5Mc1C1IyrN5S271vZUIduyhp92Qt9G473n1uJ9WyyzSfRG95Q+G539s1osx2cA5vLUVA/mtPxQfyj7ge9bw080bxDEXR1ZpzdrmzqKuraDyH0sZ8Vvt6n1rY69cWgm1vHmneUfxHnHFgxf03CqeCv+2230j/ALnr6POxyx2rHbRDabNRRUdHCPNjYO8+JJ7yT4k9SvRRFJxERG0Of3vbJabXneZ8xERVWiIiCWeNPRzPtTMqsFfiFqgraejoZIZ3SVkcJa4ycwGzyN+ixzhM0H1L0+1fp8hyiy09JbmUVRE6RldFKQ5wAaOVrifBWSiAoK1p4bdW8m1ZyjILRYKWa33C5zVFNI64wsLmOduDsXbj2FXqiDR3Bnp5lWm2nNzs2XUEVFWT3Z9TGyOoZKDGYo2g7sJA6tPRbxREHhZ7iNgzjFqvG8koW1lvqm7OaTs5jh8V7Hd7XA9QR/ZuFEOpXBznVprppsKrKTIbcSTFHLK2nqmj0ODtmO9oI39AV9og5gxcN+tklR2AwOta7f4zqiAN/wDtz7Lb2kvBpe6m4Q1+o9zp6GhY4Odb6CXtJ5dvxXSDzWA+lvMfZ3q4Nh6AiDxJ7FSUGFTY9YqGGlpoqB9LSU0QDWMHIWtaPR4dVz2/BQ1s3H/dqj/4pT/4l0kRBhmh1hueL6R4xj15gbBcKC3xwVEbZA8NeO8cw6H3LMyiIOc164V9aKq81tTFjlIY5aiR7D904BuC4kfjetWbww4lfcH0VsmM5JSspbnSOn7aJkrZAOaZ7m+c0kHoQtmIglriQ4VKfMbxVZZgdVS2y71LjJV0E+7aepee97XAHs3nxGxaT16Hfeaa/hr1rpKs0xwaqmO+wfDUwPYfXzB/T3rp2mw9CCCNJ+DzNLtdaeqz2WnsNqY4Omp4p2zVUrfyRy7sZv3cxJI9BWPX7hQ1d+7tf9ycapPuf5TJ5LvdId+y5zyd7t/i7d/VdGEQaAwjCtSMR4RXYVbbTF9+LoammjhbWRBsQmnfvJ2m/LuI3lw69+wUtfgoa2b/AL2qP/ilP/iXSREGHaLYdHgOl1gxRrWCWipGipc3udO7zpXb+O73O92yzFEQFH3F1w8Zlm2p7crwa2U1XHXUjG17X1UcJbOzzQ7zyN92Bnd+SVYKII54TdH9YtL9UW3G8WGCOxV9M+luBZcYXlg+Mx4aHbkh4A6eDivE4keHnVTNdashybH7HTVFsrZIjBK64QxlwbCxp81zgR1aVcKIJz4JtLM00xocphzC2w0TrhLSupuzqo5uYMEgdvyE7fGb3qjERAREQEREBERAREQCARsRuCvwyWa0SSdpJa6Jz+/mdTsJ+nZfuRUmIldW9q/pnZ9IYooWBkUbI2Dua1oA+pfdEVVszuIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiAiIgIiICIiD/2Q==";
 
@@ -1742,6 +1744,8 @@ function downloadReport(data) {
   const mC = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const trendAiPdfLogo = typeof window !== "undefined" ? new URL(trendAiSidebarLogo, window.location.href).href : trendAiSidebarLogo;
+  const iso9001PdfLogo = typeof window !== "undefined" ? new URL(iso9001Logo, window.location.href).href : iso9001Logo;
+  const iso27001PdfLogo = typeof window !== "undefined" ? new URL(iso27001Logo, window.location.href).href : iso27001Logo;
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
     const months = monthsBetween(l.startDate, l.date);
@@ -1749,6 +1753,28 @@ function downloadReport(data) {
     return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
   });
   const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
+
+  const itemScopeText = (product) => {
+    const raw = `${product?.name || ""} ${product?.cat || ""}`.toLowerCase();
+    if (raw.includes("support") || raw.includes("soporte")) {
+      return "Incluye el servicio de soporte asociado al nivel contratado, sujeto a las condiciones, horarios, alcance y niveles de atención indicados en la sección de soporte.";
+    }
+    if (
+      raw.includes("trend") ||
+      raw.includes("vision one") ||
+      raw.includes("xdr") ||
+      raw.includes("endpoint") ||
+      raw.includes("email") ||
+      raw.includes("cloud") ||
+      raw.includes("zero trust") ||
+      raw.includes("sandbox") ||
+      raw.includes("threat") ||
+      raw.includes("security")
+    ) {
+      return "Incluye licenciamiento o créditos asociados a Trend Vision One según el producto seleccionado, cantidad, vigencia y configuración definida en la propuesta.";
+    }
+    return "Incluye el licenciamiento, suscripción o producto indicado en la propuesta, de acuerdo con la cantidad, vigencia y configuración seleccionada en el análisis. Los créditos reflejados corresponden al consumo estimado según la configuración realizada en la calculadora.";
+  };
 
   const rowsHTML = active.map((l, i) => `
     <tr style="background:${i % 2 === 0 ? "#FFFFFF" : "#F8FAFC"}">
@@ -1774,6 +1800,22 @@ function downloadReport(data) {
       <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
       <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
+
+  const scopeItemsHTML = active.length > 0 ? active.map((l, i) => `
+    <div class="scope-item avoid-break">
+      <div class="scope-item-index">${String(i + 1).padStart(2, "0")}</div>
+      <div class="scope-item-body">
+        <div class="scope-item-title">${l.prod.name}</div>
+        <div class="scope-item-meta">
+          <span>${l.prod.sku || l.prod.cat}</span>
+          <span>${l.qty.toLocaleString("en-US")} ${l.prod.unit}${l.qty !== 1 ? "s" : ""}</span>
+          <span>${l.startDate || "Sin inicio"} - ${l.date || "Sin fin"}</span>
+          <span>${fmt(l.prorated)} créditos</span>
+        </div>
+        <p>${itemScopeText(l.prod)}</p>
+      </div>
+    </div>`).join("") : `
+    <div class="scope-empty avoid-break">No hay productos activos asociados a este análisis.</div>`;
 
   const supportMargin = soporteSale - soporteCost;
   const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
@@ -1890,6 +1932,31 @@ function downloadReport(data) {
   .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
   .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
   .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  .scope-page{display:flex;flex-direction:column;gap:12px}
+  .scope-hero{background:#082F49;border-radius:18px;color:#fff;padding:18px 20px}
+  .scope-hero h1{font-size:24px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px}
+  .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px}
+  .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
+  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .scope-card-header h2{font-size:14px}
+  .scope-card-body{padding:12px 15px}
+  .scope-item{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:10px 0;border-bottom:1px solid #E2E8F0}
+  .scope-item:last-child{border-bottom:0}
+  .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
+  .scope-item-title{font-size:12px;font-weight:800;color:#0F172A;line-height:1.25}
+  .scope-item-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:2px 7px;font-size:9px;color:#475569;font-weight:700}
+  .scope-item p{font-size:10.5px;line-height:1.45;color:#475569;margin-top:7px}
+  .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
+  .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;list-style:none}
+  .support-list li,.consideration-list li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.4;color:#475569}
+  .support-list li:before,.consideration-list li:before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:999px;background:#1D4ED8}
+  .scope-note{margin-top:10px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:9px 11px;color:#92400E;font-size:10.5px;line-height:1.45}
+  .scope-split{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+  .certification-copy{font-size:10.5px;line-height:1.5;color:#475569}
+  .iso-logos{display:flex;align-items:center;justify-content:flex-end;gap:12px}
+  .iso-logo-card{height:72px;width:72px;border:1px solid #E2E8F0;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:7px}
+  .iso-logo-card img{max-width:100%;max-height:100%;object-fit:contain}
   @page{margin:12mm 10mm;size:A4}
   @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
 </style>
@@ -2015,6 +2082,93 @@ function downloadReport(data) {
           Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
         </div>
       </footer>
+    </section>
+
+    <section class="pdf-page scope-page">
+      <section class="scope-hero avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
+        <h1>Alcance de la propuesta</h1>
+        <p>Resumen de cobertura para los productos, servicios y condiciones consideradas en este análisis interno de rentabilidad.</p>
+      </section>
+
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Detalle por línea</div>
+            <h2>Alcance por ítem vendido</h2>
+          </div>
+          <div class="status-pill">${active.length} ítem${active.length === 1 ? "" : "s"}</div>
+        </div>
+        <div class="scope-card-body">
+          ${scopeItemsHTML}
+        </div>
+      </section>
+
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Póliza Platinum</div>
+            <h2>Alcance del soporte</h2>
+          </div>
+          <div class="status-pill">Nextcom</div>
+        </div>
+        <div class="scope-card-body">
+          <ul class="support-list">
+            <li>Apertura y seguimiento de casos mediante la Plataforma de Solicitudes de Servicio y Reporte de Incidentes de Nextcom.</li>
+            <li>Soporte por email y teléfono.</li>
+            <li>Soporte remoto.</li>
+            <li>Soporte en sitio cuando aplique.</li>
+            <li>Atención 24x7 para póliza Platinum.</li>
+            <li>Atención de incidencias críticas 24x7.</li>
+            <li>Tiempo máximo de respuesta por criticidad: 30 minutos.</li>
+            <li>Tiempo máximo de primer contacto: 2 horas.</li>
+            <li>Instalación de parches y hotfixes cuando aplique.</li>
+            <li>Actualización a nuevas versiones de hardware/software cuando aplique.</li>
+            <li>Mantenimiento preventivo.</li>
+            <li>Soporte en sitio para incidencias críticas.</li>
+            <li>Instalación / reinstalación de productos.</li>
+            <li>Cobertura nacional para Platinum.</li>
+            <li>Los casos deben abrirse en https://servicios.nextcomsystems.com.</li>
+          </ul>
+          <div class="scope-note">El alcance de soporte queda sujeto al nivel de póliza contratado, criticidad del caso, información suministrada por el cliente, disponibilidad de acceso requerido y condiciones comerciales aprobadas.</div>
+        </div>
+      </section>
+
+      <section class="scope-split">
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Condiciones</div>
+              <h2>Consideraciones del alcance</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <ul class="consideration-list" style="grid-template-columns:1fr">
+              <li>El presente análisis es referencial y debe validarse contra la cotización final emitida por Nextcom.</li>
+              <li>La cobertura aplica únicamente sobre los productos, servicios y cantidades expresamente incluidos en la propuesta.</li>
+              <li>Actividades fuera del alcance, cambios realizados por terceros, daños lógicos/físicos no relacionados o servicios profesionales adicionales podrán cotizarse por separado.</li>
+              <li>La atención presencial fuera del área metropolitana o condiciones especiales de traslado pueden requerir validación comercial adicional.</li>
+              <li>La activación final de licencias, créditos o servicios queda sujeta a validación técnica, comercial y disponibilidad del fabricante cuando aplique.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Sistema Integrado de Gestión</div>
+              <h2>Certificaciones Nextcom</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <div class="iso-logos">
+              <div class="iso-logo-card"><img src="${iso9001PdfLogo}" alt="ISO 9001" /></div>
+              <div class="iso-logo-card"><img src="${iso27001PdfLogo}" alt="ISO/IEC 27001" /></div>
+            </div>
+            <p class="certification-copy" style="margin-top:12px">Nextcom cuenta con certificaciones de gestión de calidad ISO 9001 y seguridad de la información ISO/IEC 27001 como parte de su Sistema Integrado de Gestión.</p>
+          </div>
+        </div>
+      </section>
     </section>
   </div>
 </body>
