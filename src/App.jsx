@@ -10,6 +10,7 @@ import { InternalKpiStrip } from "@/components/internal/InternalKpiStrip";
 import { InternalPricingPanel } from "@/components/internal/InternalPricingPanel";
 import { InternalShell } from "@/components/internal/InternalShell";
 import { InternalWorkspaceSection } from "@/components/internal/InternalWorkspaceSection";
+import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png";
 
 const TRENDAI_LOGO = "data:image/jpeg;base64,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";
 
@@ -1603,20 +1604,6 @@ async function generatePdfFromHtml(htmlContent, filename) {
     await new Promise(r => setTimeout(r, 80));
 
     // ════════════════════════════════════════════════════════════════════
-    // CAPTURA: html2canvas directamente sobre el elemento del iframe.
-    // Sin overrides de windowWidth/width/height — dejamos que html2canvas
-    // use el contexto del iframe (target.ownerDocument.defaultView). Esto
-    // evita el desfase que aparecía con html2pdf.js.
-    // ════════════════════════════════════════════════════════════════════
-    const canvas = await html2canvas(target, {
-      scale: SCALE,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-    });
-
-    // ════════════════════════════════════════════════════════════════════
     // CONSTRUCCIÓN DEL PDF: jsPDF directamente, paginando manualmente.
     // ════════════════════════════════════════════════════════════════════
     const pdf = new jsPDF({
@@ -1632,10 +1619,53 @@ async function generatePdfFromHtml(htmlContent, filename) {
     const contentWidthMm = pageWidthMm - 2 * marginMm;      // 190
     const contentHeightMm = pageHeightMm - 2 * marginMm;    // 277
 
+    const renderCanvas = (element) => html2canvas(element, {
+      scale: SCALE,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    });
+
     // Canvas tiene dimensiones en píxeles físicos (ya con scale aplicado).
     // Para escalarlo a mm: dividir por SCALE para volver a CSS px, luego
     // convertir CSS px → mm a 96 DPI (25.4mm = 96px).
     const cssPxToMm = (px) => (px * 25.4) / 96;
+
+    const addCanvasAsPage = (canvas, pageIdx) => {
+      const canvasCssWidth = canvas.width / SCALE;
+      const canvasCssHeight = canvas.height / SCALE;
+      const naturalWidthMm = cssPxToMm(canvasCssWidth);
+      const naturalHeightMm = cssPxToMm(canvasCssHeight);
+      const widthFit = contentWidthMm / naturalWidthMm;
+      const heightFit = contentHeightMm / naturalHeightMm;
+      const fitFactor = Math.min(widthFit, heightFit);
+      const renderedWidthMm = naturalWidthMm * fitFactor;
+      const renderedHeightMm = naturalHeightMm * fitFactor;
+      const xMm = marginMm + (contentWidthMm - renderedWidthMm) / 2;
+
+      if (pageIdx > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", xMm, marginMm, renderedWidthMm, renderedHeightMm);
+    };
+
+    const explicitPages = Array.from(target.children || []).filter(el => el.classList && el.classList.contains("pdf-page"));
+    if (explicitPages.length > 0) {
+      for (let i = 0; i < explicitPages.length; i++) {
+        const pageCanvas = await renderCanvas(explicitPages[i]);
+        addCanvasAsPage(pageCanvas, i);
+      }
+      pdf.save(filename);
+      return;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // CAPTURA: html2canvas directamente sobre el elemento del iframe.
+    // Sin overrides de windowWidth/width/height — dejamos que html2canvas
+    // use el contexto del iframe (target.ownerDocument.defaultView). Esto
+    // evita el desfase que aparecía con html2pdf.js.
+    // ════════════════════════════════════════════════════════════════════
+    const canvas = await renderCanvas(target);
+
     const canvasCssWidth = canvas.width / SCALE;
     const canvasCssHeight = canvas.height / SCALE;
     const naturalWidthMm = cssPxToMm(canvasCssWidth);
@@ -1711,131 +1741,281 @@ function downloadReport(data) {
   const fmtUSDsm = usd => `$${usd.toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
   const mC = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
+  const trendAiPdfLogo = typeof window !== "undefined" ? new URL(trendAiSidebarLogo, window.location.href).href : trendAiSidebarLogo;
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
     const months = monthsBetween(l.startDate, l.date);
     const prorated = Math.round(l.qty * p.credits * (months / 12));
     return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
   });
+  const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
 
   const rowsHTML = active.map((l, i) => `
-    <tr>
-      <td style="padding:8px 10px;font-size:11px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4">${String(i+1).padStart(2,"0")}</td>
-      <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E7E5E4">
-        ${l.prod.name}<br>
-        <span style="font-size:10px;color:#A8A29E;${l.prod.sku ? "font-family:'SF Mono',monospace" : ""}">${l.prod.sku ? `${l.prod.sku} · ${l.prod.cat}` : l.prod.cat}</span>
-        ${l.isProrated ? `<br><span style="font-size:9px;color:#B45309;background:#FFFBEB;padding:1px 5px;border-radius:3px;font-family:'SF Mono',monospace;display:inline-block;margin-top:2px">⚠ ${l.months}m prorrateado</span>` : ""}
+    <tr style="background:${i % 2 === 0 ? "#FFFFFF" : "#F8FAFC"}">
+      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:12px;font-weight:700;color:#0F172A;line-height:1.35">${l.prod.name}</div>
+        ${l.isProrated ? `<div style="display:inline-block;margin-top:5px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.02em">${l.months} meses prorrateado</div>` : ""}
       </td>
-      <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace;line-height:1.4">
-        ${l.startDate || "—"}<br>
-        <span style="color:#A8A29E">→ ${l.date || "—"}</span>
+      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:10px;color:#475569;line-height:1.35">${l.prod.cat}</div>
+        <div style="font-size:10px;color:#64748B;font-family:'SF Mono',monospace;margin-top:3px">${l.prod.sku || "Sin SKU"}</div>
       </td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4">${l.qty.toLocaleString()}</td>
-      <td style="padding:8px 10px;font-size:11px;font-family:'SF Mono',monospace;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">${fmt(l.prod.credits)} cr/año</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">
+      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#475569;font-family:'SF Mono',monospace;line-height:1.45">
+        ${l.startDate || "Sin inicio"}<br>
+        <span style="color:#94A3B8">${l.date || "Sin fin"}</span>
+      </td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">${l.qty.toLocaleString()}</td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">
         ${fmt(l.prorated)}
-        ${l.isProrated ? `<br><span style="font-size:9px;color:#A8A29E;font-weight:400">base: ${fmt(l.baseTotal)}</span>` : ""}
+        ${l.isProrated ? `<br><span style="font-size:9px;color:#94A3B8">base ${fmt(l.baseTotal)}</span>` : ""}
       </td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#1D4ED8">${fmtView(salePrice)}</td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#475569">${fmtUSDsm(costPrice)}</td>
+      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
+      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
 
-  const sopRow = soporteSale > 0 ? `
-    <tr>
-      <td style="padding:8px 10px;font-size:11px;color:#A8A29E;font-family:'SF Mono',monospace;border-bottom:1px solid #E7E5E4">${String(active.length+1).padStart(2,"0")}</td>
-      <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #E7E5E4">Soporte Platinum Trend Micro<br><span style="font-size:10px;color:#A8A29E">Servicio profesional · Precio fijo</span></td>
-      <td style="padding:8px 10px;font-size:10px;color:#57534E;border-bottom:1px solid #E7E5E4;font-family:'SF Mono',monospace">${soporteDate || "—"}</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;text-align:right;border-bottom:1px solid #E7E5E4">1</td>
-      <td style="padding:8px 10px;font-size:11px;text-align:right;color:#A8A29E;border-bottom:1px solid #E7E5E4">servicio</td>
-      <td style="padding:8px 10px;font-family:'SF Mono',monospace;font-weight:700;text-align:right;color:#1E40AF;border-bottom:1px solid #E7E5E4">${fmtU(soporteSale)}</td>
-    </tr>` : "";
+  const supportMargin = soporteSale - soporteCost;
+  const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
+  const supportHTML = soporteSale > 0 ? `
+    <section class="section avoid-break">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">Soporte Platinum</div>
+          <h2>Servicio profesional asociado</h2>
+        </div>
+        <div class="status-pill">Precio fijo</div>
+      </div>
+      <div class="support-grid">
+        <div class="support-card avoid-break">
+          <div class="label">Total soporte</div>
+          <div class="value">${fmtView(soporteSale)}</div>
+          ${isVES ? `<div class="subvalue">${fmtUSDsm(soporteSale)}</div>` : ""}
+        </div>
+        <div class="support-card avoid-break">
+          <div class="label">Costo soporte</div>
+          <div class="value muted">${fmtUSDsm(soporteCost)}</div>
+        </div>
+        <div class="support-card avoid-break">
+          <div class="label">Margen soporte</div>
+          <div class="value" style="color:${mC(supportMarginPct)}">${fmtUSDsm(supportMargin)}</div>
+          <div class="subvalue">${supportMarginPct.toFixed(1)}%</div>
+        </div>
+        <div class="support-card avoid-break">
+          <div class="label">Vencimiento</div>
+          <div class="value small">${soporteDate || "Sin fecha"}</div>
+        </div>
+      </div>
+      <div class="note">Condicion referencial: servicio profesional de precio fijo sin consumo de creditos Vision One.</div>
+    </section>` : "";
 
   const plRows = [
-    { l:"Ingresos por créditos", v:fmtU(totalCredits*salePrice), c:"#0C0A09", bold:false, bg:"#fff" },
-    { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0C0A09", bold:false, bg:"#fff" },
-    { l:"Total ingresos",        v:fmtU(totalRevenue), c:"#0C0A09", bold:true, bg:"#FAFAF9" },
-    { l:"Costo créditos",        v:`(${fmtU(totalCredits*costPrice)})`, c:"#DC2626", bold:false, bg:"#fff" },
+    { l:"Ingresos por creditos", v:fmtU(totalCredits*salePrice), c:"#0F172A", bold:false, bg:"#fff" },
+    { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0F172A", bold:false, bg:"#fff" },
+    { l:"Total ingresos",        v:fmtU(totalRevenue), c:"#0F172A", bold:true, bg:"#F8FAFC" },
+    { l:"Costo creditos",        v:`(${fmtU(totalCredits*costPrice)})`, c:"#DC2626", bold:false, bg:"#fff" },
     { l:"Costo soporte",         v:`(${fmtU(soporteCost)})`, c:"#DC2626", bold:false, bg:"#fff" },
     { l:"Total costos",          v:`(${fmtU(totalCost)})`, c:"#DC2626", bold:true, bg:"#FEF2F2" },
-    { l:"MARGEN BRUTO",          v:fmtU(totalMargin), c:mC(marginPct), bold:true, bg:marginPct>=20?"#ECFDF5":marginPct>0?"#FFFBEB":"#FEF2F2", big:true },
+    { l:"Margen bruto",          v:fmtU(totalMargin), c:mC(marginPct), bold:true, bg:marginPct>=20?"#ECFDF5":marginPct>0?"#FFFBEB":"#FEF2F2", big:true },
     { l:"Rentabilidad",          v:`${marginPct.toFixed(1)}%`, c:mC(marginPct), bold:true, bg:"#fff" },
-  ].map(m => `<tr style="background:${m.bg};border-top:1px solid #E7E5E4"><td style="padding:8px 14px;font-size:${m.big?13:12}px;font-weight:${m.bold?700:400}">${m.l}</td><td style="padding:8px 14px;font-size:${m.big?15:13}px;font-weight:${m.bold?700:400};font-family:'SF Mono',monospace;text-align:right;color:${m.c}">${m.v}</td></tr>`).join("");
+  ].map(m => `<tr style="background:${m.bg};border-top:1px solid #E2E8F0"><td style="padding:10px 16px;font-size:${m.big?13:12}px;font-weight:${m.bold?800:500};color:#334155">${m.l}</td><td style="padding:10px 16px;font-size:${m.big?15:13}px;font-weight:${m.bold?800:600};font-family:'SF Mono',monospace;text-align:right;color:${m.c}">${m.v}</td></tr>`).join("");
 
-  const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
+  const metricCards = [
+    { l:"Creditos totales", v:fmt(totalCredits), c:"#1D4ED8" },
+    { l:"Total venta", v:fmtView(totalRevenue), c:"#0F172A", s:isVES ? fmtUSDsm(totalRevenue) : "" },
+    { l:"Costo proveedor", v:fmtUSDsm(totalCost), c:"#475569" },
+    { l:"Margen bruto", v:fmtUSDsm(totalMargin), c:mC(marginPct) },
+    { l:"Rentabilidad", v:`${marginPct.toFixed(1)}%`, c:mC(marginPct) },
+    { l:"Lineas activas", v:active.length.toLocaleString("en-US"), c:"#0F172A" },
+  ].map(k => `
+    <div class="metric-card avoid-break">
+      <div class="metric-label">${k.l}</div>
+      <div class="metric-value" style="color:${k.c}">${k.v}</div>
+      ${k.s ? `<div class="metric-sub">${k.s}</div>` : ""}
+    </div>`).join("");
 
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Análisis Vision One${clientName ? " — " + clientName : ""}</title>
+<title>Análisis Vision One${clientName ? " - " + clientName : ""}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,-apple-system,sans-serif;color:#0C0A09;background:#fff;font-size:13px;padding:24px 28px}
-  .container{max-width:780px;margin:0 auto}
-  @page{margin:14mm 12mm;size:A4}
-  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}}
-  .no-print{display:none}
-  @media screen{.print-toolbar{display:flex;position:sticky;top:0;background:#0C0A09;color:#fff;padding:12px 20px;margin:-24px -28px 24px;align-items:center;justify-content:space-between;z-index:100}.print-toolbar button{background:#fff;color:#0C0A09;border:none;padding:8px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-size:13px}}
-  @media print{.print-toolbar{display:none}}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
+  .container{width:800px;margin:0 auto}
+  .pdf-page{width:800px;min-height:1120px;padding:22px 26px;background:#fff}
+  .pdf-page + .pdf-page{page-break-before:always;break-before:page}
+  .pdf-page-secondary{display:flex;flex-direction:column;justify-content:space-between;gap:18px}
+  .mono{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace}
+  .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
+  .pdf-section-break{break-before:page;page-break-before:always;margin-top:0}
+  .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:16px}
+  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:20px 22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
+  .hero:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:999px;background:rgba(255,255,255,.07)}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:16px}
+  .brand-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+  .brand-mark{background:#fff;border-radius:14px;padding:9px 11px;display:flex;align-items:center;justify-content:center;min-width:126px;height:48px}
+  .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
+  .trendai-logo{display:block;width:148px;max-height:38px;object-fit:contain}
+  .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .hero h1{font-size:27px;line-height:1.12;letter-spacing:-.035em;margin-top:16px;margin-bottom:8px;position:relative;z-index:1}
+  .hero p{font-size:13px;color:#D8F3FF;max-width:610px;line-height:1.5;position:relative;z-index:1}
+  .confidential{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
+  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+  .meta-card,.metric-card,.support-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
+  .label,.metric-label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
+  .meta-sub,.subvalue,.metric-sub{font-size:10px;color:#94A3B8;margin-top:4px}
+  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
+  .metric-card{min-height:78px}
+  .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:15px;font-weight:850;letter-spacing:-.02em}
+  .section{margin-top:16px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
+  .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:13px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
+  h2{font-size:15px;letter-spacing:-.02em;color:#0F172A}
+  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+  table{width:100%;border-collapse:collapse}
+  th{padding:10px 8px;text-align:left;font-size:9px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.07em;background:#082F49}
+  th.num{text-align:right}
+  .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 15px}
+  .value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;color:#0F172A}
+  .value.small{font-size:12px}
+  .value.muted{color:#475569}
+  .note{margin:0 15px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569;font-size:11px;line-height:1.45}
+  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .pl-card{border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;background:#fff}
+  .pl-title{background:#082F49;color:#fff;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:-.01em}
+  .observations{border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:14px}
+  .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
+  .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
+  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  @page{margin:12mm 10mm;size:A4}
+  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
 </style>
 </head>
 <body>
   <div class="container pdf-content">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #0C0A09">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="display:flex;flex-direction:column;gap:4">
-          <img src="${TRENDAI_LOGO}" alt="TrendAI" style="height:36px;width:auto" />
-          <div style="font-size:11px;color:#A8A29E">${clientName ? `Cliente: ${clientName} · ` : ""}Análisis de Rentabilidad · Uso Interno${isVES ? " · 🇻🇪 Venezuela" : " · 🇵🇦 Panamá"}</div>
+    <section class="pdf-page">
+      <div class="top-rule"></div>
+      <section class="hero avoid-break">
+        <div class="brand-row">
+          <div class="brand-left">
+            <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
+            <div>
+              <div class="brand-text">Trend Vision One / TrendAI</div>
+              <div style="font-size:11px;color:#E0F2FE;margin-top:4px">Reporte interno de rentabilidad y dimensionamiento</div>
+            </div>
+          </div>
+          <div class="brand-right">
+            <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
+            <div class="confidential">Confidencial · Uso interno</div>
+          </div>
         </div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:11px;color:#A8A29E">Generado</div>
-        <div style="font-size:13px;font-weight:600">${today}</div>
-        <div style="display:inline-block;margin-top:4px;background:#FEF3C7;color:#B45309;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.04em">CONFIDENCIAL · USO INTERNO</div>
-      </div>
-    </div>
+        <h1>Análisis de Créditos Vision One</h1>
+        <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
+      </section>
 
-    ${isVES ? `
-    <div style="background:#EFF6FF;border:1px solid #C7D9EF;border-radius:6px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:11px;color:#1E40AF">
-        <strong>Tasa aplicada:</strong> ${rateSource.toUpperCase()} · <span style="font-family:'SF Mono',monospace">Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</span> por USD
-      </div>
-      <div style="font-size:10px;color:#57534E">Rentabilidad calculada siempre en USD · Ingresos mostrados en Bs. para el cliente</div>
-    </div>
-    ` : ""}
+      <section class="doc-meta avoid-break">
+        <div class="meta-card avoid-break">
+          <div class="label">Cliente</div>
+          <div class="meta-value">${clientName || "Cliente no especificado"}</div>
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Fecha de emisión</div>
+          <div class="meta-value">${today}</div>
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Moneda</div>
+          <div class="meta-value">${currency}</div>
+          ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Soporte Platinum</div>
+          <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
+          ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
+        </div>
+      </section>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-      ${[
-        {l:"Precio al cliente",v:fmtU(salePrice),c:"#1E40AF"},
-        {l:"Costo proveedor",v:fmtU(costPrice),c:"#0C0A09"},
-        {l:"Margen / crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
-      ].map(k => `<div style="background:#FAFAF9;border:1px solid #E7E5E4;border-radius:6px;padding:10px 12px"><div style="font-size:10px;color:#A8A29E;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em">${k.l}</div><div style="font-family:'SF Mono',monospace;font-size:14px;font-weight:700;color:${k.c}">${k.v}</div></div>`).join("")}
-    </div>
+      <section class="metrics avoid-break">${metricCards}</section>
 
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:20px">
-      ${[
-        {l:"Créditos",v:fmt(totalCredits),c:"#1E40AF"},
-        {l:isVES?"Ingresos (Bs.)":"Ingresos",v:fmtView(totalRevenue),c:"#0C0A09",sub:isVES?fmtUSDsm(totalRevenue):null},
-        {l:"Costo (USD)",v:fmtUSDsm(totalCost),c:"#57534E"},
-        {l:"Margen (USD)",v:fmtUSDsm(totalMargin),c:mC(marginPct)},
-        {l:"Rentab.",v:`${marginPct.toFixed(1)}%`,c:mC(marginPct)}
-      ].map(k => `<div style="border:1px solid #E7E5E4;border-radius:6px;padding:9px 11px;background:#fff"><div style="font-size:10px;color:#A8A29E;margin-bottom:2px">${k.l}</div><div style="font-family:'SF Mono',monospace;font-size:13px;font-weight:700;color:${k.c}">${k.v}</div>${k.sub?`<div style="font-size:9px;color:#A8A29E;font-family:'SF Mono',monospace;margin-top:2px">${k.sub}</div>`:""}</div>`).join("")}
-    </div>
+      <section class="section avoid-break">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Datos comerciales</div>
+            <h2>Precios por crédito y supuestos del negocio</h2>
+          </div>
+          <div class="status-pill">${active.length} líneas activas</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px">
+          ${[
+            {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
+            {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
+            {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
+          ].map(k => `<div class="support-card avoid-break"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
+        </div>
+      </section>
 
-    <div style="font-size:10px;font-weight:700;color:#A8A29E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Líneas del negocio</div>
-    <table style="width:100%;border-collapse:collapse;border:1px solid #E7E5E4">
-      <thead><tr style="background:#F5F5F4">${["#","Producto","Vigencia (inicio → fin)","Cant.","Rate","Total cr / $"].map((h,i)=>`<th style="padding:8px 10px;text-align:${i>=3?"right":"left"};font-size:10px;font-weight:700;color:#57534E;text-transform:uppercase;letter-spacing:.05em">${h}</th>`).join("")}</tr></thead>
-      <tbody>${rowsHTML}${sopRow}</tbody>
-      <tfoot><tr style="background:#EFF6FF;border-top:2px solid #1E40AF"><td colspan="5" style="padding:10px;font-size:12px;font-weight:700;color:#1E40AF">TOTAL CRÉDITOS VISION ONE</td><td style="padding:10px;font-size:14px;font-weight:700;font-family:'SF Mono',monospace;text-align:right;color:#1E40AF">${fmt(totalCredits)}</td></tr></tfoot>
-    </table>
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Tabla de productos</div>
+            <h2>Detalle de líneas Vision One</h2>
+          </div>
+          <div class="status-pill">${fmt(totalCredits)} créditos</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%">Producto</th>
+              <th style="width:14%">SKU / Categoría</th>
+              <th style="width:12%">Vigencia</th>
+              <th class="num" style="width:7%">Cant.</th>
+              <th class="num" style="width:9%">Créditos</th>
+              <th class="num" style="width:10%">Precio cliente</th>
+              <th class="num" style="width:10%">Costo prov.</th>
+              <th class="num" style="width:8%">Margen</th>
+              <th class="num" style="width:8%">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHTML || `<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748B;font-size:12px">No hay productos activos en este análisis.</td></tr>`}</tbody>
+          <tfoot>
+            <tr style="background:#E0F2FE;border-top:2px solid #082F49">
+              <td colspan="4" style="padding:12px;font-size:12px;font-weight:850;color:#075985;text-transform:uppercase;letter-spacing:.04em">Total créditos Vision One</td>
+              <td style="padding:12px;font-size:13px;font-weight:850;font-family:'SF Mono',monospace;text-align:right;color:#075985">${fmt(totalCredits)}</td>
+              <td colspan="4" style="padding:12px;font-size:12px;text-align:right;color:#075985;font-weight:750">Venta total: <span class="mono">${fmtView(totalRevenue)}</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+      ${supportHTML}
+    </section>
 
-    <div style="margin-top:14px;border:1px solid #E7E5E4;border-radius:6px;overflow:hidden">
-      <div style="background:#0C0A09;padding:9px 14px"><div style="font-size:12px;font-weight:700;color:#fff;letter-spacing:.01em">Análisis de Rentabilidad (P&L)</div></div>
-      <table style="width:100%;border-collapse:collapse">${plRows}</table>
-    </div>
+    <section class="pdf-page pdf-page-secondary">
+      <section class="analysis-grid avoid-break pdf-section-break">
+        <div class="pl-card avoid-break">
+          <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
+          <table>${plRows}</table>
+        </div>
+        <div class="observations avoid-break">
+          <div class="eyebrow">Notas internas</div>
+          <h2>Observaciones</h2>
+          <p>Sin observaciones adicionales registradas.</p>
+          <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
+        </div>
+      </section>
 
-    <div style="margin-top:16px;padding-top:10px;border-top:1px solid #E7E5E4;display:flex;justify-content:space-between">
-      <div style="font-size:10px;color:#A8A29E">Nextcom Systems, Inc. · RUC 1253816-1-593861 DV 16 · +507 394-1405</div>
-      <div style="font-size:10px;color:#A8A29E">Trend Micro Credit Calculator · Jan 2026</div>
-    </div>
+      <footer class="footer avoid-break">
+        <div>
+          <strong style="color:#0F172A">Nextcom Systems</strong><br>
+          Documento generado por Calculadora Vision One<br>
+          RUC 1253816-1-593861 DV 16 · +507 394-1405
+        </div>
+        <div class="disclaimer avoid-break">
+          Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
+        </div>
+      </footer>
+    </section>
   </div>
 </body>
 </html>`;
