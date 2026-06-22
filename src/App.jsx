@@ -10,6 +10,12 @@ import { InternalKpiStrip } from "@/components/internal/InternalKpiStrip";
 import { InternalPricingPanel } from "@/components/internal/InternalPricingPanel";
 import { InternalShell } from "@/components/internal/InternalShell";
 import { InternalWorkspaceSection } from "@/components/internal/InternalWorkspaceSection";
+import {
+  SUPPORT_POLICY_OPTIONS,
+  getSupportPolicyScope,
+  getVisionOneProductScope,
+  normalizeSupportPolicy,
+} from "@/data/visionOneProductScopes";
 import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png";
 import iso9001Logo from "@/assets/iso-9001.png";
 import iso27001Logo from "@/assets/iso-27001.png";
@@ -1347,7 +1353,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 }
 
 function PrintView({ data }) {
-  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName } = data;
+  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy = "Platinum", clientName } = data;
+  const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
   const mColor = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const activeRows = lines.filter(l => l.prodId && l.qty > 0).map(l => ({ ...l, prod:CATALOG.find(p => p.id===l.prodId), total:l.qty * (CATALOG.find(p => p.id===l.prodId)?.credits||0) }));
@@ -1444,7 +1451,7 @@ function PrintView({ data }) {
             <tr>
               <td style={{ padding:"8px 10px", fontSize:11, color:"#A8A29E", ...mono, borderBottom:"1px solid #E7E5E4" }}>{String(activeRows.length+1).padStart(2,"0")}</td>
               <td style={{ padding:"8px 10px", fontSize:12, borderBottom:"1px solid #E7E5E4" }}>
-                Soporte Platinum Trend Micro<br/>
+                Póliza {selectedSupportPolicy} Trend Micro<br/>
                 <span style={{ fontSize:10, color:"#A8A29E" }}>Servicio profesional · Precio fijo</span>
               </td>
               <td style={{ padding:"8px 10px", fontSize:11, color:"#57534E", borderBottom:"1px solid #E7E5E4", ...mono }}>{soporteDate || "—"}</td>
@@ -1736,7 +1743,7 @@ const PRINT_CSS = `
 `;
 
 function downloadReport(data) {
-  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency = "USD", rateSource = "bcv", activeRate = 0, vesRate = 1 } = data;
+  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD", rateSource = "bcv", activeRate = 0, vesRate = 1 } = data;
   const isVES = currency === "VES";
   const sym = isVES ? "Bs." : "$";
   const fmtView = usd => `${sym} ${(usd * (isVES ? vesRate : 1)).toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
@@ -1753,28 +1760,9 @@ function downloadReport(data) {
     return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
   });
   const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
-
-  const itemScopeText = (product) => {
-    const raw = `${product?.name || ""} ${product?.cat || ""}`.toLowerCase();
-    if (raw.includes("support") || raw.includes("soporte")) {
-      return "Incluye el servicio de soporte asociado al nivel contratado, sujeto a las condiciones, horarios, alcance y niveles de atención indicados en la sección de soporte.";
-    }
-    if (
-      raw.includes("trend") ||
-      raw.includes("vision one") ||
-      raw.includes("xdr") ||
-      raw.includes("endpoint") ||
-      raw.includes("email") ||
-      raw.includes("cloud") ||
-      raw.includes("zero trust") ||
-      raw.includes("sandbox") ||
-      raw.includes("threat") ||
-      raw.includes("security")
-    ) {
-      return "Incluye licenciamiento o créditos asociados a Trend Vision One según el producto seleccionado, cantidad, vigencia y configuración definida en la propuesta.";
-    }
-    return "Incluye el licenciamiento, suscripción o producto indicado en la propuesta, de acuerdo con la cantidad, vigencia y configuración seleccionada en el análisis. Los créditos reflejados corresponden al consumo estimado según la configuración realizada en la calculadora.";
-  };
+  const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
+  const supportPolicyScope = getSupportPolicyScope(selectedSupportPolicy);
+  const supportIncluded = soporteSale > 0 || soporteCost > 0;
 
   const rowsHTML = active.map((l, i) => `
     <tr style="background:${i % 2 === 0 ? "#FFFFFF" : "#F8FAFC"}">
@@ -1801,9 +1789,17 @@ function downloadReport(data) {
       <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
 
-  const scopeItemsHTML = active.length > 0 ? active.map((l, i) => `
+  const scopeHeroHTML = `
+      <section class="scope-hero avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
+        <h1>Alcance de la propuesta</h1>
+        <p>Resumen de cobertura para los productos, servicios y condiciones consideradas en este análisis interno de rentabilidad.</p>
+      </section>`;
+  const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
+    const scope = getVisionOneProductScope(l);
+    return `
     <div class="scope-item avoid-break">
-      <div class="scope-item-index">${String(i + 1).padStart(2, "0")}</div>
+      <div class="scope-item-index">${String(offset + i + 1).padStart(2, "0")}</div>
       <div class="scope-item-body">
         <div class="scope-item-title">${l.prod.name}</div>
         <div class="scope-item-meta">
@@ -1812,18 +1808,129 @@ function downloadReport(data) {
           <span>${l.startDate || "Sin inicio"} - ${l.date || "Sin fin"}</span>
           <span>${fmt(l.prorated)} créditos</span>
         </div>
-        <p>${itemScopeText(l.prod)}</p>
+        <div class="scope-product-title">${scope.title}</div>
+        <p class="scope-summary">${scope.summary}</p>
+        <ul class="scope-bullets">
+          ${scope.includes.slice(0, 3).map(item => `<li>${item}</li>`).join("")}
+        </ul>
+        <div class="scope-business"><strong>Valor para el negocio:</strong> ${scope.businessValue}</div>
+        ${scope.notes ? `<div class="scope-item-note">${scope.notes}</div>` : ""}
       </div>
-    </div>`).join("") : `
+    </div>`;
+  }).join("") : `
     <div class="scope-empty avoid-break">No hay productos activos asociados a este análisis.</div>`;
+  const renderScopeProductSection = (items, offset = 0, pageIndex = 0, totalPages = 1) => `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Detalle por línea</div>
+            <h2>Alcance por ítem vendido${totalPages > 1 ? ` · página ${pageIndex + 1}` : ""}</h2>
+          </div>
+          <div class="status-pill">${active.length} ítem${active.length === 1 ? "" : "s"}</div>
+        </div>
+        <div class="scope-card-body">
+          ${renderScopeItems(items, offset)}
+        </div>
+      </section>`;
 
   const supportMargin = soporteSale - soporteCost;
   const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
-  const supportHTML = soporteSale > 0 ? `
+  const supportScopeHTML = supportIncluded ? `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance del soporte</div>
+            <h2>Póliza de soporte: ${supportPolicyScope.label}</h2>
+          </div>
+          <div class="status-pill">${supportPolicyScope.label}</div>
+        </div>
+        <div class="scope-card-body">
+          <ul class="support-list">
+            ${supportPolicyScope.bullets.map(item => `<li>${item}</li>`).join("")}
+          </ul>
+          <div class="scope-note">${supportPolicyScope.note}</div>
+        </div>
+      </section>` : `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance del soporte</div>
+            <h2>Soporte no incluido</h2>
+          </div>
+          <div class="status-pill">No incluido</div>
+        </div>
+        <div class="scope-card-body">
+          <div class="scope-empty avoid-break">Este análisis no incluye una póliza de soporte comercial asociada. Si el negocio requiere soporte Nextcom, debe agregarse como línea de precio fijo y seleccionar el nivel de póliza aplicable.</div>
+        </div>
+      </section>`;
+  const scopeTailHTML = `
+      ${supportScopeHTML}
+
+      <section class="scope-split">
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Condiciones</div>
+              <h2>Consideraciones del alcance</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <ul class="consideration-list" style="grid-template-columns:1fr">
+              <li>El presente análisis es referencial y debe validarse contra la cotización final emitida por Nextcom.</li>
+              <li>La cobertura aplica únicamente sobre los productos, servicios y cantidades expresamente incluidos en la propuesta.</li>
+              <li>Actividades fuera del alcance, cambios realizados por terceros, daños lógicos/físicos no relacionados o servicios profesionales adicionales podrán cotizarse por separado.</li>
+              <li>La atención presencial fuera del área metropolitana o condiciones especiales de traslado pueden requerir validación comercial adicional.</li>
+              <li>La activación final de licencias, créditos o servicios queda sujeta a validación técnica, comercial y disponibilidad del fabricante cuando aplique.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Sistema Integrado de Gestión</div>
+              <h2>Certificaciones Nextcom</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <div class="iso-logos">
+              <div class="iso-logo-card"><img src="${iso9001PdfLogo}" alt="ISO 9001" /></div>
+              <div class="iso-logo-card"><img src="${iso27001PdfLogo}" alt="ISO/IEC 27001" /></div>
+            </div>
+            <p class="certification-copy" style="margin-top:12px">Nextcom cuenta con certificaciones de gestión de calidad ISO 9001 y seguridad de la información ISO/IEC 27001 como parte de su Sistema Integrado de Gestión.</p>
+          </div>
+        </div>
+      </section>`;
+  const scopeChunks = active.length > 0 ? Array.from({ length: Math.ceil(active.length / 4) }, (_, i) => active.slice(i * 4, i * 4 + 4)) : [[]];
+  const scopePagesHTML = active.length <= 4 ? `
+    <section class="pdf-page scope-page">
+      ${scopeHeroHTML}
+      ${renderScopeProductSection(active, 0)}
+      ${scopeTailHTML}
+    </section>` : `
+    ${scopeChunks.map((chunk, chunkIndex) => `
+    <section class="pdf-page scope-page">
+      ${chunkIndex === 0 ? scopeHeroHTML : `
+      <section class="scope-hero scope-hero-compact avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
+        <h1>Alcance por producto</h1>
+        <p>Continuación del detalle de productos incluidos en la propuesta.</p>
+      </section>`}
+      ${renderScopeProductSection(chunk, chunkIndex * 4, chunkIndex, scopeChunks.length)}
+    </section>`).join("")}
+    <section class="pdf-page scope-page">
+      <section class="scope-hero scope-hero-compact avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
+        <h1>Soporte, condiciones y certificaciones</h1>
+        <p>Resumen del nivel de soporte seleccionado, consideraciones comerciales y certificaciones Nextcom asociadas al alcance.</p>
+      </section>
+      ${scopeTailHTML}
+    </section>`;
+  const supportHTML = supportIncluded ? `
     <section class="section avoid-break">
       <div class="section-heading">
         <div>
-          <div class="eyebrow">Soporte Platinum</div>
+          <div class="eyebrow">Póliza de soporte: ${selectedSupportPolicy}</div>
           <h2>Servicio profesional asociado</h2>
         </div>
         <div class="status-pill">Precio fijo</div>
@@ -1934,7 +2041,9 @@ function downloadReport(data) {
   .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
   .scope-page{display:flex;flex-direction:column;gap:12px}
   .scope-hero{background:#082F49;border-radius:18px;color:#fff;padding:18px 20px}
+  .scope-hero-compact{padding:14px 18px}
   .scope-hero h1{font-size:24px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px}
+  .scope-hero-compact h1{font-size:20px;margin-bottom:5px}
   .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px}
   .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
   .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
@@ -1946,7 +2055,13 @@ function downloadReport(data) {
   .scope-item-title{font-size:12px;font-weight:800;color:#0F172A;line-height:1.25}
   .scope-item-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
   .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:2px 7px;font-size:9px;color:#475569;font-weight:700}
-  .scope-item p{font-size:10.5px;line-height:1.45;color:#475569;margin-top:7px}
+  .scope-product-title{font-size:10.5px;font-weight:800;color:#075985;margin-top:8px}
+  .scope-summary{font-size:10.2px;line-height:1.42;color:#475569;margin-top:5px}
+  .scope-bullets{display:grid;grid-template-columns:1fr;gap:3px;margin-top:7px;list-style:none}
+  .scope-bullets li{position:relative;padding-left:12px;font-size:9.6px;line-height:1.35;color:#475569}
+  .scope-bullets li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#38BDF8}
+  .scope-business{margin-top:7px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:6px 8px;font-size:9.6px;line-height:1.35;color:#334155}
+  .scope-item-note{font-size:9.2px;line-height:1.35;color:#64748B;margin-top:6px}
   .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
   .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;list-style:none}
   .support-list li,.consideration-list li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.4;color:#475569}
@@ -1998,8 +2113,8 @@ function downloadReport(data) {
           ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
         </div>
         <div class="meta-card avoid-break">
-          <div class="label">Soporte Platinum</div>
-          <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
+          <div class="label">Póliza de soporte</div>
+          <div class="meta-value">${supportIncluded ? selectedSupportPolicy : "No incluido"}</div>
           ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
         </div>
       </section>
@@ -2084,92 +2199,7 @@ function downloadReport(data) {
       </footer>
     </section>
 
-    <section class="pdf-page scope-page">
-      <section class="scope-hero avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
-        <h1>Alcance de la propuesta</h1>
-        <p>Resumen de cobertura para los productos, servicios y condiciones consideradas en este análisis interno de rentabilidad.</p>
-      </section>
-
-      <section class="scope-card avoid-break">
-        <div class="scope-card-header">
-          <div>
-            <div class="eyebrow">Detalle por línea</div>
-            <h2>Alcance por ítem vendido</h2>
-          </div>
-          <div class="status-pill">${active.length} ítem${active.length === 1 ? "" : "s"}</div>
-        </div>
-        <div class="scope-card-body">
-          ${scopeItemsHTML}
-        </div>
-      </section>
-
-      <section class="scope-card avoid-break">
-        <div class="scope-card-header">
-          <div>
-            <div class="eyebrow">Póliza Platinum</div>
-            <h2>Alcance del soporte</h2>
-          </div>
-          <div class="status-pill">Nextcom</div>
-        </div>
-        <div class="scope-card-body">
-          <ul class="support-list">
-            <li>Apertura y seguimiento de casos mediante la Plataforma de Solicitudes de Servicio y Reporte de Incidentes de Nextcom.</li>
-            <li>Soporte por email y teléfono.</li>
-            <li>Soporte remoto.</li>
-            <li>Soporte en sitio cuando aplique.</li>
-            <li>Atención 24x7 para póliza Platinum.</li>
-            <li>Atención de incidencias críticas 24x7.</li>
-            <li>Tiempo máximo de respuesta por criticidad: 30 minutos.</li>
-            <li>Tiempo máximo de primer contacto: 2 horas.</li>
-            <li>Instalación de parches y hotfixes cuando aplique.</li>
-            <li>Actualización a nuevas versiones de hardware/software cuando aplique.</li>
-            <li>Mantenimiento preventivo.</li>
-            <li>Soporte en sitio para incidencias críticas.</li>
-            <li>Instalación / reinstalación de productos.</li>
-            <li>Cobertura nacional para Platinum.</li>
-            <li>Los casos deben abrirse en https://servicios.nextcomsystems.com.</li>
-          </ul>
-          <div class="scope-note">El alcance de soporte queda sujeto al nivel de póliza contratado, criticidad del caso, información suministrada por el cliente, disponibilidad de acceso requerido y condiciones comerciales aprobadas.</div>
-        </div>
-      </section>
-
-      <section class="scope-split">
-        <div class="scope-card avoid-break">
-          <div class="scope-card-header">
-            <div>
-              <div class="eyebrow">Condiciones</div>
-              <h2>Consideraciones del alcance</h2>
-            </div>
-          </div>
-          <div class="scope-card-body">
-            <ul class="consideration-list" style="grid-template-columns:1fr">
-              <li>El presente análisis es referencial y debe validarse contra la cotización final emitida por Nextcom.</li>
-              <li>La cobertura aplica únicamente sobre los productos, servicios y cantidades expresamente incluidos en la propuesta.</li>
-              <li>Actividades fuera del alcance, cambios realizados por terceros, daños lógicos/físicos no relacionados o servicios profesionales adicionales podrán cotizarse por separado.</li>
-              <li>La atención presencial fuera del área metropolitana o condiciones especiales de traslado pueden requerir validación comercial adicional.</li>
-              <li>La activación final de licencias, créditos o servicios queda sujeta a validación técnica, comercial y disponibilidad del fabricante cuando aplique.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="scope-card avoid-break">
-          <div class="scope-card-header">
-            <div>
-              <div class="eyebrow">Sistema Integrado de Gestión</div>
-              <h2>Certificaciones Nextcom</h2>
-            </div>
-          </div>
-          <div class="scope-card-body">
-            <div class="iso-logos">
-              <div class="iso-logo-card"><img src="${iso9001PdfLogo}" alt="ISO 9001" /></div>
-              <div class="iso-logo-card"><img src="${iso27001PdfLogo}" alt="ISO/IEC 27001" /></div>
-            </div>
-            <p class="certification-copy" style="margin-top:12px">Nextcom cuenta con certificaciones de gestión de calidad ISO 9001 y seguridad de la información ISO/IEC 27001 como parte de su Sistema Integrado de Gestión.</p>
-          </div>
-        </div>
-      </section>
-    </section>
+    ${scopePagesHTML}
   </div>
 </body>
 </html>`;
@@ -2195,6 +2225,7 @@ function InternalApp() {
   const [soporteSale, setSoporteSale] = useState(0);
   const [soporteCost, setSoporteCost] = useState(0);
   const [soporteDate, setSoporteDate] = useState("");
+  const [supportPolicy, setSupportPolicy] = useState("Platinum");
   const [clientName, setClientName] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
   const isMobile = useIsMobile();
@@ -2321,6 +2352,7 @@ function InternalApp() {
     if (importResult.soportePlatinum?.present) {
       setSoporteSale(importResult.soportePlatinum.price || 0);
       setSoporteDate(importResult.endDate || "");
+      setSupportPolicy("Platinum");
     }
     setImportOpen(false);
     setImportResult(null);
@@ -2355,6 +2387,7 @@ function InternalApp() {
   const marginPct     = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
   const activeLines   = lines.filter(l => l.prodId && l.qty > 0).length;
   const perCrPct      = salePrice > 0 ? (salePrice - costPrice) / salePrice * 100 : 0;
+  const supportIncluded = soporteSale > 0 || soporteCost > 0;
   const mColor = pct => pct >= 20 ? C.green : pct > 0 ? C.amber : C.red;
   const mBg    = pct => pct >= 20 ? C.greenBg : pct > 0 ? C.amberBg : "#FEF2F2";
 
@@ -2379,13 +2412,13 @@ function InternalApp() {
     });
     setRc(c => c+1);
   };
-  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setClientName(""); }};
+  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setSupportPolicy("Platinum"); setClientName(""); }};
 
   return (
     <>
       <style>{PRINT_CSS}</style>
 
-      <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName }} />
+      <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName }} />
 
       <InternalCalculatorShell
         isMobile={isMobile}
@@ -2409,7 +2442,7 @@ function InternalApp() {
             onExportPdf={async () => {
               if (pdfLoading) return;
               setPdfLoading(true);
-              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
               catch(e){} finally { setPdfLoading(false); }
             }}
             pdfLoading={pdfLoading}
@@ -2610,11 +2643,38 @@ function InternalApp() {
         <div style={{ height:14 }} />
 
         <InternalWorkspaceSection
-          title="Soporte Platinum"
-          description="Precio libre · línea especial sin créditos."
+          title="Póliza de soporte"
+          description="Precio libre · línea especial sin créditos. Selecciona el nivel de SLA aplicable."
         >
         <div style={{ background:"#fff", overflow:"hidden" }}>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"22px 20px", background:soporteSale>0?"#F8FBFF":"#fff" }}>
+          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "170px 1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"22px 20px", background:supportIncluded?"#F8FBFF":"#fff" }}>
+            <div style={{ gridColumn:isMobile ? "1 / -1" : "auto" }}>
+              <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Tipo de póliza</div>
+              <select
+                value={supportPolicy}
+                disabled={!supportIncluded}
+                onChange={e => setSupportPolicy(normalizeSupportPolicy(e.target.value))}
+                style={{
+                  fontSize:13,
+                  fontWeight:700,
+                  color:supportIncluded ? "#0F172A" : "#94A3B8",
+                  border:"1px solid #E2E8F0",
+                  borderRadius:7,
+                  padding:"8px 10px",
+                  background:supportIncluded ? "#fff" : "#F8FAFC",
+                  width:"100%",
+                  boxShadow:"0 1px 2px rgba(15,23,42,.03)",
+                  cursor:supportIncluded ? "pointer" : "not-allowed",
+                }}
+              >
+                {SUPPORT_POLICY_OPTIONS.map(policy => (
+                  <option key={policy} value={policy}>{policy}</option>
+                ))}
+              </select>
+              <div style={{ fontSize:10, color:"#94A3B8", marginTop:6 }}>
+                {supportIncluded ? "Se reflejará en el alcance del PDF interno." : "Se activa al ingresar precio o costo de soporte."}
+              </div>
+            </div>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
               { l:"Costo proveedor",   v:soporteCost, set:setSoporteCost },
@@ -2667,7 +2727,7 @@ function InternalApp() {
           <button onClick={async () => {
               if (pdfLoading) return;
               setPdfLoading(true);
-              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
               catch(e){} finally { setPdfLoading(false); }
             }} disabled={pdfLoading}
             style={{ padding:"12px 16px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
@@ -2933,7 +2993,7 @@ function InternalApp() {
 
                   {importResult.soportePlatinum?.present && (
                     <div style={{ fontSize:12, color:C.text2, marginBottom:16, padding:"12px 14px", background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
-                      <span style={{ fontWeight:700, color:C.text }}>Soporte Platinum detectado</span>
+                      <span style={{ fontWeight:700, color:C.text }}>Póliza de soporte detectada</span>
                       <strong style={{ ...mono, color:C.text }}>${importResult.soportePlatinum.price?.toLocaleString() || 0}</strong>
                     </div>
                   )}
