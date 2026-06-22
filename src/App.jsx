@@ -1604,20 +1604,6 @@ async function generatePdfFromHtml(htmlContent, filename) {
     await new Promise(r => setTimeout(r, 80));
 
     // ════════════════════════════════════════════════════════════════════
-    // CAPTURA: html2canvas directamente sobre el elemento del iframe.
-    // Sin overrides de windowWidth/width/height — dejamos que html2canvas
-    // use el contexto del iframe (target.ownerDocument.defaultView). Esto
-    // evita el desfase que aparecía con html2pdf.js.
-    // ════════════════════════════════════════════════════════════════════
-    const canvas = await html2canvas(target, {
-      scale: SCALE,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-    });
-
-    // ════════════════════════════════════════════════════════════════════
     // CONSTRUCCIÓN DEL PDF: jsPDF directamente, paginando manualmente.
     // ════════════════════════════════════════════════════════════════════
     const pdf = new jsPDF({
@@ -1633,10 +1619,53 @@ async function generatePdfFromHtml(htmlContent, filename) {
     const contentWidthMm = pageWidthMm - 2 * marginMm;      // 190
     const contentHeightMm = pageHeightMm - 2 * marginMm;    // 277
 
+    const renderCanvas = (element) => html2canvas(element, {
+      scale: SCALE,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+    });
+
     // Canvas tiene dimensiones en píxeles físicos (ya con scale aplicado).
     // Para escalarlo a mm: dividir por SCALE para volver a CSS px, luego
     // convertir CSS px → mm a 96 DPI (25.4mm = 96px).
     const cssPxToMm = (px) => (px * 25.4) / 96;
+
+    const addCanvasAsPage = (canvas, pageIdx) => {
+      const canvasCssWidth = canvas.width / SCALE;
+      const canvasCssHeight = canvas.height / SCALE;
+      const naturalWidthMm = cssPxToMm(canvasCssWidth);
+      const naturalHeightMm = cssPxToMm(canvasCssHeight);
+      const widthFit = contentWidthMm / naturalWidthMm;
+      const heightFit = contentHeightMm / naturalHeightMm;
+      const fitFactor = Math.min(widthFit, heightFit);
+      const renderedWidthMm = naturalWidthMm * fitFactor;
+      const renderedHeightMm = naturalHeightMm * fitFactor;
+      const xMm = marginMm + (contentWidthMm - renderedWidthMm) / 2;
+
+      if (pageIdx > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", xMm, marginMm, renderedWidthMm, renderedHeightMm);
+    };
+
+    const explicitPages = Array.from(target.children || []).filter(el => el.classList && el.classList.contains("pdf-page"));
+    if (explicitPages.length > 0) {
+      for (let i = 0; i < explicitPages.length; i++) {
+        const pageCanvas = await renderCanvas(explicitPages[i]);
+        addCanvasAsPage(pageCanvas, i);
+      }
+      pdf.save(filename);
+      return;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // CAPTURA: html2canvas directamente sobre el elemento del iframe.
+    // Sin overrides de windowWidth/width/height — dejamos que html2canvas
+    // use el contexto del iframe (target.ownerDocument.defaultView). Esto
+    // evita el desfase que aparecía con html2pdf.js.
+    // ════════════════════════════════════════════════════════════════════
+    const canvas = await renderCanvas(target);
+
     const canvasCssWidth = canvas.width / SCALE;
     const canvasCssHeight = canvas.height / SCALE;
     const naturalWidthMm = cssPxToMm(canvasCssWidth);
@@ -1812,11 +1841,14 @@ function downloadReport(data) {
 <title>Análisis Vision One${clientName ? " - " + clientName : ""}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:22px 26px}
-  .container{max-width:920px;margin:0 auto}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
+  .container{width:800px;margin:0 auto}
+  .pdf-page{width:800px;min-height:1120px;padding:22px 26px;background:#fff}
+  .pdf-page + .pdf-page{page-break-before:always;break-before:page}
+  .pdf-page-secondary{display:flex;flex-direction:column;justify-content:space-between;gap:18px}
   .mono{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
-  .pdf-section-break{break-before:page;page-break-before:always;margin-top:72px}
+  .pdf-section-break{break-before:page;page-break-before:always;margin-top:0}
   .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:16px}
   .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:20px 22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
   .hero:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:999px;background:rgba(255,255,255,.07)}
@@ -1859,128 +1891,131 @@ function downloadReport(data) {
   .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
   .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
   @page{margin:12mm 10mm;size:A4}
-  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
+  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
 </style>
 </head>
 <body>
   <div class="container pdf-content">
-    <div class="top-rule"></div>
-    <section class="hero avoid-break">
-      <div class="brand-row">
-        <div class="brand-left">
-          <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
-          <div>
-            <div class="brand-text">Trend Vision One / TrendAI</div>
-            <div style="font-size:11px;color:#E0F2FE;margin-top:4px">Reporte interno de rentabilidad y dimensionamiento</div>
+    <section class="pdf-page">
+      <div class="top-rule"></div>
+      <section class="hero avoid-break">
+        <div class="brand-row">
+          <div class="brand-left">
+            <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
+            <div>
+              <div class="brand-text">Trend Vision One / TrendAI</div>
+              <div style="font-size:11px;color:#E0F2FE;margin-top:4px">Reporte interno de rentabilidad y dimensionamiento</div>
+            </div>
+          </div>
+          <div class="brand-right">
+            <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
+            <div class="confidential">Confidencial · Uso interno</div>
           </div>
         </div>
-        <div class="brand-right">
-          <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
-          <div class="confidential">Confidencial · Uso interno</div>
+        <h1>Análisis de Créditos Vision One</h1>
+        <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
+      </section>
+
+      <section class="doc-meta avoid-break">
+        <div class="meta-card avoid-break">
+          <div class="label">Cliente</div>
+          <div class="meta-value">${clientName || "Cliente no especificado"}</div>
         </div>
-      </div>
-      <h1>Análisis de Créditos Vision One</h1>
-      <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
+        <div class="meta-card avoid-break">
+          <div class="label">Fecha de emisión</div>
+          <div class="meta-value">${today}</div>
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Moneda</div>
+          <div class="meta-value">${currency}</div>
+          ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Soporte Platinum</div>
+          <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
+          ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
+        </div>
+      </section>
+
+      <section class="metrics avoid-break">${metricCards}</section>
+
+      <section class="section avoid-break">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Datos comerciales</div>
+            <h2>Precios por crédito y supuestos del negocio</h2>
+          </div>
+          <div class="status-pill">${active.length} líneas activas</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px">
+          ${[
+            {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
+            {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
+            {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
+          ].map(k => `<div class="support-card avoid-break"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">Tabla de productos</div>
+            <h2>Detalle de líneas Vision One</h2>
+          </div>
+          <div class="status-pill">${fmt(totalCredits)} créditos</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%">Producto</th>
+              <th style="width:14%">SKU / Categoría</th>
+              <th style="width:12%">Vigencia</th>
+              <th class="num" style="width:7%">Cant.</th>
+              <th class="num" style="width:9%">Créditos</th>
+              <th class="num" style="width:10%">Precio cliente</th>
+              <th class="num" style="width:10%">Costo prov.</th>
+              <th class="num" style="width:8%">Margen</th>
+              <th class="num" style="width:8%">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHTML || `<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748B;font-size:12px">No hay productos activos en este análisis.</td></tr>`}</tbody>
+          <tfoot>
+            <tr style="background:#E0F2FE;border-top:2px solid #082F49">
+              <td colspan="4" style="padding:12px;font-size:12px;font-weight:850;color:#075985;text-transform:uppercase;letter-spacing:.04em">Total créditos Vision One</td>
+              <td style="padding:12px;font-size:13px;font-weight:850;font-family:'SF Mono',monospace;text-align:right;color:#075985">${fmt(totalCredits)}</td>
+              <td colspan="4" style="padding:12px;font-size:12px;text-align:right;color:#075985;font-weight:750">Venta total: <span class="mono">${fmtView(totalRevenue)}</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+      ${supportHTML}
     </section>
 
-    <section class="doc-meta avoid-break">
-      <div class="meta-card avoid-break">
-        <div class="label">Cliente</div>
-        <div class="meta-value">${clientName || "Cliente no especificado"}</div>
-      </div>
-      <div class="meta-card avoid-break">
-        <div class="label">Fecha de emisión</div>
-        <div class="meta-value">${today}</div>
-      </div>
-      <div class="meta-card avoid-break">
-        <div class="label">Moneda</div>
-        <div class="meta-value">${currency}</div>
-        ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
-      </div>
-      <div class="meta-card avoid-break">
-        <div class="label">Soporte Platinum</div>
-        <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
-        ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
-      </div>
-    </section>
+    <section class="pdf-page pdf-page-secondary">
+      <section class="analysis-grid avoid-break pdf-section-break">
+        <div class="pl-card avoid-break">
+          <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
+          <table>${plRows}</table>
+        </div>
+        <div class="observations avoid-break">
+          <div class="eyebrow">Notas internas</div>
+          <h2>Observaciones</h2>
+          <p>Sin observaciones adicionales registradas.</p>
+          <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
+        </div>
+      </section>
 
-    <section class="metrics avoid-break">${metricCards}</section>
-
-    <section class="section avoid-break">
-      <div class="section-heading">
+      <footer class="footer avoid-break">
         <div>
-          <div class="eyebrow">Datos comerciales</div>
-          <h2>Precios por crédito y supuestos del negocio</h2>
+          <strong style="color:#0F172A">Nextcom Systems</strong><br>
+          Documento generado por Calculadora Vision One<br>
+          RUC 1253816-1-593861 DV 16 · +507 394-1405
         </div>
-        <div class="status-pill">${active.length} líneas activas</div>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px">
-        ${[
-          {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
-          {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
-          {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
-        ].map(k => `<div class="support-card avoid-break"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">Tabla de productos</div>
-          <h2>Detalle de líneas Vision One</h2>
+        <div class="disclaimer avoid-break">
+          Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
         </div>
-        <div class="status-pill">${fmt(totalCredits)} créditos</div>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:22%">Producto</th>
-            <th style="width:14%">SKU / Categoría</th>
-            <th style="width:12%">Vigencia</th>
-            <th class="num" style="width:7%">Cant.</th>
-            <th class="num" style="width:9%">Créditos</th>
-            <th class="num" style="width:10%">Precio cliente</th>
-            <th class="num" style="width:10%">Costo prov.</th>
-            <th class="num" style="width:8%">Margen</th>
-            <th class="num" style="width:8%">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHTML || `<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748B;font-size:12px">No hay productos activos en este análisis.</td></tr>`}</tbody>
-        <tfoot>
-          <tr style="background:#E0F2FE;border-top:2px solid #082F49">
-            <td colspan="4" style="padding:12px;font-size:12px;font-weight:850;color:#075985;text-transform:uppercase;letter-spacing:.04em">Total créditos Vision One</td>
-            <td style="padding:12px;font-size:13px;font-weight:850;font-family:'SF Mono',monospace;text-align:right;color:#075985">${fmt(totalCredits)}</td>
-            <td colspan="4" style="padding:12px;font-size:12px;text-align:right;color:#075985;font-weight:750">Venta total: <span class="mono">${fmtView(totalRevenue)}</span></td>
-          </tr>
-        </tfoot>
-      </table>
+      </footer>
     </section>
-
-    ${supportHTML}
-
-    <section class="analysis-grid avoid-break pdf-section-break">
-      <div class="pl-card avoid-break">
-        <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
-        <table>${plRows}</table>
-      </div>
-      <div class="observations avoid-break">
-        <div class="eyebrow">Notas internas</div>
-        <h2>Observaciones</h2>
-        <p>Sin observaciones adicionales registradas.</p>
-        <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
-      </div>
-    </section>
-
-    <footer class="footer avoid-break">
-      <div>
-        <strong style="color:#0F172A">Nextcom Systems</strong><br>
-        Documento generado por Calculadora Vision One<br>
-        RUC 1253816-1-593861 DV 16 · +507 394-1405
-      </div>
-      <div class="disclaimer avoid-break">
-        Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
-      </div>
-    </footer>
   </div>
 </body>
 </html>`;
