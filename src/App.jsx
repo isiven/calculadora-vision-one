@@ -2233,13 +2233,44 @@ function downloadClientScopeReport(data) {
   const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
   const supportPolicyScope = getSupportPolicyScope(selectedSupportPolicy);
   const supportIncluded = soporteSale > 0 || soporteCost > 0;
+  const renderScopeHeader = (title, subtitle, pageLabel) => `
+      <section class="scope-doc-header avoid-break">
+        <div class="brand-row">
+          <div class="brand-left">
+            <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
+            <div>
+              <div class="brand-text">Nextcom Systems</div>
+              <div class="brand-sub">Alcance comercial de la propuesta</div>
+            </div>
+          </div>
+          <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
+        </div>
+        <div class="scope-header-main">
+          <div>
+            <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
+            <h1>${title}</h1>
+            <p>${subtitle}</p>
+          </div>
+          <div class="scope-header-meta">
+            <div class="scope-header-meta-row">
+              <span>Cliente</span>
+              <strong>${clientName || "Cliente no especificado"}</strong>
+            </div>
+            <div class="scope-header-meta-row">
+              <span>Fecha</span>
+              <strong>${today}</strong>
+            </div>
+            <div class="page-badge">${pageLabel}</div>
+          </div>
+        </div>
+      </section>`;
 
   const scopeHeroHTML = `
-      <section class="scope-hero avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
-        <h1>Alcance de la propuesta</h1>
-        <p>Resumen de productos, vigencias, créditos dimensionados, soporte y condiciones consideradas para la propuesta Vision One.</p>
-      </section>`;
+      ${renderScopeHeader(
+        "Alcance de la propuesta",
+        "Documento comercial de cobertura para los productos, servicios y condiciones incluidos en la propuesta.",
+        "Página inicial"
+      )}`;
   const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
     const scope = getVisionOneProductScope(l);
     return `
@@ -2265,7 +2296,7 @@ function downloadClientScopeReport(data) {
   }).join("") : `
     <div class="scope-empty avoid-break">No hay productos activos asociados a este alcance.</div>`;
   const renderScopeProductSection = (items, offset = 0, pageIndex = 0, totalPages = 1) => `
-      <section class="scope-card avoid-break">
+      <section class="scope-card avoid-break ${items.length === 1 && totalPages > 1 ? "scope-card-spacious" : ""}">
         <div class="scope-card-header">
           <div>
             <div class="eyebrow">Alcance por línea</div>
@@ -2360,22 +2391,24 @@ function downloadClientScopeReport(data) {
   const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
     ${scopeChunks.slice(1).map((chunk, index) => {
       const chunkIndex = index + 1;
+      const firstItem = chunkIndex * scopeProductsPerPage + 1;
+      const lastItem = Math.min(firstItem + chunk.length - 1, active.length);
       return `
     <section class="pdf-page scope-page">
-      <section class="scope-hero scope-hero-compact avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
-        <h1>Alcance por ítem vendido - continuación</h1>
-        <p>Continuación del detalle de productos incluidos en la propuesta.</p>
-      </section>
+      ${renderScopeHeader(
+        "Alcance de la propuesta - continuación",
+        "Continuación del alcance por ítem vendido.",
+        `Ítems ${firstItem}-${lastItem}`
+      )}
       ${renderScopeProductSection(chunk, chunkIndex * scopeProductsPerPage, chunkIndex, scopeChunks.length)}
     </section>`;
     }).join("")}
     <section class="pdf-page scope-page">
-      <section class="scope-hero scope-hero-compact avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
-        <h1>Soporte, condiciones y certificaciones</h1>
-        <p>Resumen del nivel de soporte seleccionado, consideraciones comerciales y certificaciones Nextcom asociadas al alcance.</p>
-      </section>
+      ${renderScopeHeader(
+        "Alcance de soporte y condiciones",
+        "Resumen de soporte, consideraciones comerciales y certificaciones.",
+        "Soporte e ISO"
+      )}
       ${scopeTailHTML}
     </section>` : "";
 
@@ -2392,15 +2425,26 @@ function downloadClientScopeReport(data) {
   .pdf-page + .pdf-page{page-break-before:always;break-before:page}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
   .scope-page{display:flex;flex-direction:column;gap:12px}
+  .scope-doc-header{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:16px 18px;position:relative;overflow:hidden}
+  .scope-doc-header:after{content:"";position:absolute;right:-74px;top:-88px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
   .scope-hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:18px 20px;position:relative;overflow:hidden}
   .scope-hero:after{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
   .scope-hero-compact{padding:14px 18px;background:#082F49}
   .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px;position:relative;z-index:1}
   .brand-left{display:flex;align-items:center;gap:16px}
-  .brand-mark{background:#fff;border-radius:14px;padding:9px 11px;display:flex;align-items:center;justify-content:center;min-width:126px;height:48px}
-  .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
-  .trendai-logo{display:block;width:148px;max-height:38px;object-fit:contain}
+  .brand-mark{background:#fff;border-radius:14px;padding:8px 10px;display:flex;align-items:center;justify-content:center;min-width:124px;height:46px}
+  .brand-mark img{max-height:29px;max-width:114px;object-fit:contain}
+  .trendai-logo{display:block;width:154px;max-height:40px;object-fit:contain;position:relative;z-index:1}
   .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .brand-sub{font-size:10.5px;color:#E0F2FE;font-weight:650;margin-top:3px}
+  .scope-header-main{display:grid;grid-template-columns:1fr 210px;gap:20px;align-items:end;position:relative;z-index:1}
+  .scope-doc-header h1{font-size:24px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px}
+  .scope-doc-header p{font-size:11.5px;line-height:1.45;color:#D8F3FF;max-width:560px}
+  .scope-header-meta{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;color:#E0F2FE}
+  .scope-header-meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .scope-header-meta-row span{font-size:8.5px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:#BAE6FD}
+  .scope-header-meta-row strong{font-size:10px;line-height:1.25;text-align:right;color:#fff}
+  .page-badge{display:inline-flex;align-items:center;justify-content:center;width:100%;border-radius:999px;background:rgba(186,230,253,.16);border:1px solid rgba(186,230,253,.28);padding:5px 9px;color:#E0F2FE;font-size:9.5px;font-weight:850}
   .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
   .scope-hero .eyebrow{color:#BAE6FD}
   .scope-hero h1{font-size:26px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px;position:relative;z-index:1}
@@ -2412,6 +2456,7 @@ function downloadClientScopeReport(data) {
   .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
   .meta-sub{font-size:10px;color:#94A3B8;margin-top:4px}
   .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
+  .scope-card-spacious{min-height:390px}
   .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
   .scope-card-header h2{font-size:14px;letter-spacing:-.02em;color:#0F172A}
   .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
@@ -2436,8 +2481,8 @@ function downloadClientScopeReport(data) {
   .scope-note{margin-top:10px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:9px 11px;color:#92400E;font-size:10.5px;line-height:1.45}
   .scope-split{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
   .certification-copy{font-size:10.5px;line-height:1.5;color:#475569}
-  .iso-logos{display:flex;align-items:center;justify-content:flex-end;gap:12px}
-  .iso-logo-card{height:72px;width:72px;border:1px solid #E2E8F0;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:7px}
+  .iso-logos{display:flex;align-items:center;justify-content:center;gap:14px}
+  .iso-logo-card{height:84px;width:84px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px}
   .iso-logo-card img{max-width:100%;max-height:100%;object-fit:contain}
   .footer{margin-top:auto;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
   .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
