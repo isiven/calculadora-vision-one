@@ -8,8 +8,12 @@ export function InternalPricingPanel({
   perCreditBg,
   summaryItems,
   onExportPdf,
+  onExportScopePdf,
   pdfLoading,
+  scopePdfLoading,
 }) {
+  const internalPdfTooltip = "Incluye créditos, precios, costos, margen, rentabilidad, P&L, observaciones internas y alcance. Uso interno Nextcom."
+  const clientScopeTooltip = "Incluye productos, cantidades, vigencias, créditos, alcance por producto, soporte, condiciones y certificaciones. No incluye costos, margen ni rentabilidad."
   const priceFields = [
     {
       label: "Precio al cliente",
@@ -86,14 +90,26 @@ export function InternalPricingPanel({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onExportPdf}
-        disabled={pdfLoading}
-        className="mt-20 flex h-11 w-full items-center justify-center rounded-lg border border-blue-600 bg-white px-3 text-sm font-semibold text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-blue-50 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
-      >
-        {pdfLoading ? "Generando PDF..." : "Exportar análisis PDF"}
-      </button>
+      <div className="mt-20 grid grid-cols-2 gap-2" aria-label="Descargas PDF">
+        <button
+          type="button"
+          onClick={onExportPdf}
+          disabled={pdfLoading}
+          title={internalPdfTooltip}
+          className="flex h-11 items-center justify-center rounded-lg border border-blue-600 bg-white px-2 text-center text-xs font-semibold text-blue-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:cursor-wait disabled:border-slate-300 disabled:text-slate-400"
+        >
+          {pdfLoading ? "Generando..." : "Análisis interno"}
+        </button>
+        <button
+          type="button"
+          onClick={onExportScopePdf}
+          disabled={scopePdfLoading}
+          title={clientScopeTooltip}
+          className="flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 text-center text-xs font-semibold text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-colors hover:border-slate-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300/60 disabled:cursor-wait disabled:text-slate-400"
+        >
+          {scopePdfLoading ? "Generando..." : "Alcance para cliente"}
+        </button>
+      </div>
     </aside>
   )
 }

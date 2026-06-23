@@ -2217,6 +2217,278 @@ function downloadReport(data) {
   });
 }
 
+function downloadClientScopeReport(data) {
+  const { lines, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD" } = data;
+  const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
+  const trendAiPdfLogo = typeof window !== "undefined" ? new URL(trendAiSidebarLogo, window.location.href).href : trendAiSidebarLogo;
+  const iso9001PdfLogo = typeof window !== "undefined" ? new URL(iso9001Logo, window.location.href).href : iso9001Logo;
+  const iso27001PdfLogo = typeof window !== "undefined" ? new URL(iso27001Logo, window.location.href).href : iso27001Logo;
+  const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
+    const p = CATALOG.find(c => c.id===l.prodId);
+    const months = monthsBetween(l.startDate, l.date);
+    const prorated = Math.round(l.qty * p.credits * (months / 12));
+    return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
+  });
+  const totalCredits = active.reduce((sum, line) => sum + line.prorated, 0);
+  const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
+  const supportPolicyScope = getSupportPolicyScope(selectedSupportPolicy);
+  const supportIncluded = soporteSale > 0 || soporteCost > 0;
+
+  const scopeHeroHTML = `
+      <section class="scope-hero avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
+        <h1>Alcance de la propuesta</h1>
+        <p>Resumen de productos, vigencias, créditos dimensionados, soporte y condiciones consideradas para la propuesta Vision One.</p>
+      </section>`;
+  const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
+    const scope = getVisionOneProductScope(l);
+    return `
+    <div class="scope-item avoid-break">
+      <div class="scope-item-index">${String(offset + i + 1).padStart(2, "0")}</div>
+      <div class="scope-item-body">
+        <div class="scope-item-title">${l.prod.name}</div>
+        <div class="scope-item-meta">
+          <span>${l.prod.sku || l.prod.cat}</span>
+          <span>${l.qty.toLocaleString("en-US")} ${l.prod.unit}${l.qty !== 1 ? "s" : ""}</span>
+          <span>${l.startDate || "Sin inicio"} - ${l.date || "Sin fin"}</span>
+          <span>${fmt(l.prorated)} créditos</span>
+        </div>
+        <div class="scope-product-title">${scope.title}</div>
+        <p class="scope-summary">${scope.summary}</p>
+        <ul class="scope-bullets">
+          ${scope.includes.slice(0, 3).map(item => `<li>${item}</li>`).join("")}
+        </ul>
+        <div class="scope-business"><strong>Valor para el negocio:</strong> ${scope.businessValue}</div>
+        ${scope.notes ? `<div class="scope-item-note">${scope.notes}</div>` : ""}
+      </div>
+    </div>`;
+  }).join("") : `
+    <div class="scope-empty avoid-break">No hay productos activos asociados a este alcance.</div>`;
+  const renderScopeProductSection = (items, offset = 0, pageIndex = 0, totalPages = 1) => `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance por línea</div>
+            <h2>Alcance por ítem vendido${totalPages > 1 ? ` · página ${pageIndex + 1}` : ""}</h2>
+          </div>
+          <div class="status-pill">${active.length} ítem${active.length === 1 ? "" : "s"}</div>
+        </div>
+        <div class="scope-card-body">
+          ${renderScopeItems(items, offset)}
+        </div>
+      </section>`;
+  const supportScopeHTML = supportIncluded ? `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance del soporte</div>
+            <h2>Póliza de soporte: ${supportPolicyScope.label}</h2>
+          </div>
+          <div class="status-pill">${supportPolicyScope.label}</div>
+        </div>
+        <div class="scope-card-body">
+          <ul class="support-list">
+            ${supportPolicyScope.bullets.map(item => `<li>${item}</li>`).join("")}
+          </ul>
+          ${soporteDate ? `<div class="scope-note">Vigencia referencial del soporte hasta ${soporteDate}.</div>` : `<div class="scope-note">${supportPolicyScope.note}</div>`}
+        </div>
+      </section>` : `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance del soporte</div>
+            <h2>Soporte no incluido</h2>
+          </div>
+          <div class="status-pill">No incluido</div>
+        </div>
+        <div class="scope-card-body">
+          <div class="scope-empty avoid-break">Esta propuesta no incluye una póliza de soporte comercial asociada. Si el negocio requiere soporte Nextcom, debe agregarse como línea comercial y seleccionar el nivel de póliza aplicable.</div>
+        </div>
+      </section>`;
+  const scopeTailHTML = `
+      ${supportScopeHTML}
+
+      <section class="scope-split">
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Condiciones</div>
+              <h2>Consideraciones del alcance</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <ul class="consideration-list" style="grid-template-columns:1fr">
+              <li>El alcance aplica únicamente sobre los productos, servicios y cantidades expresamente incluidos en la propuesta.</li>
+              <li>La activación final de licencias, créditos o servicios queda sujeta a validación técnica, comercial y disponibilidad del fabricante cuando aplique.</li>
+              <li>Actividades fuera del alcance, cambios realizados por terceros o servicios profesionales adicionales podrán cotizarse por separado.</li>
+              <li>La atención presencial fuera del área metropolitana o condiciones especiales de traslado pueden requerir validación comercial adicional.</li>
+              <li>Este documento es referencial y debe validarse contra la cotización final emitida por Nextcom.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Sistema Integrado de Gestión</div>
+              <h2>Certificaciones Nextcom</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <div class="iso-logos">
+              <div class="iso-logo-card"><img src="${iso9001PdfLogo}" alt="ISO 9001" /></div>
+              <div class="iso-logo-card"><img src="${iso27001PdfLogo}" alt="ISO/IEC 27001" /></div>
+            </div>
+            <p class="certification-copy" style="margin-top:12px">Nextcom cuenta con certificaciones de gestión de calidad ISO 9001 y seguridad de la información ISO/IEC 27001 como parte de su Sistema Integrado de Gestión.</p>
+          </div>
+        </div>
+      </section>
+      <footer class="footer avoid-break">
+        <div>
+          <strong style="color:#0F172A">Nextcom Systems</strong><br>
+          Documento generado por Calculadora Vision One<br>
+          RUC 1253816-1-593861 DV 16 · +507 394-1405
+        </div>
+        <div class="disclaimer avoid-break">
+          Este documento es una versión de alcance para cliente. El alcance final queda sujeto a la cotización aprobada, condiciones comerciales vigentes y lineamientos de la marca.
+        </div>
+      </footer>`;
+  const scopeProductsPerPage = 2;
+  const scopeChunks = active.length > 0 ? Array.from({ length: Math.ceil(active.length / scopeProductsPerPage) }, (_, i) => active.slice(i * scopeProductsPerPage, i * scopeProductsPerPage + scopeProductsPerPage)) : [[]];
+  const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
+  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage;
+  const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
+    ${scopeChunks.slice(1).map((chunk, index) => {
+      const chunkIndex = index + 1;
+      return `
+    <section class="pdf-page scope-page">
+      <section class="scope-hero scope-hero-compact avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
+        <h1>Alcance por ítem vendido - continuación</h1>
+        <p>Continuación del detalle de productos incluidos en la propuesta.</p>
+      </section>
+      ${renderScopeProductSection(chunk, chunkIndex * scopeProductsPerPage, chunkIndex, scopeChunks.length)}
+    </section>`;
+    }).join("")}
+    <section class="pdf-page scope-page">
+      <section class="scope-hero scope-hero-compact avoid-break">
+        <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
+        <h1>Soporte, condiciones y certificaciones</h1>
+        <p>Resumen del nivel de soporte seleccionado, consideraciones comerciales y certificaciones Nextcom asociadas al alcance.</p>
+      </section>
+      ${scopeTailHTML}
+    </section>` : "";
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Alcance de la propuesta${clientName ? " - " + clientName : ""}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
+  .container{width:800px;margin:0 auto}
+  .pdf-page{width:800px;min-height:1120px;padding:22px 26px;background:#fff}
+  .pdf-page + .pdf-page{page-break-before:always;break-before:page}
+  .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
+  .scope-page{display:flex;flex-direction:column;gap:12px}
+  .scope-hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:18px 20px;position:relative;overflow:hidden}
+  .scope-hero:after{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
+  .scope-hero-compact{padding:14px 18px;background:#082F49}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:16px}
+  .brand-mark{background:#fff;border-radius:14px;padding:9px 11px;display:flex;align-items:center;justify-content:center;min-width:126px;height:48px}
+  .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
+  .trendai-logo{display:block;width:148px;max-height:38px;object-fit:contain}
+  .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
+  .scope-hero .eyebrow{color:#BAE6FD}
+  .scope-hero h1{font-size:26px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px;position:relative;z-index:1}
+  .scope-hero-compact h1{font-size:20px;margin-bottom:5px}
+  .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px;position:relative;z-index:1}
+  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px}
+  .meta-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
+  .label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
+  .meta-sub{font-size:10px;color:#94A3B8;margin-top:4px}
+  .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
+  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .scope-card-header h2{font-size:14px;letter-spacing:-.02em;color:#0F172A}
+  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+  .scope-card-body{padding:14px 16px}
+  .scope-item{display:grid;grid-template-columns:38px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid #E2E8F0}
+  .scope-item:last-child{border-bottom:0}
+  .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10.5px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+  .scope-item-title{font-size:13px;font-weight:800;color:#0F172A;line-height:1.28}
+  .scope-item-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:3px 8px;font-size:9.8px;color:#475569;font-weight:700}
+  .scope-product-title{font-size:11.2px;font-weight:800;color:#075985;margin-top:10px}
+  .scope-summary{font-size:11px;line-height:1.5;color:#475569;margin-top:6px}
+  .scope-bullets{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;list-style:none}
+  .scope-bullets li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.45;color:#475569}
+  .scope-bullets li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#38BDF8}
+  .scope-business{margin-top:9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:7px 9px;font-size:10.4px;line-height:1.42;color:#334155}
+  .scope-item-note{font-size:9.8px;line-height:1.42;color:#64748B;margin-top:7px}
+  .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
+  .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;list-style:none}
+  .support-list li,.consideration-list li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.4;color:#475569}
+  .support-list li:before,.consideration-list li:before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:999px;background:#1D4ED8}
+  .scope-note{margin-top:10px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:9px 11px;color:#92400E;font-size:10.5px;line-height:1.45}
+  .scope-split{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+  .certification-copy{font-size:10.5px;line-height:1.5;color:#475569}
+  .iso-logos{display:flex;align-items:center;justify-content:flex-end;gap:12px}
+  .iso-logo-card{height:72px;width:72px;border:1px solid #E2E8F0;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:7px}
+  .iso-logo-card img{max-width:100%;max-height:100%;object-fit:contain}
+  .footer{margin-top:auto;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
+  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  @page{margin:12mm 10mm;size:A4}
+</style>
+</head>
+<body>
+  <div class="container pdf-content">
+    <section class="pdf-page scope-page">
+      ${scopeHeroHTML}
+      <section class="doc-meta avoid-break">
+        <div class="meta-card avoid-break">
+          <div class="label">Cliente</div>
+          <div class="meta-value">${clientName || "Cliente no especificado"}</div>
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Fecha</div>
+          <div class="meta-value">${today}</div>
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Moneda</div>
+          <div class="meta-value">${currency}</div>
+          <div class="meta-sub">Documento de alcance comercial</div>
+        </div>
+        <div class="meta-card avoid-break">
+          <div class="label">Créditos dimensionados</div>
+          <div class="meta-value">${fmt(totalCredits)}</div>
+          <div class="meta-sub">${active.length} línea${active.length === 1 ? "" : "s"} incluida${active.length === 1 ? "" : "s"}</div>
+        </div>
+      </section>
+      ${!scopeTailNeedsOwnPage ? `
+      ${renderScopeProductSection(active, 0)}
+      ${scopeTailHTML}
+      ` : `
+      ${renderScopeProductSection(scopeChunks[0] || [], 0, 0, scopeChunks.length)}
+      `}
+    </section>
+    ${continuationScopePagesHTML}
+  </div>
+</body>
+</html>`;
+
+  const fname = `Alcance_Propuesta_VisionOne_Nextcom_${new Date().toISOString().split("T")[0]}.pdf`;
+
+  return generatePdfFromHtml(html, fname).catch(err => {
+    console.error("Error generando PDF de alcance:", err);
+    alert("No se pudo generar el PDF de alcance. Por favor verifica tu conexión a internet e inténtalo de nuevo.\n\nDetalle: " + err.message);
+    throw err;
+  });
+}
+
 function InternalApp() {
   const [lines, setLines] = useState(() => {
     const d = defaultDates();
@@ -2231,7 +2503,11 @@ function InternalApp() {
   const [supportPolicy, setSupportPolicy] = useState("Platinum");
   const [clientName, setClientName] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [scopePdfLoading, setScopePdfLoading] = useState(false);
   const isMobile = useIsMobile();
+  const supportPolicyGridColumns = isMobile
+    ? "1fr"
+    : (typeof window !== "undefined" && window.innerWidth < 1180 ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // --- Currency / FX ---
@@ -2448,7 +2724,14 @@ function InternalApp() {
               try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
               catch(e){} finally { setPdfLoading(false); }
             }}
+            onExportScopePdf={async () => {
+              if (scopePdfLoading) return;
+              setScopePdfLoading(true);
+              try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency }); }
+              catch(e){} finally { setScopePdfLoading(false); }
+            }}
             pdfLoading={pdfLoading}
+            scopePdfLoading={scopePdfLoading}
           />
         ) : null}
       >
@@ -2650,8 +2933,9 @@ function InternalApp() {
           description="Precio libre · línea especial sin créditos. Selecciona el nivel de SLA aplicable."
         >
         <div style={{ background:"#fff", overflow:"hidden" }}>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "170px 1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"22px 20px", background:supportIncluded?"#F8FBFF":"#fff" }}>
-            <div style={{ gridColumn:isMobile ? "1 / -1" : "auto" }}>
+          <div style={{ padding:isMobile?"14px":"22px 20px", background:supportIncluded?"#F8FBFF":"#fff" }}>
+            <div style={{ display:"grid", gridTemplateColumns: supportPolicyGridColumns, gap:18, alignItems:"end" }}>
+            <div>
               <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Tipo de póliza</div>
               <select
                 value={supportPolicy}
@@ -2663,9 +2947,11 @@ function InternalApp() {
                   color:supportIncluded ? "#0F172A" : "#94A3B8",
                   border:"1px solid #E2E8F0",
                   borderRadius:7,
-                  padding:"8px 10px",
+                  padding:"0 10px",
                   background:supportIncluded ? "#fff" : "#F8FAFC",
+                  height:38,
                   width:"100%",
+                  boxSizing:"border-box",
                   boxShadow:"0 1px 2px rgba(15,23,42,.03)",
                   cursor:supportIncluded ? "pointer" : "not-allowed",
                 }}
@@ -2674,9 +2960,6 @@ function InternalApp() {
                   <option key={policy} value={policy}>{policy}</option>
                 ))}
               </select>
-              <div style={{ fontSize:10, color:"#94A3B8", marginTop:6 }}>
-                {supportIncluded ? "Se reflejará en el alcance del PDF interno." : "Se activa al ingresar precio o costo de soporte."}
-              </div>
             </div>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
@@ -2684,7 +2967,7 @@ function InternalApp() {
             ].map(f => (
               <div key={f.l}>
                 <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>{f.l}</div>
-                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 11px", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:7, padding:"0 11px", height:38, boxSizing:"border-box", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
                   <span style={{ color:"#64748B", fontSize:13 }}>$</span>
                   <input type="number" min={0} step={0.01} value={f.v||""} placeholder="0.00" onChange={e => f.set(parseFloat(e.target.value)||0)}
                     style={{ ...mono, fontSize:13, fontWeight:600, width:"100%", border:"none", outline:"none", background:"transparent", color:"#0F172A" }} />
@@ -2694,12 +2977,18 @@ function InternalApp() {
             <div>
               <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Vencimiento</div>
               <input type="date" value={soporteDate} onChange={e => setSoporteDate(e.target.value)}
-                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 11px", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
+                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"0 11px", height:38, boxSizing:"border-box", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
             </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Margen</div>
-              <div style={{ ...mono, fontSize:15, fontWeight:700, color:soporteSale>soporteCost?C.green:"#64748B" }}>
-                {soporteSale > 0 ? fmtU(soporteSale - soporteCost) : "—"}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginTop:10, flexWrap:"wrap" }}>
+              <div style={{ fontSize:10.5, color:"#94A3B8" }}>
+                El nivel de póliza seleccionado se reflejará en el alcance del PDF interno.
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"#64748B" }}>
+                <span>Margen</span>
+                <span style={{ ...mono, fontSize:13, fontWeight:700, color:soporteSale>soporteCost?C.green:"#64748B" }}>
+                  {soporteSale > 0 ? fmtU(soporteSale - soporteCost) : "—"}
+                </span>
               </div>
             </div>
           </div>
@@ -2727,15 +3016,32 @@ function InternalApp() {
               Margen {fmtU(totalMargin)} · {marginPct.toFixed(1)}%
             </div>
           </div>
-          <button onClick={async () => {
-              if (pdfLoading) return;
-              setPdfLoading(true);
-              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
-              catch(e){} finally { setPdfLoading(false); }
-            }} disabled={pdfLoading}
-            style={{ padding:"12px 16px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
-            {pdfLoading ? "⏳ Generando..." : "⬇ PDF"}
-          </button>
+          <div style={{ display:"flex", flexDirection:"column", gap:6, minWidth:138 }}>
+            <button onClick={async () => {
+                if (pdfLoading) return;
+                setPdfLoading(true);
+                try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
+                catch(e){} finally { setPdfLoading(false); }
+              }} disabled={pdfLoading}
+              title="Incluye créditos, precios, costos, margen, rentabilidad, P&L, observaciones internas y alcance. Uso interno Nextcom."
+              style={{ padding:"9px 12px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:12, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
+              {pdfLoading ? "Generando..." : "Análisis interno"}
+            </button>
+            <button
+              type="button"
+              title="Incluye productos, cantidades, vigencias, créditos, alcance por producto, soporte, condiciones y certificaciones. No incluye costos, margen ni rentabilidad."
+              onClick={async () => {
+                if (scopePdfLoading) return;
+                setScopePdfLoading(true);
+                try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency }); }
+                catch(e){} finally { setScopePdfLoading(false); }
+              }}
+              disabled={scopePdfLoading}
+              style={{ padding:"8px 12px", background:"#F8FAFC", color:"#334155", border:"1px solid #E2E8F0", borderRadius:9, fontSize:12, fontWeight:700, cursor:scopePdfLoading?"wait":"pointer", whiteSpace:"nowrap", textAlign:"center", opacity:scopePdfLoading ? .7 : 1 }}
+            >
+              {scopePdfLoading ? "Generando..." : "Alcance para cliente"}
+            </button>
+          </div>
         </div>
       )}
 
