@@ -1536,6 +1536,31 @@ function loadPdfDeps() {
   return _pdfDepsPromise;
 }
 
+function resolvePdfAssetUrl(asset) {
+  return typeof window !== "undefined" ? new URL(asset, window.location.href).href : asset;
+}
+
+async function pdfAssetToDataUrl(asset) {
+  const url = resolvePdfAssetUrl(asset);
+  if (typeof window === "undefined" || url.startsWith("data:")) return url;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`No se pudo cargar asset PDF: ${response.status}`);
+    const blob = await response.blob();
+
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn("No se pudo convertir asset PDF a data URL; usando URL directa.", error);
+    return url;
+  }
+}
+
 async function generatePdfFromHtml(htmlContent, filename) {
   const { html2canvas, jsPDF } = await loadPdfDeps();
 
@@ -1751,8 +1776,6 @@ function downloadReport(data) {
   const mC = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const trendAiPdfLogo = typeof window !== "undefined" ? new URL(trendAiSidebarLogo, window.location.href).href : trendAiSidebarLogo;
-  const iso9001PdfLogo = typeof window !== "undefined" ? new URL(iso9001Logo, window.location.href).href : iso9001Logo;
-  const iso27001PdfLogo = typeof window !== "undefined" ? new URL(iso27001Logo, window.location.href).href : iso27001Logo;
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
     const months = monthsBetween(l.startDate, l.date);
@@ -1761,7 +1784,6 @@ function downloadReport(data) {
   });
   const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
   const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
-  const supportPolicyScope = getSupportPolicyScope(selectedSupportPolicy);
   const supportIncluded = soporteSale > 0 || soporteCost > 0;
 
   const rowsHTML = active.map((l, i) => `
@@ -1789,146 +1811,8 @@ function downloadReport(data) {
       <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
 
-  const scopeHeroHTML = `
-      <section class="scope-hero avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
-        <h1>Alcance de la propuesta</h1>
-        <p>Resumen de cobertura para los productos, servicios y condiciones consideradas en este análisis interno de rentabilidad.</p>
-      </section>`;
-  const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
-    const scope = getVisionOneProductScope(l);
-    return `
-    <div class="scope-item avoid-break">
-      <div class="scope-item-index">${String(offset + i + 1).padStart(2, "0")}</div>
-      <div class="scope-item-body">
-        <div class="scope-item-title">${l.prod.name}</div>
-        <div class="scope-item-meta">
-          <span>${l.prod.sku || l.prod.cat}</span>
-          <span>${l.qty.toLocaleString("en-US")} ${l.prod.unit}${l.qty !== 1 ? "s" : ""}</span>
-          <span>${l.startDate || "Sin inicio"} - ${l.date || "Sin fin"}</span>
-          <span>${fmt(l.prorated)} créditos</span>
-        </div>
-        <div class="scope-product-title">${scope.title}</div>
-        <p class="scope-summary">${scope.summary}</p>
-        <ul class="scope-bullets">
-          ${scope.includes.slice(0, 3).map(item => `<li>${item}</li>`).join("")}
-        </ul>
-        <div class="scope-business"><strong>Valor para el negocio:</strong> ${scope.businessValue}</div>
-        ${scope.notes ? `<div class="scope-item-note">${scope.notes}</div>` : ""}
-      </div>
-    </div>`;
-  }).join("") : `
-    <div class="scope-empty avoid-break">No hay productos activos asociados a este análisis.</div>`;
-  const renderScopeProductSection = (items, offset = 0, pageIndex = 0, totalPages = 1) => `
-      <section class="scope-card avoid-break">
-        <div class="scope-card-header">
-          <div>
-            <div class="eyebrow">Detalle por línea</div>
-            <h2>Alcance por ítem vendido${totalPages > 1 ? ` · página ${pageIndex + 1}` : ""}</h2>
-          </div>
-          <div class="status-pill">${active.length} ítem${active.length === 1 ? "" : "s"}</div>
-        </div>
-        <div class="scope-card-body">
-          ${renderScopeItems(items, offset)}
-        </div>
-      </section>`;
-
   const supportMargin = soporteSale - soporteCost;
   const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
-  const supportScopeHTML = supportIncluded ? `
-      <section class="scope-card avoid-break">
-        <div class="scope-card-header">
-          <div>
-            <div class="eyebrow">Alcance del soporte</div>
-            <h2>Póliza de soporte: ${supportPolicyScope.label}</h2>
-          </div>
-          <div class="status-pill">${supportPolicyScope.label}</div>
-        </div>
-        <div class="scope-card-body">
-          <ul class="support-list">
-            ${supportPolicyScope.bullets.map(item => `<li>${item}</li>`).join("")}
-          </ul>
-          <div class="scope-note">${supportPolicyScope.note}</div>
-        </div>
-      </section>` : `
-      <section class="scope-card avoid-break">
-        <div class="scope-card-header">
-          <div>
-            <div class="eyebrow">Alcance del soporte</div>
-            <h2>Soporte no incluido</h2>
-          </div>
-          <div class="status-pill">No incluido</div>
-        </div>
-        <div class="scope-card-body">
-          <div class="scope-empty avoid-break">Este análisis no incluye una póliza de soporte comercial asociada. Si el negocio requiere soporte Nextcom, debe agregarse como línea de precio fijo y seleccionar el nivel de póliza aplicable.</div>
-        </div>
-      </section>`;
-  const scopeTailHTML = `
-      ${supportScopeHTML}
-
-      <section class="scope-split">
-        <div class="scope-card avoid-break">
-          <div class="scope-card-header">
-            <div>
-              <div class="eyebrow">Condiciones</div>
-              <h2>Consideraciones del alcance</h2>
-            </div>
-          </div>
-          <div class="scope-card-body">
-            <ul class="consideration-list" style="grid-template-columns:1fr">
-              <li>El presente análisis es referencial y debe validarse contra la cotización final emitida por Nextcom.</li>
-              <li>La cobertura aplica únicamente sobre los productos, servicios y cantidades expresamente incluidos en la propuesta.</li>
-              <li>Actividades fuera del alcance, cambios realizados por terceros, daños lógicos/físicos no relacionados o servicios profesionales adicionales podrán cotizarse por separado.</li>
-              <li>La atención presencial fuera del área metropolitana o condiciones especiales de traslado pueden requerir validación comercial adicional.</li>
-              <li>La activación final de licencias, créditos o servicios queda sujeta a validación técnica, comercial y disponibilidad del fabricante cuando aplique.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="scope-card avoid-break">
-          <div class="scope-card-header">
-            <div>
-              <div class="eyebrow">Sistema Integrado de Gestión</div>
-              <h2>Certificaciones Nextcom</h2>
-            </div>
-          </div>
-          <div class="scope-card-body">
-            <div class="iso-logos">
-              <div class="iso-logo-card"><img src="${iso9001PdfLogo}" alt="ISO 9001" /></div>
-              <div class="iso-logo-card"><img src="${iso27001PdfLogo}" alt="ISO/IEC 27001" /></div>
-            </div>
-            <p class="certification-copy" style="margin-top:12px">Nextcom cuenta con certificaciones de gestión de calidad ISO 9001 y seguridad de la información ISO/IEC 27001 como parte de su Sistema Integrado de Gestión.</p>
-          </div>
-        </div>
-      </section>`;
-  const scopeProductsPerPage = 2;
-  const scopeChunks = active.length > 0 ? Array.from({ length: Math.ceil(active.length / scopeProductsPerPage) }, (_, i) => active.slice(i * scopeProductsPerPage, i * scopeProductsPerPage + scopeProductsPerPage)) : [[]];
-  const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
-  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage;
-  const scopePagesHTML = !scopeTailNeedsOwnPage ? `
-    <section class="pdf-page scope-page">
-      ${scopeHeroHTML}
-      ${renderScopeProductSection(active, 0)}
-      ${scopeTailHTML}
-    </section>` : `
-    ${scopeChunks.map((chunk, chunkIndex) => `
-    <section class="pdf-page scope-page">
-      ${chunkIndex === 0 ? scopeHeroHTML : `
-      <section class="scope-hero scope-hero-compact avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
-        <h1>Alcance por ítem vendido - continuación</h1>
-        <p>Continuación del detalle de productos incluidos en la propuesta.</p>
-      </section>`}
-      ${renderScopeProductSection(chunk, chunkIndex * scopeProductsPerPage, chunkIndex, scopeChunks.length)}
-    </section>`).join("")}
-    <section class="pdf-page scope-page">
-      <section class="scope-hero scope-hero-compact avoid-break">
-        <div class="eyebrow" style="color:#BAE6FD">Alcance comercial</div>
-        <h1>Soporte, condiciones y certificaciones</h1>
-        <p>Resumen del nivel de soporte seleccionado, consideraciones comerciales y certificaciones Nextcom asociadas al alcance.</p>
-      </section>
-      ${scopeTailHTML}
-    </section>`;
   const supportHTML = supportIncluded ? `
     <section class="section avoid-break">
       <div class="section-heading">
@@ -1960,7 +1844,6 @@ function downloadReport(data) {
       </div>
       <div class="note">Condicion referencial: servicio profesional de precio fijo sin consumo de creditos Vision One.</div>
     </section>` : "";
-
   const plRows = [
     { l:"Ingresos por creditos", v:fmtU(totalCredits*salePrice), c:"#0F172A", bold:false, bg:"#fff" },
     { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0F172A", bold:false, bg:"#fff" },
@@ -2042,39 +1925,6 @@ function downloadReport(data) {
   .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
   .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
   .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
-  .scope-page{display:flex;flex-direction:column;gap:12px}
-  .scope-hero{background:#082F49;border-radius:18px;color:#fff;padding:18px 20px}
-  .scope-hero-compact{padding:14px 18px}
-  .scope-hero h1{font-size:24px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px}
-  .scope-hero-compact h1{font-size:20px;margin-bottom:5px}
-  .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px}
-  .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
-  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
-  .scope-card-header h2{font-size:14px}
-  .scope-card-body{padding:14px 16px}
-  .scope-item{display:grid;grid-template-columns:38px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid #E2E8F0}
-  .scope-item:last-child{border-bottom:0}
-  .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10.5px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
-  .scope-item-title{font-size:13px;font-weight:800;color:#0F172A;line-height:1.28}
-  .scope-item-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:3px 8px;font-size:9.8px;color:#475569;font-weight:700}
-  .scope-product-title{font-size:11.2px;font-weight:800;color:#075985;margin-top:10px}
-  .scope-summary{font-size:11px;line-height:1.5;color:#475569;margin-top:6px}
-  .scope-bullets{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;list-style:none}
-  .scope-bullets li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.45;color:#475569}
-  .scope-bullets li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#38BDF8}
-  .scope-business{margin-top:9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:7px 9px;font-size:10.4px;line-height:1.42;color:#334155}
-  .scope-item-note{font-size:9.8px;line-height:1.42;color:#64748B;margin-top:7px}
-  .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
-  .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;list-style:none}
-  .support-list li,.consideration-list li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.4;color:#475569}
-  .support-list li:before,.consideration-list li:before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:999px;background:#1D4ED8}
-  .scope-note{margin-top:10px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:9px 11px;color:#92400E;font-size:10.5px;line-height:1.45}
-  .scope-split{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
-  .certification-copy{font-size:10.5px;line-height:1.5;color:#475569}
-  .iso-logos{display:flex;align-items:center;justify-content:flex-end;gap:12px}
-  .iso-logo-card{height:72px;width:72px;border:1px solid #E2E8F0;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:7px}
-  .iso-logo-card img{max-width:100%;max-height:100%;object-fit:contain}
   @page{margin:12mm 10mm;size:A4}
   @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
 </style>
@@ -2097,7 +1947,7 @@ function downloadReport(data) {
             <div class="confidential">Confidencial · Uso interno</div>
           </div>
         </div>
-        <h1>Análisis de Créditos Vision One</h1>
+        <h1>Resumen ejecutivo</h1>
         <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
       </section>
 
@@ -2127,8 +1977,8 @@ function downloadReport(data) {
       <section class="section avoid-break">
         <div class="section-heading">
           <div>
-            <div class="eyebrow">Datos comerciales</div>
-            <h2>Precios por crédito y supuestos del negocio</h2>
+            <div class="eyebrow">Resumen ejecutivo</div>
+            <h2>Supuestos comerciales del análisis</h2>
           </div>
           <div class="status-pill">${active.length} líneas activas</div>
         </div>
@@ -2144,8 +1994,8 @@ function downloadReport(data) {
       <section class="section">
         <div class="section-heading">
           <div>
-            <div class="eyebrow">Tabla de productos</div>
-            <h2>Detalle de líneas Vision One</h2>
+            <div class="eyebrow">Detalle de productos</div>
+            <h2>Productos y créditos analizados</h2>
           </div>
           <div class="status-pill">${fmt(totalCredits)} créditos</div>
         </div>
@@ -2179,14 +2029,15 @@ function downloadReport(data) {
     <section class="pdf-page pdf-page-secondary">
       <section class="analysis-grid avoid-break pdf-section-break">
         <div class="pl-card avoid-break">
-          <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
+          <div class="pl-title">Resumen financiero</div>
           <table>${plRows}</table>
         </div>
         <div class="observations avoid-break">
-          <div class="eyebrow">Notas internas</div>
-          <h2>Observaciones</h2>
+          <div class="eyebrow">Observaciones internas</div>
+          <h2>Notas de revisión</h2>
           <p>Sin observaciones adicionales registradas.</p>
           <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
+          <p>El detalle comercial del alcance por producto, soporte, condiciones y certificaciones está disponible en la descarga &ldquo;Alcance para cliente&rdquo;.</p>
         </div>
       </section>
 
@@ -2202,7 +2053,6 @@ function downloadReport(data) {
       </footer>
     </section>
 
-    ${scopePagesHTML}
   </div>
 </body>
 </html>`;
@@ -2217,12 +2067,12 @@ function downloadReport(data) {
   });
 }
 
-function downloadClientScopeReport(data) {
+async function downloadClientScopeReport(data) {
   const { lines, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD" } = data;
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
-  const trendAiPdfLogo = typeof window !== "undefined" ? new URL(trendAiSidebarLogo, window.location.href).href : trendAiSidebarLogo;
-  const iso9001PdfLogo = typeof window !== "undefined" ? new URL(iso9001Logo, window.location.href).href : iso9001Logo;
-  const iso27001PdfLogo = typeof window !== "undefined" ? new URL(iso27001Logo, window.location.href).href : iso27001Logo;
+  const trendAiPdfLogo = resolvePdfAssetUrl(trendAiSidebarLogo);
+  const iso9001PdfLogo = await pdfAssetToDataUrl(iso9001Logo);
+  const iso27001PdfLogo = await pdfAssetToDataUrl(iso27001Logo);
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
     const months = monthsBetween(l.startDate, l.date);
@@ -3068,7 +2918,7 @@ function InternalApp() {
                 try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
                 catch(e){} finally { setPdfLoading(false); }
               }} disabled={pdfLoading}
-              title="Incluye créditos, precios, costos, margen, rentabilidad, P&L, observaciones internas y alcance. Uso interno Nextcom."
+              title="Incluye créditos, precios, costos, margen, rentabilidad, P&L y observaciones internas. Uso interno Nextcom."
               style={{ padding:"9px 12px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:12, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
               {pdfLoading ? "Generando..." : "Análisis interno"}
             </button>

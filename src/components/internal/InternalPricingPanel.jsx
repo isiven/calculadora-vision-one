@@ -12,7 +12,7 @@ export function InternalPricingPanel({
   pdfLoading,
   scopePdfLoading,
 }) {
-  const internalPdfTooltip = "Incluye créditos, precios, costos, margen, rentabilidad, P&L, observaciones internas y alcance. Uso interno Nextcom."
+  const internalPdfTooltip = "Incluye créditos, precios, costos, margen, rentabilidad, P&L y observaciones internas. Uso interno Nextcom."
   const clientScopeTooltip = "Incluye productos, cantidades, vigencias, créditos, alcance por producto, soporte, condiciones y certificaciones. No incluye costos, margen ni rentabilidad."
   const priceFields = [
     {
