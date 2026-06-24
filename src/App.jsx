@@ -2070,7 +2070,7 @@ function downloadReport(data) {
 async function downloadClientScopeReport(data) {
   const { lines, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD" } = data;
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
-  const trendAiPdfLogo = resolvePdfAssetUrl(trendAiSidebarLogo);
+  const trendAiPdfLogo = await pdfAssetToDataUrl(trendAiSidebarLogo);
   const iso9001PdfLogo = await pdfAssetToDataUrl(iso9001Logo);
   const iso27001PdfLogo = await pdfAssetToDataUrl(iso27001Logo);
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
@@ -2231,7 +2231,7 @@ async function downloadClientScopeReport(data) {
           RUC 1253816-1-593861 DV 16 · +507 394-1405
         </div>
         <div class="disclaimer avoid-break">
-          Este documento es una versión de alcance para cliente. El alcance final queda sujeto a la cotización aprobada, condiciones comerciales vigentes y lineamientos de la marca.
+          Alcance para cliente · Documento descriptivo de productos, créditos y soporte. No incluye precios, costos, márgenes ni rentabilidad.
         </div>
       </footer>`;
   const scopeProductsPerPage = 2;
@@ -2271,16 +2271,16 @@ async function downloadClientScopeReport(data) {
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
   .container{width:800px;margin:0 auto}
-  .pdf-page{width:800px;min-height:1120px;padding:22px 26px;background:#fff}
+  .pdf-page{width:800px;min-height:1120px;padding:20px 26px;background:#fff}
   .pdf-page + .pdf-page{page-break-before:always;break-before:page}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
-  .scope-page{display:flex;flex-direction:column;gap:12px}
-  .scope-doc-header{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:16px 18px;position:relative;overflow:hidden}
+  .scope-page{display:flex;flex-direction:column;gap:10px}
+  .scope-doc-header{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:14px 18px;position:relative;overflow:hidden}
   .scope-doc-header:after{content:"";position:absolute;right:-74px;top:-88px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
   .scope-hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:18px 20px;position:relative;overflow:hidden}
   .scope-hero:after{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
   .scope-hero-compact{padding:14px 18px;background:#082F49}
-  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px;position:relative;z-index:1}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:11px;position:relative;z-index:1}
   .brand-left{display:flex;align-items:center;gap:16px}
   .brand-mark{background:#fff;border-radius:14px;padding:8px 10px;display:flex;align-items:center;justify-content:center;min-width:124px;height:46px}
   .brand-mark img{max-height:29px;max-width:114px;object-fit:contain}
@@ -2288,8 +2288,8 @@ async function downloadClientScopeReport(data) {
   .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
   .brand-sub{font-size:10.5px;color:#E0F2FE;font-weight:650;margin-top:3px}
   .scope-header-main{display:grid;grid-template-columns:1fr 210px;gap:20px;align-items:end;position:relative;z-index:1}
-  .scope-doc-header h1{font-size:24px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px}
-  .scope-doc-header p{font-size:11.5px;line-height:1.45;color:#D8F3FF;max-width:560px}
+  .scope-doc-header h1{font-size:23px;line-height:1.1;letter-spacing:-.035em;margin:4px 0 6px}
+  .scope-doc-header p{font-size:11.2px;line-height:1.42;color:#D8F3FF;max-width:560px}
   .scope-header-meta{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;color:#E0F2FE}
   .scope-header-meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid rgba(255,255,255,.12)}
   .scope-header-meta-row span{font-size:8.5px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:#BAE6FD}
@@ -2300,6 +2300,10 @@ async function downloadClientScopeReport(data) {
   .scope-hero h1{font-size:26px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px;position:relative;z-index:1}
   .scope-hero-compact h1{font-size:20px;margin-bottom:5px}
   .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px;position:relative;z-index:1}
+  .scope-context-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #E2E8F0;border-radius:14px;background:#F8FAFC;padding:10px 13px}
+  .scope-context-item{display:flex;align-items:center;gap:7px;min-width:0;color:#475569;font-size:10.5px;line-height:1.35}
+  .scope-context-item strong{color:#0F172A;font-size:11px;font-weight:800}
+  .scope-context-dot{width:6px;height:6px;border-radius:999px;background:#0EA5E9;flex:0 0 auto}
   .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px}
   .meta-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
   .label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
@@ -2307,11 +2311,11 @@ async function downloadClientScopeReport(data) {
   .meta-sub{font-size:10px;color:#94A3B8;margin-top:4px}
   .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
   .scope-card-spacious{min-height:390px}
-  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 14px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
   .scope-card-header h2{font-size:14px;letter-spacing:-.02em;color:#0F172A}
   .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
-  .scope-card-body{padding:14px 16px}
-  .scope-item{display:grid;grid-template-columns:38px 1fr;gap:12px;padding:13px 0;border-bottom:1px solid #E2E8F0}
+  .scope-card-body{padding:12px 15px}
+  .scope-item{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:11px 0;border-bottom:1px solid #E2E8F0}
   .scope-item:last-child{border-bottom:0}
   .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10.5px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
   .scope-item-title{font-size:13px;font-weight:800;color:#0F172A;line-height:1.28}
@@ -2322,7 +2326,7 @@ async function downloadClientScopeReport(data) {
   .scope-bullets{display:grid;grid-template-columns:1fr;gap:4px;margin-top:8px;list-style:none}
   .scope-bullets li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.45;color:#475569}
   .scope-bullets li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#38BDF8}
-  .scope-business{margin-top:9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:7px 9px;font-size:10.4px;line-height:1.42;color:#334155}
+  .scope-business{margin-top:8px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:7px 9px;font-size:10.4px;line-height:1.42;color:#334155}
   .scope-item-note{font-size:9.8px;line-height:1.42;color:#64748B;margin-top:7px}
   .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
   .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;list-style:none}
@@ -2334,8 +2338,8 @@ async function downloadClientScopeReport(data) {
   .iso-logos{display:flex;align-items:center;justify-content:center;gap:14px}
   .iso-logo-card{height:84px;width:84px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;padding:8px}
   .iso-logo-card img{max-width:100%;max-height:100%;object-fit:contain}
-  .footer{margin-top:auto;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
-  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  .footer{margin-top:auto;padding-top:11px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
+  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:9px 11px;color:#475569}
   @page{margin:12mm 10mm;size:A4}
 </style>
 </head>
@@ -2343,24 +2347,22 @@ async function downloadClientScopeReport(data) {
   <div class="container pdf-content">
     <section class="pdf-page scope-page">
       ${scopeHeroHTML}
-      <section class="doc-meta avoid-break">
-        <div class="meta-card avoid-break">
-          <div class="label">Cliente</div>
-          <div class="meta-value">${clientName || "Cliente no especificado"}</div>
+      <section class="scope-context-strip avoid-break">
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Moneda: <strong>${currency}</strong></span>
         </div>
-        <div class="meta-card avoid-break">
-          <div class="label">Fecha</div>
-          <div class="meta-value">${today}</div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Créditos dimensionados: <strong>${fmt(totalCredits)}</strong></span>
         </div>
-        <div class="meta-card avoid-break">
-          <div class="label">Moneda</div>
-          <div class="meta-value">${currency}</div>
-          <div class="meta-sub">Documento de alcance comercial</div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Productos incluidos: <strong>${active.length}</strong></span>
         </div>
-        <div class="meta-card avoid-break">
-          <div class="label">Créditos dimensionados</div>
-          <div class="meta-value">${fmt(totalCredits)}</div>
-          <div class="meta-sub">${active.length} línea${active.length === 1 ? "" : "s"} incluida${active.length === 1 ? "" : "s"}</div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Tipo de documento: <strong>alcance descriptivo</strong></span>
         </div>
       </section>
       ${!scopeTailNeedsOwnPage ? `
