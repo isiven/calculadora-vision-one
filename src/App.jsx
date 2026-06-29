@@ -2120,11 +2120,22 @@ async function downloadClientScopeReport(data) {
     const lastItem = offset + items.length;
     return items.length === 1 ? `Ítem ${firstItem}` : `Ítems ${firstItem}-${lastItem}`;
   };
+  const renderScopeSlimHeader = (pageLabel) => `
+      <section class="scope-slim-header avoid-break">
+        <div class="scope-slim-brand">
+          <img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" />
+          <span>Alcance comercial de la propuesta</span>
+        </div>
+        <div class="scope-slim-actions">
+          <img src="${trendAiPdfLogo}" alt="TrendAI" class="scope-slim-trendai" />
+          <div class="scope-slim-badge">${pageLabel}</div>
+        </div>
+      </section>`;
 
   const scopeHeroHTML = `
       ${renderScopeHeader(
-        "Alcance de la propuesta",
-        "Documento comercial de cobertura para los productos, servicios y condiciones incluidos en la propuesta.",
+        "Alcance comercial de la propuesta",
+        "Cobertura descriptiva de los productos, servicios y condiciones incluidos.",
         getScopeItemRangeLabel(active.slice(0, 2))
       )}`;
   const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
@@ -2151,14 +2162,13 @@ async function downloadClientScopeReport(data) {
     </div>`;
   }).join("") : `
     <div class="scope-empty avoid-break">No hay productos activos asociados a este alcance.</div>`;
-  const renderScopeProductSection = (items, offset = 0, totalPages = 1) => `
-      <section class="scope-card avoid-break ${items.length === 1 && totalPages > 1 ? "scope-card-spacious" : ""}">
+  const renderScopeProductSection = (items, offset = 0) => `
+      <section class="scope-card avoid-break">
         <div class="scope-card-header">
           <div>
             <div class="eyebrow">Alcance por línea</div>
             <h2>Alcance por ítem vendido</h2>
           </div>
-          <div class="status-pill">${getScopeItemRangeLabel(items, offset)}</div>
         </div>
         <div class="scope-card-body">
           ${renderScopeItems(items, offset)}
@@ -2244,68 +2254,72 @@ async function downloadClientScopeReport(data) {
   const scopeChunks = active.length > 0 ? Array.from({ length: Math.ceil(active.length / scopeProductsPerPage) }, (_, i) => active.slice(i * scopeProductsPerPage, i * scopeProductsPerPage + scopeProductsPerPage)) : [[]];
   const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
   const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage;
+  const combineTailWithLastProductPage = scopeTailNeedsOwnPage && scopeChunks.length > 1 && scopeChunks[scopeChunks.length - 1].length === 1;
   const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
     ${scopeChunks.slice(1).map((chunk, index) => {
       const chunkIndex = index + 1;
       const itemOffset = chunkIndex * scopeProductsPerPage;
+      const includesScopeTail = combineTailWithLastProductPage && chunkIndex === scopeChunks.length - 1;
       return `
-    <section class="pdf-page scope-page">
-      ${renderScopeHeader(
-        "Alcance de la propuesta",
-        "Documento comercial de cobertura para los productos, servicios y condiciones incluidos en la propuesta.",
-        getScopeItemRangeLabel(chunk, itemOffset)
-      )}
-      ${renderScopeProductSection(chunk, itemOffset, scopeChunks.length)}
+    <section class="pdf-page scope-page scope-page-compact">
+      ${renderScopeSlimHeader(getScopeItemRangeLabel(chunk, itemOffset))}
+      ${renderScopeProductSection(chunk, itemOffset)}
+      ${includesScopeTail ? scopeTailHTML : ""}
     </section>`;
     }).join("")}
+    ${combineTailWithLastProductPage ? "" : `
     <section class="pdf-page scope-page">
-      ${renderScopeHeader(
-        "Alcance de soporte y condiciones",
-        "Resumen de soporte, consideraciones comerciales y certificaciones.",
-        "Soporte e ISO"
-      )}
+      ${renderScopeSlimHeader("Soporte e ISO")}
       ${scopeTailHTML}
-    </section>` : "";
+    </section>`}
+    ` : "";
 
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Alcance de la propuesta${clientName ? " - " + clientName : ""}</title>
+<title>Alcance comercial de la propuesta${clientName ? " - " + clientName : ""}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
   .container{width:800px;margin:0 auto}
-  .pdf-page{width:800px;min-height:1120px;padding:20px 26px;background:#fff}
+  .pdf-page{width:800px;min-height:1120px;padding:18px 24px;background:#fff}
   .pdf-page + .pdf-page{page-break-before:always;break-before:page}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
-  .scope-page{display:flex;flex-direction:column;gap:10px}
-  .scope-doc-header{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:14px 18px;position:relative;overflow:hidden}
+  .scope-page{display:flex;flex-direction:column;gap:8px}
+  .scope-page-compact{padding-top:10px;gap:6px}
+  .scope-doc-header{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:16px;color:#fff;padding:12px 16px;position:relative;overflow:hidden}
   .scope-doc-header:after{content:"";position:absolute;right:-74px;top:-88px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
   .scope-hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:18px 20px;position:relative;overflow:hidden}
   .scope-hero:after{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
   .scope-hero-compact{padding:14px 18px;background:#082F49}
-  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:11px;position:relative;z-index:1}
-  .brand-left{display:flex;align-items:center;gap:16px}
-  .brand-mark{background:#fff;border-radius:14px;padding:8px 10px;display:flex;align-items:center;justify-content:center;min-width:124px;height:46px}
-  .brand-mark img{max-height:29px;max-width:114px;object-fit:contain}
-  .trendai-logo{display:block;width:154px;max-height:40px;object-fit:contain;position:relative;z-index:1}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:8px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:13px}
+  .brand-mark{background:#fff;border-radius:12px;padding:7px 9px;display:flex;align-items:center;justify-content:center;min-width:118px;height:42px}
+  .brand-mark img{max-height:26px;max-width:108px;object-fit:contain}
+  .trendai-logo{display:block;width:142px;max-height:36px;object-fit:contain;position:relative;z-index:1}
   .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
   .brand-sub{font-size:10.5px;color:#E0F2FE;font-weight:650;margin-top:3px}
-  .scope-header-main{display:grid;grid-template-columns:1fr 210px;gap:20px;align-items:end;position:relative;z-index:1}
-  .scope-doc-header h1{font-size:23px;line-height:1.1;letter-spacing:-.035em;margin:4px 0 6px}
-  .scope-doc-header p{font-size:11.2px;line-height:1.42;color:#D8F3FF;max-width:560px}
-  .scope-header-meta{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:10px 12px;color:#E0F2FE}
-  .scope-header-meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .scope-header-main{display:grid;grid-template-columns:1fr 200px;gap:18px;align-items:end;position:relative;z-index:1}
+  .scope-doc-header h1{font-size:21px;line-height:1.1;letter-spacing:-.035em;margin:3px 0 5px}
+  .scope-doc-header p{font-size:10.8px;line-height:1.38;color:#D8F3FF;max-width:540px}
+  .scope-header-meta{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;color:#E0F2FE}
+  .scope-header-meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:5px;margin-bottom:5px;border-bottom:1px solid rgba(255,255,255,.12)}
   .scope-header-meta-row span{font-size:8.5px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:#BAE6FD}
   .scope-header-meta-row strong{font-size:10px;line-height:1.25;text-align:right;color:#fff}
   .page-badge{display:inline-flex;align-items:center;justify-content:center;width:100%;border-radius:999px;background:rgba(186,230,253,.16);border:1px solid rgba(186,230,253,.28);padding:5px 9px;color:#E0F2FE;font-size:9.5px;font-weight:850}
+  .scope-slim-header{min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #D7E2EA;border-radius:10px;background:#F8FAFC;padding:5px 9px}
+  .scope-slim-brand{display:flex;align-items:center;gap:9px;min-width:0;color:#0F3B57;font-size:10.5px;font-weight:800;letter-spacing:.01em}
+  .scope-slim-brand img{display:block;width:78px;height:26px;object-fit:contain;background:#fff;border-radius:7px;padding:3px 5px}
+  .scope-slim-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex:0 0 auto}
+  .scope-slim-trendai{display:block;width:82px;height:26px;object-fit:contain;background:#082F49;border-radius:7px;padding:3px 6px}
+  .scope-slim-badge{flex:0 0 auto;border:1px solid #BAE6FD;border-radius:999px;background:#E0F2FE;color:#075985;padding:4px 9px;font-size:9.5px;font-weight:850}
   .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
   .scope-hero .eyebrow{color:#BAE6FD}
   .scope-hero h1{font-size:26px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px;position:relative;z-index:1}
   .scope-hero-compact h1{font-size:20px;margin-bottom:5px}
   .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px;position:relative;z-index:1}
-  .scope-context-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #E2E8F0;border-radius:14px;background:#F8FAFC;padding:10px 13px}
+  .scope-context-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #E2E8F0;border-radius:12px;background:#F8FAFC;padding:8px 11px}
   .scope-context-item{display:flex;align-items:center;gap:7px;min-width:0;color:#475569;font-size:10.5px;line-height:1.35}
   .scope-context-item strong{color:#0F172A;font-size:11px;font-weight:800}
   .scope-context-dot{width:6px;height:6px;border-radius:999px;background:#0EA5E9;flex:0 0 auto}
@@ -2315,12 +2329,11 @@ async function downloadClientScopeReport(data) {
   .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
   .meta-sub{font-size:10px;color:#94A3B8;margin-top:4px}
   .scope-card{border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
-  .scope-card-spacious{min-height:390px}
-  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 14px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
   .scope-card-header h2{font-size:14px;letter-spacing:-.02em;color:#0F172A}
   .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
-  .scope-card-body{padding:12px 15px}
-  .scope-item{display:grid;grid-template-columns:36px 1fr;gap:11px;padding:11px 0;border-bottom:1px solid #E2E8F0}
+  .scope-card-body{padding:10px 13px}
+  .scope-item{display:grid;grid-template-columns:36px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #E2E8F0}
   .scope-item:last-child{border-bottom:0}
   .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10.5px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
   .scope-item-title{font-size:13px;font-weight:800;color:#0F172A;line-height:1.28}
@@ -2374,7 +2387,7 @@ async function downloadClientScopeReport(data) {
       ${renderScopeProductSection(active, 0)}
       ${scopeTailHTML}
       ` : `
-      ${renderScopeProductSection(scopeChunks[0] || [], 0, scopeChunks.length)}
+      ${renderScopeProductSection(scopeChunks[0] || [], 0)}
       `}
     </section>
     ${continuationScopePagesHTML}
