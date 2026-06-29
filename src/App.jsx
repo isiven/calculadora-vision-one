@@ -2114,12 +2114,18 @@ async function downloadClientScopeReport(data) {
           </div>
         </div>
       </section>`;
+  const getScopeItemRangeLabel = (items, offset = 0) => {
+    if (items.length === 0) return "Sin ítems";
+    const firstItem = offset + 1;
+    const lastItem = offset + items.length;
+    return items.length === 1 ? `Ítem ${firstItem}` : `Ítems ${firstItem}-${lastItem}`;
+  };
 
   const scopeHeroHTML = `
       ${renderScopeHeader(
         "Alcance de la propuesta",
         "Documento comercial de cobertura para los productos, servicios y condiciones incluidos en la propuesta.",
-        "Página inicial"
+        getScopeItemRangeLabel(active.slice(0, 2))
       )}`;
   const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
     const scope = getVisionOneProductScope(l);
@@ -2145,14 +2151,14 @@ async function downloadClientScopeReport(data) {
     </div>`;
   }).join("") : `
     <div class="scope-empty avoid-break">No hay productos activos asociados a este alcance.</div>`;
-  const renderScopeProductSection = (items, offset = 0, pageIndex = 0, totalPages = 1) => `
+  const renderScopeProductSection = (items, offset = 0, totalPages = 1) => `
       <section class="scope-card avoid-break ${items.length === 1 && totalPages > 1 ? "scope-card-spacious" : ""}">
         <div class="scope-card-header">
           <div>
             <div class="eyebrow">Alcance por línea</div>
-            <h2>Alcance por ítem vendido${totalPages > 1 ? ` · página ${pageIndex + 1}` : ""}</h2>
+            <h2>Alcance por ítem vendido</h2>
           </div>
-          <div class="status-pill">${active.length} ítem${active.length === 1 ? "" : "s"}</div>
+          <div class="status-pill">${getScopeItemRangeLabel(items, offset)}</div>
         </div>
         <div class="scope-card-body">
           ${renderScopeItems(items, offset)}
@@ -2241,16 +2247,15 @@ async function downloadClientScopeReport(data) {
   const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
     ${scopeChunks.slice(1).map((chunk, index) => {
       const chunkIndex = index + 1;
-      const firstItem = chunkIndex * scopeProductsPerPage + 1;
-      const lastItem = Math.min(firstItem + chunk.length - 1, active.length);
+      const itemOffset = chunkIndex * scopeProductsPerPage;
       return `
     <section class="pdf-page scope-page">
       ${renderScopeHeader(
-        "Alcance de la propuesta - continuación",
-        "Continuación del alcance por ítem vendido.",
-        `Ítems ${firstItem}-${lastItem}`
+        "Alcance de la propuesta",
+        "Documento comercial de cobertura para los productos, servicios y condiciones incluidos en la propuesta.",
+        getScopeItemRangeLabel(chunk, itemOffset)
       )}
-      ${renderScopeProductSection(chunk, chunkIndex * scopeProductsPerPage, chunkIndex, scopeChunks.length)}
+      ${renderScopeProductSection(chunk, itemOffset, scopeChunks.length)}
     </section>`;
     }).join("")}
     <section class="pdf-page scope-page">
@@ -2369,7 +2374,7 @@ async function downloadClientScopeReport(data) {
       ${renderScopeProductSection(active, 0)}
       ${scopeTailHTML}
       ` : `
-      ${renderScopeProductSection(scopeChunks[0] || [], 0, 0, scopeChunks.length)}
+      ${renderScopeProductSection(scopeChunks[0] || [], 0, scopeChunks.length)}
       `}
     </section>
     ${continuationScopePagesHTML}
