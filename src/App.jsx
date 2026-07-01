@@ -10,7 +10,15 @@ import { InternalKpiStrip } from "@/components/internal/InternalKpiStrip";
 import { InternalPricingPanel } from "@/components/internal/InternalPricingPanel";
 import { InternalShell } from "@/components/internal/InternalShell";
 import { InternalWorkspaceSection } from "@/components/internal/InternalWorkspaceSection";
+import {
+  SUPPORT_POLICY_OPTIONS,
+  getSupportPolicyScope,
+  getVisionOneProductScope,
+  normalizeSupportPolicy,
+} from "@/data/visionOneProductScopes";
 import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png";
+import iso9001Logo from "@/assets/iso-9001.png";
+import iso27001Logo from "@/assets/iso-27001.png";
 
 const TRENDAI_LOGO = "data:image/jpeg;base64,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";
 
@@ -1345,7 +1353,8 @@ function LineRow({ line, onUpdate, onDelete, onDuplicate, idx, isMobile }) {
 }
 
 function PrintView({ data }) {
-  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName } = data;
+  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy = "Platinum", clientName } = data;
+  const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
   const mColor = pct => pct >= 20 ? "#047857" : pct > 0 ? "#B45309" : "#DC2626";
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const activeRows = lines.filter(l => l.prodId && l.qty > 0).map(l => ({ ...l, prod:CATALOG.find(p => p.id===l.prodId), total:l.qty * (CATALOG.find(p => p.id===l.prodId)?.credits||0) }));
@@ -1442,7 +1451,7 @@ function PrintView({ data }) {
             <tr>
               <td style={{ padding:"8px 10px", fontSize:11, color:"#A8A29E", ...mono, borderBottom:"1px solid #E7E5E4" }}>{String(activeRows.length+1).padStart(2,"0")}</td>
               <td style={{ padding:"8px 10px", fontSize:12, borderBottom:"1px solid #E7E5E4" }}>
-                Soporte Platinum Trend Micro<br/>
+                Póliza {selectedSupportPolicy} Trend Micro<br/>
                 <span style={{ fontSize:10, color:"#A8A29E" }}>Servicio profesional · Precio fijo</span>
               </td>
               <td style={{ padding:"8px 10px", fontSize:11, color:"#57534E", borderBottom:"1px solid #E7E5E4", ...mono }}>{soporteDate || "—"}</td>
@@ -1525,6 +1534,31 @@ function loadPdfDeps() {
     return { html2canvas: window.html2canvas, jsPDF: window.jspdf.jsPDF };
   })();
   return _pdfDepsPromise;
+}
+
+function resolvePdfAssetUrl(asset) {
+  return typeof window !== "undefined" ? new URL(asset, window.location.href).href : asset;
+}
+
+async function pdfAssetToDataUrl(asset) {
+  const url = resolvePdfAssetUrl(asset);
+  if (typeof window === "undefined" || url.startsWith("data:")) return url;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`No se pudo cargar asset PDF: ${response.status}`);
+    const blob = await response.blob();
+
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn("No se pudo convertir asset PDF a data URL; usando URL directa.", error);
+    return url;
+  }
 }
 
 async function generatePdfFromHtml(htmlContent, filename) {
@@ -1734,7 +1768,7 @@ const PRINT_CSS = `
 `;
 
 function downloadReport(data) {
-  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency = "USD", rateSource = "bcv", activeRate = 0, vesRate = 1 } = data;
+  const { lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD", rateSource = "bcv", activeRate = 0, vesRate = 1 } = data;
   const isVES = currency === "VES";
   const sym = isVES ? "Bs." : "$";
   const fmtView = usd => `${sym} ${(usd * (isVES ? vesRate : 1)).toLocaleString("en-US", { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
@@ -1749,76 +1783,37 @@ function downloadReport(data) {
     return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
   });
   const perCrPct = salePrice > 0 ? (salePrice-costPrice)/salePrice*100 : 0;
+  const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
+  const supportIncluded = soporteSale > 0 || soporteCost > 0;
 
   const rowsHTML = active.map((l, i) => `
     <tr style="background:${i % 2 === 0 ? "#FFFFFF" : "#F8FAFC"}">
-      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0">
-        <div style="font-size:12px;font-weight:700;color:#0F172A;line-height:1.35">${l.prod.name}</div>
+      <td style="padding:8px 9px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:10.5px;font-weight:700;color:#0F172A;line-height:1.3">${l.prod.name}</div>
         ${l.isProrated ? `<div style="display:inline-block;margin-top:5px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.02em">${l.months} meses prorrateado</div>` : ""}
       </td>
-      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0">
-        <div style="font-size:10px;color:#475569;line-height:1.35">${l.prod.cat}</div>
-        <div style="font-size:10px;color:#64748B;font-family:'SF Mono',monospace;margin-top:3px">${l.prod.sku || "Sin SKU"}</div>
+      <td style="padding:8px 7px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:9px;color:#475569;line-height:1.3">${l.prod.cat}</div>
+        <div style="font-size:9px;color:#64748B;font-family:'SF Mono',monospace;margin-top:2px">${l.prod.sku || "Sin SKU"}</div>
       </td>
-      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#475569;font-family:'SF Mono',monospace;line-height:1.45">
+      <td style="padding:8px 7px;border-bottom:1px solid #E2E8F0;font-size:9px;color:#475569;font-family:'SF Mono',monospace;line-height:1.35">
         ${l.startDate || "Sin inicio"}<br>
         <span style="color:#94A3B8">${l.date || "Sin fin"}</span>
       </td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">${l.qty.toLocaleString()}</td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#0F172A">${l.qty.toLocaleString()}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#0F172A">
         ${fmt(l.prorated)}
         ${l.isProrated ? `<br><span style="font-size:9px;color:#94A3B8">base ${fmt(l.baseTotal)}</span>` : ""}
       </td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#1D4ED8">${fmtView(salePrice)}</td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#475569">${fmtUSDsm(costPrice)}</td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
-      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#1D4ED8">${fmtView(salePrice)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#475569">${fmtUSDsm(costPrice)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
+      <td style="padding:8px 9px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
 
-  const supportMargin = soporteSale - soporteCost;
-  const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
-  const supportHTML = soporteSale > 0 ? `
-    <section class="section avoid-break">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">Soporte Platinum</div>
-          <h2>Servicio profesional asociado</h2>
-        </div>
-        <div class="status-pill">Precio fijo</div>
-      </div>
-      <div class="support-grid">
-        <div class="support-card avoid-break">
-          <div class="label">Total soporte</div>
-          <div class="value">${fmtView(soporteSale)}</div>
-          ${isVES ? `<div class="subvalue">${fmtUSDsm(soporteSale)}</div>` : ""}
-        </div>
-        <div class="support-card avoid-break">
-          <div class="label">Costo soporte</div>
-          <div class="value muted">${fmtUSDsm(soporteCost)}</div>
-        </div>
-        <div class="support-card avoid-break">
-          <div class="label">Margen soporte</div>
-          <div class="value" style="color:${mC(supportMarginPct)}">${fmtUSDsm(supportMargin)}</div>
-          <div class="subvalue">${supportMarginPct.toFixed(1)}%</div>
-        </div>
-        <div class="support-card avoid-break">
-          <div class="label">Vencimiento</div>
-          <div class="value small">${soporteDate || "Sin fecha"}</div>
-        </div>
-      </div>
-      <div class="note">Condicion referencial: servicio profesional de precio fijo sin consumo de creditos Vision One.</div>
-    </section>` : "";
-
-  const plRows = [
-    { l:"Ingresos por creditos", v:fmtU(totalCredits*salePrice), c:"#0F172A", bold:false, bg:"#fff" },
-    { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0F172A", bold:false, bg:"#fff" },
-    { l:"Total ingresos",        v:fmtU(totalRevenue), c:"#0F172A", bold:true, bg:"#F8FAFC" },
-    { l:"Costo creditos",        v:`(${fmtU(totalCredits*costPrice)})`, c:"#DC2626", bold:false, bg:"#fff" },
-    { l:"Costo soporte",         v:`(${fmtU(soporteCost)})`, c:"#DC2626", bold:false, bg:"#fff" },
-    { l:"Total costos",          v:`(${fmtU(totalCost)})`, c:"#DC2626", bold:true, bg:"#FEF2F2" },
-    { l:"Margen bruto",          v:fmtU(totalMargin), c:mC(marginPct), bold:true, bg:marginPct>=20?"#ECFDF5":marginPct>0?"#FFFBEB":"#FEF2F2", big:true },
-    { l:"Rentabilidad",          v:`${marginPct.toFixed(1)}%`, c:mC(marginPct), bold:true, bg:"#fff" },
-  ].map(m => `<tr style="background:${m.bg};border-top:1px solid #E2E8F0"><td style="padding:10px 16px;font-size:${m.big?13:12}px;font-weight:${m.bold?800:500};color:#334155">${m.l}</td><td style="padding:10px 16px;font-size:${m.big?15:13}px;font-weight:${m.bold?800:600};font-family:'SF Mono',monospace;text-align:right;color:${m.c}">${m.v}</td></tr>`).join("");
+  const supportSummaryHTML = supportIncluded
+    ? `<strong>Soporte:</strong> Póliza ${selectedSupportPolicy} · Venta soporte: ${fmtView(soporteSale)} · Costo soporte: ${fmtUSDsm(soporteCost)} · Vencimiento: ${soporteDate || "Sin fecha"}`
+    : `<strong>Soporte:</strong> No incluido`;
 
   const metricCards = [
     { l:"Creditos totales", v:fmt(totalCredits), c:"#1D4ED8" },
@@ -1826,7 +1821,6 @@ function downloadReport(data) {
     { l:"Costo proveedor", v:fmtUSDsm(totalCost), c:"#475569" },
     { l:"Margen bruto", v:fmtUSDsm(totalMargin), c:mC(marginPct) },
     { l:"Rentabilidad", v:`${marginPct.toFixed(1)}%`, c:mC(marginPct) },
-    { l:"Lineas activas", v:active.length.toLocaleString("en-US"), c:"#0F172A" },
   ].map(k => `
     <div class="metric-card avoid-break">
       <div class="metric-label">${k.l}</div>
@@ -1843,55 +1837,51 @@ function downloadReport(data) {
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
   .container{width:800px;margin:0 auto}
-  .pdf-page{width:800px;min-height:1120px;padding:22px 26px;background:#fff}
+  .pdf-page{width:800px;min-height:1120px;padding:18px 22px;background:#fff;display:flex;flex-direction:column}
   .pdf-page + .pdf-page{page-break-before:always;break-before:page}
-  .pdf-page-secondary{display:flex;flex-direction:column;justify-content:space-between;gap:18px}
   .mono{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
-  .pdf-section-break{break-before:page;page-break-before:always;margin-top:0}
-  .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:16px}
-  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:20px 22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
+  .top-rule{height:5px;background:#082F49;border-radius:999px;margin-bottom:10px}
+  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:14px;padding:13px 16px;color:#fff;margin-bottom:9px;position:relative;overflow:hidden}
   .hero:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:999px;background:rgba(255,255,255,.07)}
-  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:1}
-  .brand-left{display:flex;align-items:center;gap:16px}
-  .brand-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-  .brand-mark{background:#fff;border-radius:14px;padding:9px 11px;display:flex;align-items:center;justify-content:center;min-width:126px;height:48px}
-  .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
-  .trendai-logo{display:block;width:148px;max-height:38px;object-fit:contain}
-  .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .hero h1{font-size:27px;line-height:1.12;letter-spacing:-.035em;margin-top:16px;margin-bottom:8px;position:relative;z-index:1}
-  .hero p{font-size:13px;color:#D8F3FF;max-width:610px;line-height:1.5;position:relative;z-index:1}
-  .confidential{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
-  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px}
-  .meta-card,.metric-card,.support-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
-  .label,.metric-label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
-  .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
-  .meta-sub,.subvalue,.metric-sub{font-size:10px;color:#94A3B8;margin-top:4px}
-  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
-  .metric-card{min-height:78px}
-  .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:15px;font-weight:850;letter-spacing:-.02em}
-  .section{margin-top:16px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
-  .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:13px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
-  .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
-  h2{font-size:15px;letter-spacing:-.02em;color:#0F172A}
-  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:18px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:12px}
+  .brand-right{display:flex;align-items:center;gap:12px}
+  .brand-mark{background:#fff;border-radius:10px;padding:6px 8px;display:flex;align-items:center;justify-content:center;width:108px;height:38px}
+  .brand-mark img{max-height:25px;max-width:98px;object-fit:contain}
+  .trendai-logo{display:block;width:122px;max-height:30px;object-fit:contain}
+  .brand-text{font-size:10px;color:#BAE6FD;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+  .hero h1{font-size:22px;line-height:1.12;letter-spacing:-.025em;margin-top:10px;margin-bottom:4px;position:relative;z-index:1}
+  .hero p{font-size:11.5px;color:#D8F3FF;max-width:590px;line-height:1.4;position:relative;z-index:1}
+  .confidential{display:inline-flex;align-items:center;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 9px;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
+  .doc-meta{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border:1px solid #E2E8F0;border-radius:11px;background:#F8FAFC;padding:8px 10px;margin-bottom:9px}
+  .meta-item{padding:0 10px;border-right:1px solid #E2E8F0}
+  .meta-item:first-child{padding-left:0}
+  .meta-item:last-child{padding-right:0;border-right:0}
+  .label,.metric-label{font-size:8.5px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .meta-value{font-size:11px;font-weight:750;color:#0F172A;line-height:1.3}
+  .meta-sub,.metric-sub{font-size:9px;color:#94A3B8;margin-top:2px}
+  .section-label{font-size:8.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin:0 0 5px 2px}
+  .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:9px}
+  .metric-card{border:1px solid #E2E8F0;border-radius:11px;background:#fff;padding:9px 10px;min-height:62px}
+  .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;letter-spacing:-.02em}
+  .section{border:1px solid #E2E8F0;border-radius:13px;background:#fff;overflow:hidden}
+  .section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 11px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .eyebrow{font-size:8.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:3px}
+  h2{font-size:13.5px;letter-spacing:-.015em;color:#0F172A}
+  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:800;white-space:nowrap}
   table{width:100%;border-collapse:collapse}
-  th{padding:10px 8px;text-align:left;font-size:9px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.07em;background:#082F49}
+  th{padding:7px 7px;text-align:left;font-size:8px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.055em;background:#082F49}
   th.num{text-align:right}
-  .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 15px}
-  .value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;color:#0F172A}
-  .value.small{font-size:12px}
-  .value.muted{color:#475569}
-  .note{margin:0 15px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569;font-size:11px;line-height:1.45}
-  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .pl-card{border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;background:#fff}
-  .pl-title{background:#082F49;color:#fff;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:-.01em}
-  .observations{border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:14px}
-  .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
-  .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
-  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  .support-line{margin-top:8px;border:1px solid #D7E2EA;border-radius:10px;background:#F8FAFC;padding:8px 10px;color:#334155;font-size:10.5px;line-height:1.4}
+  .observations{margin-top:8px;border:1px solid #E2E8F0;border-radius:11px;background:#F8FAFC;padding:9px 11px}
+  .observations-copy{display:grid;grid-template-columns:.8fr 1.2fr;gap:12px;margin-top:5px}
+  .observations p{font-size:10px;line-height:1.4;color:#475569}
+  .observations strong{color:#0F172A}
+  .footer{margin-top:auto;padding-top:8px;border-top:1px solid #E2E8F0;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;color:#64748B;font-size:9px;line-height:1.4}
+  .footer strong{color:#0F172A}
   @page{margin:12mm 10mm;size:A4}
-  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
+  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.observations,.support-line,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -1902,67 +1892,48 @@ function downloadReport(data) {
         <div class="brand-row">
           <div class="brand-left">
             <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
-            <div>
-              <div class="brand-text">Trend Vision One / TrendAI</div>
-              <div style="font-size:11px;color:#E0F2FE;margin-top:4px">Reporte interno de rentabilidad y dimensionamiento</div>
-            </div>
+            <div class="brand-text">Nextcom Systems · Trend Vision One</div>
           </div>
           <div class="brand-right">
             <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
             <div class="confidential">Confidencial · Uso interno</div>
           </div>
         </div>
-        <h1>Análisis de Créditos Vision One</h1>
-        <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
+        <h1>Análisis interno</h1>
+        <p>Reporte interno de rentabilidad y dimensionamiento</p>
       </section>
 
       <section class="doc-meta avoid-break">
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Cliente</div>
           <div class="meta-value">${clientName || "Cliente no especificado"}</div>
         </div>
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Fecha de emisión</div>
           <div class="meta-value">${today}</div>
         </div>
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Moneda</div>
           <div class="meta-value">${currency}</div>
           ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
         </div>
-        <div class="meta-card avoid-break">
-          <div class="label">Soporte Platinum</div>
-          <div class="meta-value">${soporteSale > 0 ? "Incluido" : "No incluido"}</div>
+        <div class="meta-item">
+          <div class="label">Póliza de soporte</div>
+          <div class="meta-value">${supportIncluded ? selectedSupportPolicy : "No incluido"}</div>
           ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
         </div>
       </section>
 
+      <div class="section-label">KPIs principales</div>
       <section class="metrics avoid-break">${metricCards}</section>
-
-      <section class="section avoid-break">
-        <div class="section-heading">
-          <div>
-            <div class="eyebrow">Datos comerciales</div>
-            <h2>Precios por crédito y supuestos del negocio</h2>
-          </div>
-          <div class="status-pill">${active.length} líneas activas</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px">
-          ${[
-            {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
-            {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
-            {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
-          ].map(k => `<div class="support-card avoid-break"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
-        </div>
-      </section>
 
       <section class="section">
         <div class="section-heading">
           <div>
-            <div class="eyebrow">Tabla de productos</div>
-            <h2>Detalle de líneas Vision One</h2>
+            <div class="eyebrow">Detalle de productos</div>
+            <h2>Productos y créditos analizados</h2>
           </div>
-          <div class="status-pill">${fmt(totalCredits)} créditos</div>
+          <div class="status-pill">${active.length} ${active.length === 1 ? "producto" : "productos"}</div>
         </div>
         <table>
           <thead>
@@ -1979,41 +1950,29 @@ function downloadReport(data) {
             </tr>
           </thead>
           <tbody>${rowsHTML || `<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748B;font-size:12px">No hay productos activos en este análisis.</td></tr>`}</tbody>
-          <tfoot>
-            <tr style="background:#E0F2FE;border-top:2px solid #082F49">
-              <td colspan="4" style="padding:12px;font-size:12px;font-weight:850;color:#075985;text-transform:uppercase;letter-spacing:.04em">Total créditos Vision One</td>
-              <td style="padding:12px;font-size:13px;font-weight:850;font-family:'SF Mono',monospace;text-align:right;color:#075985">${fmt(totalCredits)}</td>
-              <td colspan="4" style="padding:12px;font-size:12px;text-align:right;color:#075985;font-weight:750">Venta total: <span class="mono">${fmtView(totalRevenue)}</span></td>
-            </tr>
-          </tfoot>
         </table>
       </section>
-      ${supportHTML}
-    </section>
 
-    <section class="pdf-page pdf-page-secondary">
-      <section class="analysis-grid avoid-break pdf-section-break">
-        <div class="pl-card avoid-break">
-          <div class="pl-title">Análisis de Rentabilidad (P&L)</div>
-          <table>${plRows}</table>
-        </div>
-        <div class="observations avoid-break">
-          <div class="eyebrow">Notas internas</div>
-          <h2>Observaciones</h2>
-          <p>Sin observaciones adicionales registradas.</p>
-          <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
+      <section class="support-line avoid-break">${supportSummaryHTML}</section>
+
+      <section class="observations avoid-break">
+        <div class="eyebrow">Observaciones internas</div>
+        <h2>Notas de revisión</h2>
+        <div class="observations-copy">
+          <p><strong>Sin observaciones adicionales registradas.</strong></p>
+          <div>
+            <p>Validar contra cotización final antes de compartir o aprobar.</p>
+            <p style="margin-top:4px">El detalle comercial del alcance por producto, soporte, condiciones y certificaciones está disponible en la descarga &ldquo;Alcance para cliente&rdquo;.</p>
+          </div>
         </div>
       </section>
 
       <footer class="footer avoid-break">
         <div>
-          <strong style="color:#0F172A">Nextcom Systems</strong><br>
-          Documento generado por Calculadora Vision One<br>
+          <strong>Nextcom Systems · Documento confidencial de uso interno · No distribuir externamente</strong><br>
           RUC 1253816-1-593861 DV 16 · +507 394-1405
         </div>
-        <div class="disclaimer avoid-break">
-          Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
-        </div>
+        <div>Generado por Calculadora Vision One</div>
       </footer>
     </section>
   </div>
@@ -2030,6 +1989,400 @@ function downloadReport(data) {
   });
 }
 
+async function downloadClientScopeReport(data) {
+  const { lines, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD" } = data;
+  const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
+  const trendAiPdfLogo = await pdfAssetToDataUrl(trendAiSidebarLogo);
+  const iso9001PdfLogo = await pdfAssetToDataUrl(iso9001Logo);
+  const iso27001PdfLogo = await pdfAssetToDataUrl(iso27001Logo);
+  const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
+    const p = CATALOG.find(c => c.id===l.prodId);
+    const months = monthsBetween(l.startDate, l.date);
+    const prorated = Math.round(l.qty * p.credits * (months / 12));
+    return { ...l, prod:p, months, prorated, baseTotal: l.qty * p.credits, isProrated: Math.abs(months - 12) > 0.1 };
+  });
+  const totalCredits = active.reduce((sum, line) => sum + line.prorated, 0);
+  const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
+  const supportPolicyScope = getSupportPolicyScope(selectedSupportPolicy);
+  const supportIncluded = soporteSale > 0 || soporteCost > 0;
+  const renderScopeHeader = (title, subtitle, pageLabel) => `
+      <section class="scope-doc-header avoid-break">
+        <div class="brand-row">
+          <div class="brand-left">
+            <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
+            <div>
+              <div class="brand-text">Nextcom Systems</div>
+              <div class="brand-sub">Alcance comercial de la propuesta</div>
+            </div>
+          </div>
+          <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
+        </div>
+        <div class="scope-header-main">
+          <div>
+            <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
+            <h1>${title}</h1>
+            <p>${subtitle}</p>
+          </div>
+          <div class="scope-header-meta">
+            <div class="scope-header-meta-row">
+              <span>Cliente</span>
+              <strong>${clientName || "Cliente no especificado"}</strong>
+            </div>
+            <div class="scope-header-meta-row">
+              <span>Fecha</span>
+              <strong>${today}</strong>
+            </div>
+            <div class="page-badge">${pageLabel}</div>
+          </div>
+        </div>
+      </section>`;
+  const getScopeItemRangeLabel = (items, offset = 0) => {
+    if (items.length === 0) return "Sin ítems";
+    const firstItem = offset + 1;
+    const lastItem = offset + items.length;
+    return items.length === 1 ? `Ítem ${firstItem}` : `Ítems ${firstItem}-${lastItem}`;
+  };
+  const getScopeVisualWeight = (line) => {
+    const scope = getVisionOneProductScope(line);
+    const visibleTextLength = [
+      scope.title,
+      scope.summary,
+      ...scope.includes.slice(0, 3),
+      scope.businessValue,
+      scope.notes || "",
+    ].join(" ").length;
+
+    if (visibleTextLength > 1050) return 3;
+    if (visibleTextLength > 760) return 1.5;
+    return 1;
+  };
+  const groupScopeProducts = (items) => {
+    if (items.length === 0) return [[]];
+
+    const groups = [];
+    let currentGroup = [];
+    let currentWeight = 0;
+
+    items.forEach((item) => {
+      const itemWeight = getScopeVisualWeight(item);
+      const exceedsItemLimit = currentGroup.length >= 3;
+      const exceedsPageWeight = currentWeight + itemWeight > 3;
+
+      if (currentGroup.length > 0 && (exceedsItemLimit || exceedsPageWeight)) {
+        groups.push(currentGroup);
+        currentGroup = [];
+        currentWeight = 0;
+      }
+
+      currentGroup.push(item);
+      currentWeight += itemWeight;
+    });
+
+    if (currentGroup.length > 0) groups.push(currentGroup);
+    return groups;
+  };
+  const scopeChunks = groupScopeProducts(active);
+  const scopeChunkOffsets = scopeChunks.map((_, chunkIndex) =>
+    scopeChunks.slice(0, chunkIndex).reduce((total, chunk) => total + chunk.length, 0)
+  );
+  const renderScopeSlimHeader = (pageLabel) => `
+      <section class="scope-slim-header avoid-break">
+        <div class="scope-slim-brand">
+          <img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" />
+          <span>Alcance comercial de la propuesta</span>
+        </div>
+        <div class="scope-slim-actions">
+          <div class="scope-slim-trendai" aria-label="TrendAI">
+            <span class="scope-slim-trendai-symbol"><img src="${trendAiPdfLogo}" alt="" /></span>
+            <span class="scope-slim-trendai-wordmark">TrendAI</span>
+          </div>
+          <div class="scope-slim-badge">${pageLabel}</div>
+        </div>
+      </section>`;
+
+  const scopeHeroHTML = `
+      ${renderScopeHeader(
+        "Alcance comercial de la propuesta",
+        "Cobertura descriptiva de los productos, servicios y condiciones incluidos.",
+        getScopeItemRangeLabel(scopeChunks[0] || [])
+      )}`;
+  const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
+    const scope = getVisionOneProductScope(l);
+    return `
+    <div class="scope-item avoid-break">
+      <div class="scope-item-index">${String(offset + i + 1).padStart(2, "0")}</div>
+      <div class="scope-item-body">
+        <div class="scope-item-title">${l.prod.name}</div>
+        <div class="scope-item-meta">
+          <span>${l.prod.sku || l.prod.cat}</span>
+          <span>${l.qty.toLocaleString("en-US")} ${l.prod.unit}${l.qty !== 1 ? "s" : ""}</span>
+          <span>${l.startDate || "Sin inicio"} - ${l.date || "Sin fin"}</span>
+          <span>${fmt(l.prorated)} créditos</span>
+        </div>
+        <div class="scope-product-title">${scope.title}</div>
+        <p class="scope-summary">${scope.summary}</p>
+        <ul class="scope-bullets">
+          ${scope.includes.slice(0, 3).map(item => `<li>${item}</li>`).join("")}
+        </ul>
+        <div class="scope-business"><strong>Valor para el negocio:</strong> ${scope.businessValue}</div>
+        ${scope.notes ? `<div class="scope-item-note">${scope.notes}</div>` : ""}
+      </div>
+    </div>`;
+  }).join("") : `
+    <div class="scope-empty avoid-break">No hay productos activos asociados a este alcance.</div>`;
+  const renderScopeProductSection = (items, offset = 0) => `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance por línea</div>
+            <h2>Alcance por ítem vendido</h2>
+          </div>
+        </div>
+        <div class="scope-card-body">
+          ${renderScopeItems(items, offset)}
+        </div>
+      </section>`;
+  const supportScopeHTML = supportIncluded ? `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance del soporte</div>
+            <h2>Póliza de soporte: ${supportPolicyScope.label}</h2>
+          </div>
+          <div class="status-pill">${supportPolicyScope.label}</div>
+        </div>
+        <div class="scope-card-body">
+          <ul class="support-list">
+            ${supportPolicyScope.bullets.map(item => `<li>${item}</li>`).join("")}
+          </ul>
+          ${soporteDate ? `<div class="scope-note">Vigencia referencial del soporte hasta ${soporteDate}.</div>` : `<div class="scope-note">${supportPolicyScope.note}</div>`}
+        </div>
+      </section>` : `
+      <section class="scope-card avoid-break">
+        <div class="scope-card-header">
+          <div>
+            <div class="eyebrow">Alcance del soporte</div>
+            <h2>Soporte no incluido</h2>
+          </div>
+          <div class="status-pill">No incluido</div>
+        </div>
+        <div class="scope-card-body">
+          <div class="scope-empty avoid-break">Esta propuesta no incluye una póliza de soporte comercial asociada. Si el negocio requiere soporte Nextcom, debe agregarse como línea comercial y seleccionar el nivel de póliza aplicable.</div>
+        </div>
+      </section>`;
+  const scopeTailHTML = `
+      ${supportScopeHTML}
+
+      <section class="scope-split">
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Condiciones</div>
+              <h2>Consideraciones del alcance</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <ul class="consideration-list" style="grid-template-columns:1fr">
+              <li>El alcance aplica únicamente sobre los productos, servicios y cantidades expresamente incluidos en la propuesta.</li>
+              <li>La activación final de licencias, créditos o servicios queda sujeta a validación técnica, comercial y disponibilidad del fabricante cuando aplique.</li>
+              <li>Actividades fuera del alcance, cambios realizados por terceros o servicios profesionales adicionales podrán cotizarse por separado.</li>
+              <li>La atención presencial fuera del área metropolitana o condiciones especiales de traslado pueden requerir validación comercial adicional.</li>
+              <li>Este documento es referencial y debe validarse contra la cotización final emitida por Nextcom.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="scope-card avoid-break">
+          <div class="scope-card-header">
+            <div>
+              <div class="eyebrow">Sistema Integrado de Gestión</div>
+              <h2>Certificaciones Nextcom</h2>
+            </div>
+          </div>
+          <div class="scope-card-body">
+            <div class="iso-logos">
+              <div class="iso-logo-card"><img src="${iso9001PdfLogo}" alt="ISO 9001" /></div>
+              <div class="iso-logo-card"><img src="${iso27001PdfLogo}" alt="ISO/IEC 27001" /></div>
+            </div>
+            <p class="certification-copy" style="margin-top:8px">Nextcom cuenta con certificaciones de gestión de calidad ISO 9001 y seguridad de la información ISO/IEC 27001 como parte de su Sistema Integrado de Gestión.</p>
+          </div>
+        </div>
+      </section>
+      <footer class="footer avoid-break">
+        <div>
+          <strong style="color:#0F172A">Nextcom Systems</strong><br>
+          Documento generado por Calculadora Vision One<br>
+          RUC 1253816-1-593861 DV 16 · +507 394-1405
+        </div>
+        <div class="disclaimer avoid-break">
+          Alcance para cliente · Documento descriptivo de productos, créditos y soporte. No incluye precios, costos, márgenes ni rentabilidad.
+        </div>
+      </footer>`;
+  const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
+  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage || scopeChunks.length > 1;
+  const lastScopeChunk = scopeChunks[scopeChunks.length - 1];
+  const hasCompactSupportScope = !supportIncluded || selectedSupportPolicy !== "Platinum";
+  const lastScopeChunkWeight = lastScopeChunk.reduce((total, item) => total + getScopeVisualWeight(item), 0);
+  const canCombineSingleProductTail = lastScopeChunk.length === 1
+    && lastScopeChunkWeight <= (hasCompactSupportScope ? 1.5 : 1);
+  const canCombineTwoProductTail = lastScopeChunk.length === 2
+    && lastScopeChunkWeight <= 2
+    && hasCompactSupportScope;
+  const combineTailWithLastProductPage = scopeTailNeedsOwnPage
+    && scopeChunks.length > 1
+    && (canCombineSingleProductTail || canCombineTwoProductTail);
+  const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
+    ${scopeChunks.slice(1).map((chunk, index) => {
+      const chunkIndex = index + 1;
+      const itemOffset = scopeChunkOffsets[chunkIndex];
+      const includesScopeTail = combineTailWithLastProductPage && chunkIndex === scopeChunks.length - 1;
+      return `
+    <section class="pdf-page scope-page scope-page-compact">
+      ${renderScopeSlimHeader(getScopeItemRangeLabel(chunk, itemOffset))}
+      ${renderScopeProductSection(chunk, itemOffset)}
+      ${includesScopeTail ? scopeTailHTML : ""}
+    </section>`;
+    }).join("")}
+    ${combineTailWithLastProductPage ? "" : `
+    <section class="pdf-page scope-page">
+      ${renderScopeSlimHeader("Soporte e ISO")}
+      ${scopeTailHTML}
+    </section>`}
+    ` : "";
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Alcance comercial de la propuesta${clientName ? " - " + clientName : ""}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
+  .container{width:800px;margin:0 auto}
+  .pdf-page{width:800px;min-height:1120px;padding:16px 22px;background:#fff}
+  .pdf-page + .pdf-page{page-break-before:always;break-before:page}
+  .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
+  .scope-page{display:flex;flex-direction:column;gap:6px}
+  .scope-page-compact{padding-top:6px;gap:4px}
+  .scope-doc-header{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:16px;color:#fff;padding:12px 16px;position:relative;overflow:hidden}
+  .scope-doc-header:after{content:"";position:absolute;right:-74px;top:-88px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
+  .scope-hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;color:#fff;padding:18px 20px;position:relative;overflow:hidden}
+  .scope-hero:after{content:"";position:absolute;right:-70px;top:-90px;width:230px;height:230px;border-radius:999px;background:rgba(255,255,255,.07)}
+  .scope-hero-compact{padding:14px 18px;background:#082F49}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:8px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:13px}
+  .brand-mark{background:#fff;border-radius:12px;padding:7px 9px;display:flex;align-items:center;justify-content:center;min-width:118px;height:42px}
+  .brand-mark img{max-height:26px;max-width:108px;object-fit:contain}
+  .trendai-logo{display:block;width:142px;max-height:36px;object-fit:contain;position:relative;z-index:1}
+  .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  .brand-sub{font-size:10.5px;color:#E0F2FE;font-weight:650;margin-top:3px}
+  .scope-header-main{display:grid;grid-template-columns:1fr 200px;gap:18px;align-items:end;position:relative;z-index:1}
+  .scope-doc-header h1{font-size:21px;line-height:1.1;letter-spacing:-.035em;margin:3px 0 5px}
+  .scope-doc-header p{font-size:10.8px;line-height:1.38;color:#D8F3FF;max-width:540px}
+  .scope-header-meta{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:8px 10px;color:#E0F2FE}
+  .scope-header-meta-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:5px;margin-bottom:5px;border-bottom:1px solid rgba(255,255,255,.12)}
+  .scope-header-meta-row span{font-size:8.5px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;color:#BAE6FD}
+  .scope-header-meta-row strong{font-size:10px;line-height:1.25;text-align:right;color:#fff}
+  .page-badge{display:inline-flex;align-items:center;justify-content:center;width:100%;border-radius:999px;background:rgba(186,230,253,.16);border:1px solid rgba(186,230,253,.28);padding:5px 9px;color:#E0F2FE;font-size:9.5px;font-weight:850}
+  .scope-slim-header{min-height:36px;display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #D7E2EA;border-radius:9px;background:#F8FAFC;padding:3px 7px}
+  .scope-slim-brand{display:flex;align-items:center;gap:8px;min-width:0;color:#0F3B57;font-size:10px;font-weight:800;letter-spacing:.01em}
+  .scope-slim-brand img{display:block;width:68px;height:22px;object-fit:contain}
+  .scope-slim-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex:0 0 auto}
+  .scope-slim-trendai{display:flex;align-items:center;gap:3px;height:19px;flex:0 0 auto}
+  .scope-slim-trendai-symbol{position:relative;width:19px;height:19px;overflow:hidden;flex:0 0 auto}
+  .scope-slim-trendai-symbol img{position:absolute;left:0;top:0;width:72px;height:19px;max-width:none;object-fit:contain;object-position:left center}
+  .scope-slim-trendai-wordmark{color:#0F3B57;font-size:10.5px;font-weight:850;line-height:1}
+  .scope-slim-badge{flex:0 0 auto;border:1px solid #BAE6FD;border-radius:999px;background:#E0F2FE;color:#075985;padding:3px 8px;font-size:9px;font-weight:850}
+  .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
+  .scope-hero .eyebrow{color:#BAE6FD}
+  .scope-hero h1{font-size:26px;line-height:1.1;letter-spacing:-.035em;margin:5px 0 7px;position:relative;z-index:1}
+  .scope-hero-compact h1{font-size:20px;margin-bottom:5px}
+  .scope-hero p{font-size:12px;line-height:1.45;color:#D8F3FF;max-width:650px;position:relative;z-index:1}
+  .scope-context-strip{display:flex;align-items:center;justify-content:space-between;gap:9px;border:1px solid #E2E8F0;border-radius:12px;background:#F8FAFC;padding:7px 10px}
+  .scope-context-item{display:flex;align-items:center;gap:7px;min-width:0;color:#475569;font-size:10.5px;line-height:1.35}
+  .scope-context-item strong{color:#0F172A;font-size:11px;font-weight:800}
+  .scope-context-dot{width:6px;height:6px;border-radius:999px;background:#0EA5E9;flex:0 0 auto}
+  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px}
+  .meta-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
+  .label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
+  .meta-sub{font-size:10px;color:#94A3B8;margin-top:4px}
+  .scope-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;overflow:hidden}
+  .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 11px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .scope-card-header h2{font-size:14px;letter-spacing:-.02em;color:#0F172A}
+  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+  .scope-card-body{padding:8px 12px}
+  .scope-item{display:grid;grid-template-columns:34px 1fr;gap:9px;padding:7px 0;border-bottom:1px solid #E2E8F0}
+  .scope-item:last-child{border-bottom:0}
+  .scope-item-index{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:10.5px;font-weight:850;color:#0F172A;background:#E0F2FE;border:1px solid #BAE6FD;border-radius:999px;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+  .scope-item-title{font-size:13px;font-weight:800;color:#0F172A;line-height:1.28}
+  .scope-item-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .scope-item-meta span{background:#F1F5F9;border:1px solid #E2E8F0;border-radius:999px;padding:3px 8px;font-size:9.8px;color:#475569;font-weight:700}
+  .scope-product-title{font-size:11.2px;font-weight:800;color:#075985;margin-top:8px}
+  .scope-summary{font-size:11px;line-height:1.48;color:#475569;margin-top:4px}
+  .scope-bullets{display:grid;grid-template-columns:1fr;gap:3px;margin-top:6px;list-style:none}
+  .scope-bullets li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.45;color:#475569}
+  .scope-bullets li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#38BDF8}
+  .scope-business{margin-top:6px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:9px;padding:6px 8px;font-size:10.4px;line-height:1.4;color:#334155}
+  .scope-item-note{font-size:9.8px;line-height:1.4;color:#64748B;margin-top:5px}
+  .scope-empty{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
+  .support-list,.consideration-list{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;list-style:none}
+  .support-list li,.consideration-list li{position:relative;padding-left:13px;font-size:10.5px;line-height:1.4;color:#475569}
+  .support-list li:before,.consideration-list li:before{content:"";position:absolute;left:0;top:.55em;width:5px;height:5px;border-radius:999px;background:#1D4ED8}
+  .scope-note{margin-top:8px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:8px 10px;color:#92400E;font-size:10.5px;line-height:1.42}
+  .scope-split{display:grid;grid-template-columns:1.1fr .9fr;gap:9px}
+  .certification-copy{font-size:10.5px;line-height:1.5;color:#475569}
+  .iso-logos{display:flex;align-items:center;justify-content:center;gap:10px}
+  .iso-logo-card{height:76px;width:76px;border:1px solid #E2E8F0;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;padding:6px}
+  .iso-logo-card img{max-width:100%;max-height:100%;object-fit:contain}
+  .footer{margin-top:auto;padding-top:8px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:14px;color:#64748B;font-size:9.5px;line-height:1.45}
+  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:7px 9px;color:#475569}
+  @page{margin:12mm 10mm;size:A4}
+</style>
+</head>
+<body>
+  <div class="container pdf-content">
+    <section class="pdf-page scope-page">
+      ${scopeHeroHTML}
+      <section class="scope-context-strip avoid-break">
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Moneda: <strong>${currency}</strong></span>
+        </div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Créditos dimensionados: <strong>${fmt(totalCredits)}</strong></span>
+        </div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Productos incluidos: <strong>${active.length}</strong></span>
+        </div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Tipo de documento: <strong>alcance descriptivo</strong></span>
+        </div>
+      </section>
+      ${!scopeTailNeedsOwnPage ? `
+      ${renderScopeProductSection(active, 0)}
+      ${scopeTailHTML}
+      ` : `
+      ${renderScopeProductSection(scopeChunks[0] || [], 0)}
+      `}
+    </section>
+    ${continuationScopePagesHTML}
+  </div>
+</body>
+</html>`;
+
+  const fname = `Alcance_Propuesta_VisionOne_Nextcom_${new Date().toISOString().split("T")[0]}.pdf`;
+
+  return generatePdfFromHtml(html, fname).catch(err => {
+    console.error("Error generando PDF de alcance:", err);
+    alert("No se pudo generar el PDF de alcance. Por favor verifica tu conexión a internet e inténtalo de nuevo.\n\nDetalle: " + err.message);
+    throw err;
+  });
+}
+
 function InternalApp() {
   const [lines, setLines] = useState(() => {
     const d = defaultDates();
@@ -2041,9 +2394,14 @@ function InternalApp() {
   const [soporteSale, setSoporteSale] = useState(0);
   const [soporteCost, setSoporteCost] = useState(0);
   const [soporteDate, setSoporteDate] = useState("");
+  const [supportPolicy, setSupportPolicy] = useState("Platinum");
   const [clientName, setClientName] = useState("");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [scopePdfLoading, setScopePdfLoading] = useState(false);
   const isMobile = useIsMobile();
+  const supportPolicyGridColumns = isMobile
+    ? "1fr"
+    : (typeof window !== "undefined" && window.innerWidth < 1180 ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // --- Currency / FX ---
@@ -2167,6 +2525,7 @@ function InternalApp() {
     if (importResult.soportePlatinum?.present) {
       setSoporteSale(importResult.soportePlatinum.price || 0);
       setSoporteDate(importResult.endDate || "");
+      setSupportPolicy("Platinum");
     }
     setImportOpen(false);
     setImportResult(null);
@@ -2201,6 +2560,7 @@ function InternalApp() {
   const marginPct     = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
   const activeLines   = lines.filter(l => l.prodId && l.qty > 0).length;
   const perCrPct      = salePrice > 0 ? (salePrice - costPrice) / salePrice * 100 : 0;
+  const supportIncluded = soporteSale > 0 || soporteCost > 0;
   const mColor = pct => pct >= 20 ? C.green : pct > 0 ? C.amber : C.red;
   const mBg    = pct => pct >= 20 ? C.greenBg : pct > 0 ? C.amberBg : "#FEF2F2";
 
@@ -2225,13 +2585,13 @@ function InternalApp() {
     });
     setRc(c => c+1);
   };
-  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setClientName(""); }};
+  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setSupportPolicy("Platinum"); setClientName(""); }};
 
   return (
     <>
       <style>{PRINT_CSS}</style>
 
-      <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName }} />
+      <PrintView data={{ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName }} />
 
       <InternalCalculatorShell
         isMobile={isMobile}
@@ -2255,10 +2615,17 @@ function InternalApp() {
             onExportPdf={async () => {
               if (pdfLoading) return;
               setPdfLoading(true);
-              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
+              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
               catch(e){} finally { setPdfLoading(false); }
             }}
+            onExportScopePdf={async () => {
+              if (scopePdfLoading) return;
+              setScopePdfLoading(true);
+              try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency }); }
+              catch(e){} finally { setScopePdfLoading(false); }
+            }}
             pdfLoading={pdfLoading}
+            scopePdfLoading={scopePdfLoading}
           />
         ) : null}
       >
@@ -2456,18 +2823,45 @@ function InternalApp() {
         <div style={{ height:14 }} />
 
         <InternalWorkspaceSection
-          title="Soporte Platinum"
-          description="Precio libre · línea especial sin créditos."
+          title="Póliza de soporte"
+          description="Precio libre · línea especial sin créditos. Selecciona el nivel de SLA aplicable."
         >
         <div style={{ background:"#fff", overflow:"hidden" }}>
-          <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 170px 110px", gap:18, alignItems:"end", padding:isMobile?"14px":"22px 20px", background:soporteSale>0?"#F8FBFF":"#fff" }}>
+          <div style={{ padding:isMobile?"14px":"22px 20px", background:supportIncluded?"#F8FBFF":"#fff" }}>
+            <div style={{ display:"grid", gridTemplateColumns: supportPolicyGridColumns, gap:18, alignItems:"end" }}>
+            <div>
+              <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Tipo de póliza</div>
+              <select
+                value={supportPolicy}
+                disabled={!supportIncluded}
+                onChange={e => setSupportPolicy(normalizeSupportPolicy(e.target.value))}
+                style={{
+                  fontSize:13,
+                  fontWeight:700,
+                  color:supportIncluded ? "#0F172A" : "#94A3B8",
+                  border:"1px solid #E2E8F0",
+                  borderRadius:7,
+                  padding:"0 10px",
+                  background:supportIncluded ? "#fff" : "#F8FAFC",
+                  height:38,
+                  width:"100%",
+                  boxSizing:"border-box",
+                  boxShadow:"0 1px 2px rgba(15,23,42,.03)",
+                  cursor:supportIncluded ? "pointer" : "not-allowed",
+                }}
+              >
+                {SUPPORT_POLICY_OPTIONS.map(policy => (
+                  <option key={policy} value={policy}>{policy}</option>
+                ))}
+              </select>
+            </div>
             {[
               { l:"Precio al cliente", v:soporteSale, set:setSoporteSale },
               { l:"Costo proveedor",   v:soporteCost, set:setSoporteCost },
             ].map(f => (
               <div key={f.l}>
                 <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>{f.l}</div>
-                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 11px", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:4, border:"1px solid #E2E8F0", borderRadius:7, padding:"0 11px", height:38, boxSizing:"border-box", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}>
                   <span style={{ color:"#64748B", fontSize:13 }}>$</span>
                   <input type="number" min={0} step={0.01} value={f.v||""} placeholder="0.00" onChange={e => f.set(parseFloat(e.target.value)||0)}
                     style={{ ...mono, fontSize:13, fontWeight:600, width:"100%", border:"none", outline:"none", background:"transparent", color:"#0F172A" }} />
@@ -2477,12 +2871,18 @@ function InternalApp() {
             <div>
               <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Vencimiento</div>
               <input type="date" value={soporteDate} onChange={e => setSoporteDate(e.target.value)}
-                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"8px 11px", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
+                style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"0 11px", height:38, boxSizing:"border-box", background:"#fff", width:"100%", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }} />
             </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:12, color:"#64748B", marginBottom:8, fontWeight:500 }}>Margen</div>
-              <div style={{ ...mono, fontSize:15, fontWeight:700, color:soporteSale>soporteCost?C.green:"#64748B" }}>
-                {soporteSale > 0 ? fmtU(soporteSale - soporteCost) : "—"}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginTop:10, flexWrap:"wrap" }}>
+              <div style={{ fontSize:10.5, color:"#94A3B8" }}>
+                El nivel de póliza seleccionado se reflejará en el alcance del PDF interno.
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:11, color:"#64748B" }}>
+                <span>Margen</span>
+                <span style={{ ...mono, fontSize:13, fontWeight:700, color:soporteSale>soporteCost?C.green:"#64748B" }}>
+                  {soporteSale > 0 ? fmtU(soporteSale - soporteCost) : "—"}
+                </span>
               </div>
             </div>
           </div>
@@ -2510,15 +2910,32 @@ function InternalApp() {
               Margen {fmtU(totalMargin)} · {marginPct.toFixed(1)}%
             </div>
           </div>
-          <button onClick={async () => {
-              if (pdfLoading) return;
-              setPdfLoading(true);
-              try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, clientName, currency, rateSource, activeRate, vesRate }); }
-              catch(e){} finally { setPdfLoading(false); }
-            }} disabled={pdfLoading}
-            style={{ padding:"12px 16px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:13, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
-            {pdfLoading ? "⏳ Generando..." : "⬇ PDF"}
-          </button>
+          <div style={{ display:"flex", flexDirection:"column", gap:6, minWidth:138 }}>
+            <button onClick={async () => {
+                if (pdfLoading) return;
+                setPdfLoading(true);
+                try { await downloadReport({ lines, totalCredits, totalRevenue, totalCost, totalMargin, marginPct, salePrice, costPrice, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, rateSource, activeRate, vesRate }); }
+                catch(e){} finally { setPdfLoading(false); }
+              }} disabled={pdfLoading}
+              title="Incluye créditos, precios, costos, margen, rentabilidad, P&L y observaciones internas. Uso interno Nextcom."
+              style={{ padding:"9px 12px", background: pdfLoading ? "#A8A29E" : C.text, color:"#fff", border:"none", borderRadius:9, fontSize:12, fontWeight:700, cursor: pdfLoading ? "wait" : "pointer", whiteSpace:"nowrap", display:"flex", alignItems:"center", justifyContent:"center", gap:6, opacity: pdfLoading ? 0.7 : 1 }}>
+              {pdfLoading ? "Generando..." : "Análisis interno"}
+            </button>
+            <button
+              type="button"
+              title="Incluye productos, cantidades, vigencias, créditos, alcance por producto, soporte, condiciones y certificaciones. No incluye costos, margen ni rentabilidad."
+              onClick={async () => {
+                if (scopePdfLoading) return;
+                setScopePdfLoading(true);
+                try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency }); }
+                catch(e){} finally { setScopePdfLoading(false); }
+              }}
+              disabled={scopePdfLoading}
+              style={{ padding:"8px 12px", background:"#F8FAFC", color:"#334155", border:"1px solid #E2E8F0", borderRadius:9, fontSize:12, fontWeight:700, cursor:scopePdfLoading?"wait":"pointer", whiteSpace:"nowrap", textAlign:"center", opacity:scopePdfLoading ? .7 : 1 }}
+            >
+              {scopePdfLoading ? "Generando..." : "Alcance para cliente"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -2779,7 +3196,7 @@ function InternalApp() {
 
                   {importResult.soportePlatinum?.present && (
                     <div style={{ fontSize:12, color:C.text2, marginBottom:16, padding:"12px 14px", background:C.panel, border:`1px solid ${C.border}`, borderRadius:12, display:"flex", justifyContent:"space-between", alignItems:"center", gap:12 }}>
-                      <span style={{ fontWeight:700, color:C.text }}>Soporte Platinum detectado</span>
+                      <span style={{ fontWeight:700, color:C.text }}>Póliza de soporte detectada</span>
                       <strong style={{ ...mono, color:C.text }}>${importResult.soportePlatinum.price?.toLocaleString() || 0}</strong>
                     </div>
                   )}
