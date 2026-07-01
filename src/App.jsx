@@ -1788,72 +1788,32 @@ function downloadReport(data) {
 
   const rowsHTML = active.map((l, i) => `
     <tr style="background:${i % 2 === 0 ? "#FFFFFF" : "#F8FAFC"}">
-      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0">
-        <div style="font-size:12px;font-weight:700;color:#0F172A;line-height:1.35">${l.prod.name}</div>
+      <td style="padding:8px 9px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:10.5px;font-weight:700;color:#0F172A;line-height:1.3">${l.prod.name}</div>
         ${l.isProrated ? `<div style="display:inline-block;margin-top:5px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:700;letter-spacing:.02em">${l.months} meses prorrateado</div>` : ""}
       </td>
-      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0">
-        <div style="font-size:10px;color:#475569;line-height:1.35">${l.prod.cat}</div>
-        <div style="font-size:10px;color:#64748B;font-family:'SF Mono',monospace;margin-top:3px">${l.prod.sku || "Sin SKU"}</div>
+      <td style="padding:8px 7px;border-bottom:1px solid #E2E8F0">
+        <div style="font-size:9px;color:#475569;line-height:1.3">${l.prod.cat}</div>
+        <div style="font-size:9px;color:#64748B;font-family:'SF Mono',monospace;margin-top:2px">${l.prod.sku || "Sin SKU"}</div>
       </td>
-      <td style="padding:11px 10px;border-bottom:1px solid #E2E8F0;font-size:10px;color:#475569;font-family:'SF Mono',monospace;line-height:1.45">
+      <td style="padding:8px 7px;border-bottom:1px solid #E2E8F0;font-size:9px;color:#475569;font-family:'SF Mono',monospace;line-height:1.35">
         ${l.startDate || "Sin inicio"}<br>
         <span style="color:#94A3B8">${l.date || "Sin fin"}</span>
       </td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">${l.qty.toLocaleString()}</td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#0F172A">
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#0F172A">${l.qty.toLocaleString()}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#0F172A">
         ${fmt(l.prorated)}
         ${l.isProrated ? `<br><span style="font-size:9px;color:#94A3B8">base ${fmt(l.baseTotal)}</span>` : ""}
       </td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#1D4ED8">${fmtView(salePrice)}</td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;color:#475569">${fmtUSDsm(costPrice)}</td>
-      <td style="padding:11px 8px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
-      <td style="padding:11px 12px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:11px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#1D4ED8">${fmtView(salePrice)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;color:#475569">${fmtUSDsm(costPrice)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;font-weight:700;color:${mC(perCrPct)}">${fmtUSDsm(l.prorated * (salePrice - costPrice))}</td>
+      <td style="padding:8px 9px;border-bottom:1px solid #E2E8F0;text-align:right;font-family:'SF Mono',monospace;font-size:9.5px;font-weight:800;color:#0F172A">${fmtView(l.prorated * salePrice)}</td>
     </tr>`).join("");
 
-  const supportMargin = soporteSale - soporteCost;
-  const supportMarginPct = soporteSale > 0 ? supportMargin / soporteSale * 100 : 0;
-  const supportHTML = supportIncluded ? `
-    <section class="section avoid-break">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">Póliza de soporte: ${selectedSupportPolicy}</div>
-          <h2>Servicio profesional asociado</h2>
-        </div>
-        <div class="status-pill">Precio fijo</div>
-      </div>
-      <div class="support-grid">
-        <div class="support-card avoid-break">
-          <div class="label">Total soporte</div>
-          <div class="value">${fmtView(soporteSale)}</div>
-          ${isVES ? `<div class="subvalue">${fmtUSDsm(soporteSale)}</div>` : ""}
-        </div>
-        <div class="support-card avoid-break">
-          <div class="label">Costo soporte</div>
-          <div class="value muted">${fmtUSDsm(soporteCost)}</div>
-        </div>
-        <div class="support-card avoid-break">
-          <div class="label">Margen soporte</div>
-          <div class="value" style="color:${mC(supportMarginPct)}">${fmtUSDsm(supportMargin)}</div>
-          <div class="subvalue">${supportMarginPct.toFixed(1)}%</div>
-        </div>
-        <div class="support-card avoid-break">
-          <div class="label">Vencimiento</div>
-          <div class="value small">${soporteDate || "Sin fecha"}</div>
-        </div>
-      </div>
-      <div class="note">Condicion referencial: servicio profesional de precio fijo sin consumo de creditos Vision One.</div>
-    </section>` : "";
-  const plRows = [
-    { l:"Ingresos por creditos", v:fmtU(totalCredits*salePrice), c:"#0F172A", bold:false, bg:"#fff" },
-    { l:"Ingresos por soporte",  v:fmtU(soporteSale), c:"#0F172A", bold:false, bg:"#fff" },
-    { l:"Total ingresos",        v:fmtU(totalRevenue), c:"#0F172A", bold:true, bg:"#F8FAFC" },
-    { l:"Costo creditos",        v:`(${fmtU(totalCredits*costPrice)})`, c:"#DC2626", bold:false, bg:"#fff" },
-    { l:"Costo soporte",         v:`(${fmtU(soporteCost)})`, c:"#DC2626", bold:false, bg:"#fff" },
-    { l:"Total costos",          v:`(${fmtU(totalCost)})`, c:"#DC2626", bold:true, bg:"#FEF2F2" },
-    { l:"Margen bruto",          v:fmtU(totalMargin), c:mC(marginPct), bold:true, bg:marginPct>=20?"#ECFDF5":marginPct>0?"#FFFBEB":"#FEF2F2", big:true },
-    { l:"Rentabilidad",          v:`${marginPct.toFixed(1)}%`, c:mC(marginPct), bold:true, bg:"#fff" },
-  ].map(m => `<tr style="background:${m.bg};border-top:1px solid #E2E8F0"><td style="padding:10px 16px;font-size:${m.big?13:12}px;font-weight:${m.bold?800:500};color:#334155">${m.l}</td><td style="padding:10px 16px;font-size:${m.big?15:13}px;font-weight:${m.bold?800:600};font-family:'SF Mono',monospace;text-align:right;color:${m.c}">${m.v}</td></tr>`).join("");
+  const supportSummaryHTML = supportIncluded
+    ? `<strong>Soporte:</strong> Póliza ${selectedSupportPolicy} · Venta soporte: ${fmtView(soporteSale)} · Costo soporte: ${fmtUSDsm(soporteCost)} · Vencimiento: ${soporteDate || "Sin fecha"}`
+    : `<strong>Soporte:</strong> No incluido`;
 
   const metricCards = [
     { l:"Creditos totales", v:fmt(totalCredits), c:"#1D4ED8" },
@@ -1861,7 +1821,6 @@ function downloadReport(data) {
     { l:"Costo proveedor", v:fmtUSDsm(totalCost), c:"#475569" },
     { l:"Margen bruto", v:fmtUSDsm(totalMargin), c:mC(marginPct) },
     { l:"Rentabilidad", v:`${marginPct.toFixed(1)}%`, c:mC(marginPct) },
-    { l:"Lineas activas", v:active.length.toLocaleString("en-US"), c:"#0F172A" },
   ].map(k => `
     <div class="metric-card avoid-break">
       <div class="metric-label">${k.l}</div>
@@ -1878,55 +1837,51 @@ function downloadReport(data) {
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
   .container{width:800px;margin:0 auto}
-  .pdf-page{width:800px;min-height:1120px;padding:22px 26px;background:#fff}
+  .pdf-page{width:800px;min-height:1120px;padding:18px 22px;background:#fff;display:flex;flex-direction:column}
   .pdf-page + .pdf-page{page-break-before:always;break-before:page}
-  .pdf-page-secondary{display:flex;flex-direction:column;justify-content:space-between;gap:18px}
   .mono{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
-  .pdf-section-break{break-before:page;page-break-before:always;margin-top:0}
-  .top-rule{height:7px;background:#082F49;border-radius:999px;margin-bottom:16px}
-  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:18px;padding:20px 22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden}
+  .top-rule{height:5px;background:#082F49;border-radius:999px;margin-bottom:10px}
+  .hero{background:linear-gradient(135deg,#082F49 0%,#0F3B57 58%,#124C6B 100%);border-radius:14px;padding:13px 16px;color:#fff;margin-bottom:9px;position:relative;overflow:hidden}
   .hero:after{content:"";position:absolute;right:-60px;top:-80px;width:220px;height:220px;border-radius:999px;background:rgba(255,255,255,.07)}
-  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:24px;position:relative;z-index:1}
-  .brand-left{display:flex;align-items:center;gap:16px}
-  .brand-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-  .brand-mark{background:#fff;border-radius:14px;padding:9px 11px;display:flex;align-items:center;justify-content:center;min-width:126px;height:48px}
-  .brand-mark img{max-height:30px;max-width:116px;object-fit:contain}
-  .trendai-logo{display:block;width:148px;max-height:38px;object-fit:contain}
-  .brand-text{font-size:12px;color:#BAE6FD;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .hero h1{font-size:27px;line-height:1.12;letter-spacing:-.035em;margin-top:16px;margin-bottom:8px;position:relative;z-index:1}
-  .hero p{font-size:13px;color:#D8F3FF;max-width:610px;line-height:1.5;position:relative;z-index:1}
-  .confidential{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
-  .doc-meta{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:10px;margin-bottom:16px}
-  .meta-card,.metric-card,.support-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;padding:12px 13px}
-  .label,.metric-label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
-  .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
-  .meta-sub,.subvalue,.metric-sub{font-size:10px;color:#94A3B8;margin-top:4px}
-  .metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
-  .metric-card{min-height:78px}
-  .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:15px;font-weight:850;letter-spacing:-.02em}
-  .section{margin-top:16px;border:1px solid #E2E8F0;border-radius:16px;background:#fff;overflow:hidden}
-  .section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:13px 15px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
-  .eyebrow{font-size:9px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:4px}
-  h2{font-size:15px;letter-spacing:-.02em;color:#0F172A}
-  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:800;white-space:nowrap}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;gap:18px;position:relative;z-index:1}
+  .brand-left{display:flex;align-items:center;gap:12px}
+  .brand-right{display:flex;align-items:center;gap:12px}
+  .brand-mark{background:#fff;border-radius:10px;padding:6px 8px;display:flex;align-items:center;justify-content:center;width:108px;height:38px}
+  .brand-mark img{max-height:25px;max-width:98px;object-fit:contain}
+  .trendai-logo{display:block;width:122px;max-height:30px;object-fit:contain}
+  .brand-text{font-size:10px;color:#BAE6FD;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+  .hero h1{font-size:22px;line-height:1.12;letter-spacing:-.025em;margin-top:10px;margin-bottom:4px;position:relative;z-index:1}
+  .hero p{font-size:11.5px;color:#D8F3FF;max-width:590px;line-height:1.4;position:relative;z-index:1}
+  .confidential{display:inline-flex;align-items:center;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:5px 9px;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#E0F2FE;white-space:nowrap}
+  .doc-meta{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;border:1px solid #E2E8F0;border-radius:11px;background:#F8FAFC;padding:8px 10px;margin-bottom:9px}
+  .meta-item{padding:0 10px;border-right:1px solid #E2E8F0}
+  .meta-item:first-child{padding-left:0}
+  .meta-item:last-child{padding-right:0;border-right:0}
+  .label,.metric-label{font-size:8.5px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+  .meta-value{font-size:11px;font-weight:750;color:#0F172A;line-height:1.3}
+  .meta-sub,.metric-sub{font-size:9px;color:#94A3B8;margin-top:2px}
+  .section-label{font-size:8.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin:0 0 5px 2px}
+  .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:9px}
+  .metric-card{border:1px solid #E2E8F0;border-radius:11px;background:#fff;padding:9px 10px;min-height:62px}
+  .metric-value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;letter-spacing:-.02em}
+  .section{border:1px solid #E2E8F0;border-radius:13px;background:#fff;overflow:hidden}
+  .section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 11px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .eyebrow{font-size:8.5px;font-weight:850;color:#64748B;text-transform:uppercase;letter-spacing:.09em;margin-bottom:3px}
+  h2{font-size:13.5px;letter-spacing:-.015em;color:#0F172A}
+  .status-pill{background:#E0F2FE;color:#075985;border:1px solid #BAE6FD;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:800;white-space:nowrap}
   table{width:100%;border-collapse:collapse}
-  th{padding:10px 8px;text-align:left;font-size:9px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.07em;background:#082F49}
+  th{padding:7px 7px;text-align:left;font-size:8px;font-weight:850;color:#E0F2FE;text-transform:uppercase;letter-spacing:.055em;background:#082F49}
   th.num{text-align:right}
-  .support-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 15px}
-  .value{font-family:"SF Mono","Roboto Mono","Fira Mono",monospace;font-size:14px;font-weight:850;color:#0F172A}
-  .value.small{font-size:12px}
-  .value.muted{color:#475569}
-  .note{margin:0 15px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569;font-size:11px;line-height:1.45}
-  .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .pl-card{border:1px solid #E2E8F0;border-radius:16px;overflow:hidden;background:#fff}
-  .pl-title{background:#082F49;color:#fff;padding:12px 16px;font-size:13px;font-weight:800;letter-spacing:-.01em}
-  .observations{border:1px solid #E2E8F0;border-radius:16px;background:#F8FAFC;padding:14px}
-  .observations p{font-size:11px;line-height:1.55;color:#475569;margin-top:8px}
-  .footer{margin-top:16px;padding-top:12px;border-top:1px solid #E2E8F0;display:grid;grid-template-columns:1fr 1.25fr;gap:18px;color:#64748B;font-size:10px;line-height:1.5}
-  .disclaimer{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;color:#475569}
+  .support-line{margin-top:8px;border:1px solid #D7E2EA;border-radius:10px;background:#F8FAFC;padding:8px 10px;color:#334155;font-size:10.5px;line-height:1.4}
+  .observations{margin-top:8px;border:1px solid #E2E8F0;border-radius:11px;background:#F8FAFC;padding:9px 11px}
+  .observations-copy{display:grid;grid-template-columns:.8fr 1.2fr;gap:12px;margin-top:5px}
+  .observations p{font-size:10px;line-height:1.4;color:#475569}
+  .observations strong{color:#0F172A}
+  .footer{margin-top:auto;padding-top:8px;border-top:1px solid #E2E8F0;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;color:#64748B;font-size:9px;line-height:1.4}
+  .footer strong{color:#0F172A}
   @page{margin:12mm 10mm;size:A4}
-  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.meta-card,.pl-card,.observations,.support-card,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}.pdf-section-break{break-before:page;page-break-before:always;margin-top:0}}
+  @media print{body{padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.container{max-width:none}.pdf-page{min-height:277mm}.hero,.section,.metric-card,.observations,.support-line,.footer,.avoid-break{break-inside:avoid;page-break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -1937,59 +1892,40 @@ function downloadReport(data) {
         <div class="brand-row">
           <div class="brand-left">
             <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
-            <div>
-              <div class="brand-text">Trend Vision One / TrendAI</div>
-              <div style="font-size:11px;color:#E0F2FE;margin-top:4px">Reporte interno de rentabilidad y dimensionamiento</div>
-            </div>
+            <div class="brand-text">Nextcom Systems · Trend Vision One</div>
           </div>
           <div class="brand-right">
             <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
             <div class="confidential">Confidencial · Uso interno</div>
           </div>
         </div>
-        <h1>Resumen ejecutivo</h1>
-        <p>Documento comercial para validar dimensionamiento, precio, costo proveedor, margen y rentabilidad antes de emitir una cotización final.</p>
+        <h1>Análisis interno</h1>
+        <p>Reporte interno de rentabilidad y dimensionamiento</p>
       </section>
 
       <section class="doc-meta avoid-break">
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Cliente</div>
           <div class="meta-value">${clientName || "Cliente no especificado"}</div>
         </div>
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Fecha de emisión</div>
           <div class="meta-value">${today}</div>
         </div>
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Moneda</div>
           <div class="meta-value">${currency}</div>
           ${isVES ? `<div class="meta-sub">${rateSource.toUpperCase()} · Bs. ${activeRate.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})} por USD</div>` : `<div class="meta-sub">Valores comerciales en USD</div>`}
         </div>
-        <div class="meta-card avoid-break">
+        <div class="meta-item">
           <div class="label">Póliza de soporte</div>
           <div class="meta-value">${supportIncluded ? selectedSupportPolicy : "No incluido"}</div>
           ${soporteDate ? `<div class="meta-sub">Vence ${soporteDate}</div>` : ""}
         </div>
       </section>
 
+      <div class="section-label">KPIs principales</div>
       <section class="metrics avoid-break">${metricCards}</section>
-
-      <section class="section avoid-break">
-        <div class="section-heading">
-          <div>
-            <div class="eyebrow">Resumen ejecutivo</div>
-            <h2>Supuestos comerciales del análisis</h2>
-          </div>
-          <div class="status-pill">${active.length} líneas activas</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px">
-          ${[
-            {l:"Precio al cliente",v:fmtU(salePrice),c:"#1D4ED8"},
-            {l:"Costo proveedor",v:fmtU(costPrice),c:"#0F172A"},
-            {l:"Margen por crédito",v:`${fmtU(salePrice-costPrice)} · ${perCrPct.toFixed(1)}%`,c:mC(perCrPct)}
-          ].map(k => `<div class="support-card avoid-break"><div class="label">${k.l}</div><div class="value" style="color:${k.c}">${k.v}</div></div>`).join("")}
-        </div>
-      </section>
 
       <section class="section">
         <div class="section-heading">
@@ -1997,7 +1933,7 @@ function downloadReport(data) {
             <div class="eyebrow">Detalle de productos</div>
             <h2>Productos y créditos analizados</h2>
           </div>
-          <div class="status-pill">${fmt(totalCredits)} créditos</div>
+          <div class="status-pill">${active.length} ${active.length === 1 ? "producto" : "productos"}</div>
         </div>
         <table>
           <thead>
@@ -2014,45 +1950,31 @@ function downloadReport(data) {
             </tr>
           </thead>
           <tbody>${rowsHTML || `<tr><td colspan="9" style="padding:18px;text-align:center;color:#64748B;font-size:12px">No hay productos activos en este análisis.</td></tr>`}</tbody>
-          <tfoot>
-            <tr style="background:#E0F2FE;border-top:2px solid #082F49">
-              <td colspan="4" style="padding:12px;font-size:12px;font-weight:850;color:#075985;text-transform:uppercase;letter-spacing:.04em">Total créditos Vision One</td>
-              <td style="padding:12px;font-size:13px;font-weight:850;font-family:'SF Mono',monospace;text-align:right;color:#075985">${fmt(totalCredits)}</td>
-              <td colspan="4" style="padding:12px;font-size:12px;text-align:right;color:#075985;font-weight:750">Venta total: <span class="mono">${fmtView(totalRevenue)}</span></td>
-            </tr>
-          </tfoot>
         </table>
       </section>
-      ${supportHTML}
-    </section>
 
-    <section class="pdf-page pdf-page-secondary">
-      <section class="analysis-grid avoid-break pdf-section-break">
-        <div class="pl-card avoid-break">
-          <div class="pl-title">Resumen financiero</div>
-          <table>${plRows}</table>
-        </div>
-        <div class="observations avoid-break">
-          <div class="eyebrow">Observaciones internas</div>
-          <h2>Notas de revisión</h2>
-          <p>Sin observaciones adicionales registradas.</p>
-          <p>Este reporte mantiene los valores calculados por la herramienta y debe revisarse contra la propuesta comercial final antes de compartirse o aprobarse.</p>
-          <p>El detalle comercial del alcance por producto, soporte, condiciones y certificaciones está disponible en la descarga &ldquo;Alcance para cliente&rdquo;.</p>
+      <section class="support-line avoid-break">${supportSummaryHTML}</section>
+
+      <section class="observations avoid-break">
+        <div class="eyebrow">Observaciones internas</div>
+        <h2>Notas de revisión</h2>
+        <div class="observations-copy">
+          <p><strong>Sin observaciones adicionales registradas.</strong></p>
+          <div>
+            <p>Validar contra cotización final antes de compartir o aprobar.</p>
+            <p style="margin-top:4px">El detalle comercial del alcance por producto, soporte, condiciones y certificaciones está disponible en la descarga &ldquo;Alcance para cliente&rdquo;.</p>
+          </div>
         </div>
       </section>
 
       <footer class="footer avoid-break">
         <div>
-          <strong style="color:#0F172A">Nextcom Systems</strong><br>
-          Documento generado por Calculadora Vision One<br>
+          <strong>Nextcom Systems · Documento confidencial de uso interno · No distribuir externamente</strong><br>
           RUC 1253816-1-593861 DV 16 · +507 394-1405
         </div>
-        <div class="disclaimer avoid-break">
-          Este análisis es referencial y debe validarse contra la cotización final, condiciones comerciales vigentes y lineamientos de la marca.
-        </div>
+        <div>Generado por Calculadora Vision One</div>
       </footer>
     </section>
-
   </div>
 </body>
 </html>`;
