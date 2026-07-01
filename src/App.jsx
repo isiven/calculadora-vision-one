@@ -2130,8 +2130,8 @@ async function downloadClientScopeReport(data) {
       scope.notes || "",
     ].join(" ").length;
 
-    if (visibleTextLength > 630) return 4;
-    if (visibleTextLength > 570) return 2;
+    if (visibleTextLength > 1050) return 3;
+    if (visibleTextLength > 760) return 1.5;
     return 1;
   };
   const groupScopeProducts = (items) => {
@@ -2144,7 +2144,7 @@ async function downloadClientScopeReport(data) {
     items.forEach((item) => {
       const itemWeight = getScopeVisualWeight(item);
       const exceedsItemLimit = currentGroup.length >= 3;
-      const exceedsPageWeight = currentWeight + itemWeight > 4;
+      const exceedsPageWeight = currentWeight + itemWeight > 3;
 
       if (currentGroup.length > 0 && (exceedsItemLimit || exceedsPageWeight)) {
         groups.push(currentGroup);
@@ -2297,12 +2297,18 @@ async function downloadClientScopeReport(data) {
         </div>
       </footer>`;
   const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
-  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage;
+  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage || scopeChunks.length > 1;
   const lastScopeChunk = scopeChunks[scopeChunks.length - 1];
   const hasCompactSupportScope = !supportIncluded || selectedSupportPolicy !== "Platinum";
+  const lastScopeChunkWeight = lastScopeChunk.reduce((total, item) => total + getScopeVisualWeight(item), 0);
+  const canCombineSingleProductTail = lastScopeChunk.length === 1
+    && lastScopeChunkWeight <= (hasCompactSupportScope ? 1.5 : 1);
+  const canCombineTwoProductTail = lastScopeChunk.length === 2
+    && lastScopeChunkWeight <= 2
+    && hasCompactSupportScope;
   const combineTailWithLastProductPage = scopeTailNeedsOwnPage
     && scopeChunks.length > 1
-    && (lastScopeChunk.length === 1 || (active.length <= 4 && lastScopeChunk.length === 2 && hasCompactSupportScope));
+    && (canCombineSingleProductTail || canCombineTwoProductTail);
   const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
     ${scopeChunks.slice(1).map((chunk, index) => {
       const chunkIndex = index + 1;
