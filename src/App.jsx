@@ -1579,6 +1579,7 @@ async function generatePdfFromHtml(htmlContent, filename) {
     "top:0",
     `width:${RENDER_WIDTH}px`,
     "height:1200px",
+    "background:#ffffff",
     "border:0",
     "z-index:-1",
   ].join(";");
@@ -1590,6 +1591,8 @@ async function generatePdfFromHtml(htmlContent, filename) {
     doc.open();
     doc.write(htmlContent);
     doc.close();
+    doc.documentElement.style.backgroundColor = "#ffffff";
+    if (doc.body) doc.body.style.backgroundColor = "#ffffff";
 
     // Esperar a que el iframe termine de parsear
     if (doc.readyState !== "complete") {
@@ -1666,7 +1669,19 @@ async function generatePdfFromHtml(htmlContent, filename) {
     // convertir CSS px → mm a 96 DPI (25.4mm = 96px).
     const cssPxToMm = (px) => (px * 25.4) / 96;
 
+    const composeCanvasOnWhite = (sourceCanvas) => {
+      const opaqueCanvas = document.createElement("canvas");
+      opaqueCanvas.width = sourceCanvas.width;
+      opaqueCanvas.height = sourceCanvas.height;
+      const ctx = opaqueCanvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, opaqueCanvas.width, opaqueCanvas.height);
+      ctx.drawImage(sourceCanvas, 0, 0);
+      return opaqueCanvas;
+    };
+
     const addCanvasAsPage = (canvas, pageIdx) => {
+      const opaqueCanvas = composeCanvasOnWhite(canvas);
       const canvasCssWidth = canvas.width / SCALE;
       const canvasCssHeight = canvas.height / SCALE;
       const naturalWidthMm = cssPxToMm(canvasCssWidth);
@@ -1679,7 +1694,9 @@ async function generatePdfFromHtml(htmlContent, filename) {
       const xMm = marginMm + (contentWidthMm - renderedWidthMm) / 2;
 
       if (pageIdx > 0) pdf.addPage();
-      pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", xMm, marginMm, renderedWidthMm, renderedHeightMm);
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageWidthMm, pageHeightMm, "F");
+      pdf.addImage(opaqueCanvas.toDataURL("image/jpeg", 0.95), "JPEG", xMm, marginMm, renderedWidthMm, renderedHeightMm);
     };
 
     const explicitPages = Array.from(target.children || []).filter(el => el.classList && el.classList.contains("pdf-page"));
@@ -1710,7 +1727,7 @@ async function generatePdfFromHtml(htmlContent, filename) {
 
     if (totalRenderedHeightMm <= contentHeightMm + 0.5) {
       // Cabe en una sola página
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgData = composeCanvasOnWhite(canvas).toDataURL("image/jpeg", 0.95);
       pdf.addImage(imgData, "JPEG", marginMm, marginMm, contentWidthMm, totalRenderedHeightMm);
     } else {
       // Paginar: cortar el canvas en slices, cada uno con la altura de una página
@@ -1990,11 +2007,47 @@ function downloadReport(data) {
 }
 
 async function downloadClientScopeReport(data) {
-  const { lines, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD" } = data;
+  const { lines, soporteSale, soporteCost, soporteDate, clientName, supportPolicy = "Platinum", currency = "USD", technicalScope = {} } = data;
   const today = new Date().toLocaleDateString("es-PA", { year:"numeric", month:"long", day:"numeric" });
   const trendAiPdfLogo = await pdfAssetToDataUrl(trendAiSidebarLogo);
   const iso9001PdfLogo = await pdfAssetToDataUrl(iso9001Logo);
   const iso27001PdfLogo = await pdfAssetToDataUrl(iso27001Logo);
+  const escapeScopeText = value => String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+  const optionalScopeText = value => value?.trim() ? escapeScopeText(value.trim()) : "No especificado";
+  const technicalLines = value => String(value || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const renderTechnicalList = value => {
+    const items = technicalLines(value);
+    return items.length > 0
+      ? `<ul class="technical-list">${items.map(item => `<li>${escapeScopeText(item)}</li>`).join("")}</ul>`
+      : `<p class="technical-empty">No especificado</p>`;
+  };
+  const formatTechnicalDate = value => {
+    if (!value) return "";
+    const [year, month, day] = value.split("-").map(Number);
+    if (!year || !month || !day) return "";
+    return new Date(year, month - 1, day).toLocaleDateString("es-PA", { day:"numeric", month:"long", year:"numeric" });
+  };
+  const coverageStartLabel = formatTechnicalDate(technicalScope.coverageStart);
+  const coverageEndLabel = formatTechnicalDate(technicalScope.coverageEnd);
+  const coverageLabel = coverageStartLabel && coverageEndLabel
+    ? `Desde el ${coverageStartLabel} hasta el ${coverageEndLabel}`
+    : coverageStartLabel
+      ? `Desde el ${coverageStartLabel}`
+      : coverageEndLabel
+        ? `Hasta el ${coverageEndLabel}`
+        : "No especificado";
+  const technicalNarrativeLength = [
+    technicalScope.caseDescription,
+    technicalScope.serviceObjectives,
+    technicalScope.scopeDetails,
+    technicalScope.deliverables,
+  ].join(" ").length;
+  const technicalDetailsNeedsOwnPage = technicalNarrativeLength > 1150;
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
     const months = monthsBetween(l.startDate, l.date);
@@ -2012,14 +2065,14 @@ async function downloadClientScopeReport(data) {
             <div class="brand-mark"><img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" /></div>
             <div>
               <div class="brand-text">Nextcom Systems</div>
-              <div class="brand-sub">Alcance comercial de la propuesta</div>
+              <div class="brand-sub">Alcance técnico de la propuesta</div>
             </div>
           </div>
           <img src="${trendAiPdfLogo}" alt="TrendAI" class="trendai-logo" />
         </div>
         <div class="scope-header-main">
           <div>
-            <div class="eyebrow" style="color:#BAE6FD">Propuesta comercial</div>
+            <div class="eyebrow" style="color:#BAE6FD">Documento técnico</div>
             <h1>${title}</h1>
             <p>${subtitle}</p>
           </div>
@@ -2089,7 +2142,7 @@ async function downloadClientScopeReport(data) {
       <section class="scope-slim-header avoid-break">
         <div class="scope-slim-brand">
           <img src="${NEXTCOM_LOGO}" alt="Nextcom Systems" />
-          <span>Alcance comercial de la propuesta</span>
+          <span>Alcance técnico de la propuesta</span>
         </div>
         <div class="scope-slim-actions">
           <div class="scope-slim-trendai" aria-label="TrendAI">
@@ -2100,12 +2153,71 @@ async function downloadClientScopeReport(data) {
         </div>
       </section>`;
 
-  const scopeHeroHTML = `
-      ${renderScopeHeader(
-        "Alcance comercial de la propuesta",
-        "Cobertura descriptiva de los productos, servicios y condiciones incluidos.",
-        getScopeItemRangeLabel(scopeChunks[0] || [])
-      )}`;
+  const technicalGeneralHTML = `
+      <section class="technical-section avoid-break">
+        <div class="technical-section-heading">
+          <span>01</span>
+          <h2>Información general del caso</h2>
+        </div>
+        <div class="technical-info-grid">
+          <div class="technical-field">
+            <div class="label">Nombre del cliente</div>
+            <div class="technical-value">${clientName ? escapeScopeText(clientName) : "No especificado"}</div>
+          </div>
+          <div class="technical-field">
+            <div class="label">Periodo de cobertura</div>
+            <div class="technical-value">${coverageLabel}</div>
+          </div>
+          <div class="technical-field">
+            <div class="label">Tipo de soporte</div>
+            <div class="technical-value">${supportIncluded ? selectedSupportPolicy : "No incluido"}</div>
+          </div>
+          <div class="technical-field technical-field-wide">
+            <div class="label">Descripción del caso</div>
+            <div class="technical-value technical-copy">${optionalScopeText(technicalScope.caseDescription).replace(/\r?\n/g, "<br>")}</div>
+          </div>
+        </div>
+      </section>`;
+  const technicalContactHTML = `
+      <section class="technical-section avoid-break">
+        <div class="technical-section-heading">
+          <span>02</span>
+          <h2>Datos de contacto</h2>
+        </div>
+        <div class="technical-contact-grid">
+          ${[
+            ["Contacto principal", technicalScope.contactName],
+            ["Cargo", technicalScope.contactRole],
+            ["Correo", technicalScope.contactEmail],
+            ["Teléfono", technicalScope.contactPhone],
+          ].map(([label, value]) => `
+            <div class="technical-field">
+              <div class="label">${label}</div>
+              <div class="technical-value">${optionalScopeText(value)}</div>
+            </div>`).join("")}
+        </div>
+      </section>`;
+  const technicalProposalHTML = `
+      <section class="technical-section">
+        <div class="technical-section-heading">
+          <span>03</span>
+          <h2>Propuesta técnica</h2>
+        </div>
+        <div class="technical-proposal-grid">
+          <div class="technical-proposal-card avoid-break">
+            <div class="label">Objetivos del servicio</div>
+            ${renderTechnicalList(technicalScope.serviceObjectives)}
+          </div>
+          <div class="technical-proposal-card avoid-break">
+            <div class="label">Alcances</div>
+            ${renderTechnicalList(technicalScope.scopeDetails)}
+          </div>
+          <div class="technical-proposal-card avoid-break">
+            <div class="label">Entregables</div>
+            ${renderTechnicalList(technicalScope.deliverables)}
+          </div>
+        </div>
+      </section>`;
   const renderScopeItems = (items, offset = 0) => items.length > 0 ? items.map((l, i) => {
     const scope = getVisionOneProductScope(l);
     return `
@@ -2134,7 +2246,7 @@ async function downloadClientScopeReport(data) {
       <section class="scope-card avoid-break">
         <div class="scope-card-header">
           <div>
-            <div class="eyebrow">Alcance por línea</div>
+            <div class="eyebrow">04 · Alcance por producto</div>
             <h2>Alcance por ítem vendido</h2>
           </div>
         </div>
@@ -2146,7 +2258,7 @@ async function downloadClientScopeReport(data) {
       <section class="scope-card avoid-break">
         <div class="scope-card-header">
           <div>
-            <div class="eyebrow">Alcance del soporte</div>
+            <div class="eyebrow">05 · Soporte según póliza</div>
             <h2>Póliza de soporte: ${supportPolicyScope.label}</h2>
           </div>
           <div class="status-pill">${supportPolicyScope.label}</div>
@@ -2161,7 +2273,7 @@ async function downloadClientScopeReport(data) {
       <section class="scope-card avoid-break">
         <div class="scope-card-header">
           <div>
-            <div class="eyebrow">Alcance del soporte</div>
+            <div class="eyebrow">05 · Soporte según póliza</div>
             <h2>Soporte no incluido</h2>
           </div>
           <div class="status-pill">No incluido</div>
@@ -2177,7 +2289,7 @@ async function downloadClientScopeReport(data) {
         <div class="scope-card avoid-break">
           <div class="scope-card-header">
             <div>
-              <div class="eyebrow">Condiciones</div>
+              <div class="eyebrow">06 · Consideraciones</div>
               <h2>Consideraciones del alcance</h2>
             </div>
           </div>
@@ -2195,7 +2307,7 @@ async function downloadClientScopeReport(data) {
         <div class="scope-card avoid-break">
           <div class="scope-card-header">
             <div>
-              <div class="eyebrow">Sistema Integrado de Gestión</div>
+              <div class="eyebrow">07 · Certificaciones</div>
               <h2>Certificaciones Nextcom</h2>
             </div>
           </div>
@@ -2215,51 +2327,93 @@ async function downloadClientScopeReport(data) {
           RUC 1253816-1-593861 DV 16 · +507 394-1405
         </div>
         <div class="disclaimer avoid-break">
-          Alcance para cliente · Documento descriptivo de productos, créditos y soporte. No incluye precios, costos, márgenes ni rentabilidad.
+          Alcance técnico · Documento descriptivo de productos, servicios, créditos y soporte. No incluye precios, costos, márgenes ni rentabilidad.
         </div>
       </footer>`;
-  const supportNeedsOwnPage = supportIncluded && (active.length > 1 || ["Gold", "Platinum"].includes(selectedSupportPolicy));
-  const scopeTailNeedsOwnPage = active.length >= 3 || supportNeedsOwnPage || scopeChunks.length > 1;
-  const lastScopeChunk = scopeChunks[scopeChunks.length - 1];
-  const hasCompactSupportScope = !supportIncluded || selectedSupportPolicy !== "Platinum";
+  const productScopeChunks = active.length > 0 ? scopeChunks : [];
+  const lastScopeChunk = productScopeChunks[productScopeChunks.length - 1] || [];
   const lastScopeChunkWeight = lastScopeChunk.reduce((total, item) => total + getScopeVisualWeight(item), 0);
-  const canCombineSingleProductTail = lastScopeChunk.length === 1
-    && lastScopeChunkWeight <= (hasCompactSupportScope ? 1.5 : 1);
-  const canCombineTwoProductTail = lastScopeChunk.length === 2
-    && lastScopeChunkWeight <= 2
-    && hasCompactSupportScope;
-  const combineTailWithLastProductPage = scopeTailNeedsOwnPage
-    && scopeChunks.length > 1
-    && (canCombineSingleProductTail || canCombineTwoProductTail);
-  const continuationScopePagesHTML = scopeTailNeedsOwnPage ? `
-    ${scopeChunks.slice(1).map((chunk, index) => {
-      const chunkIndex = index + 1;
-      const itemOffset = scopeChunkOffsets[chunkIndex];
-      const includesScopeTail = combineTailWithLastProductPage && chunkIndex === scopeChunks.length - 1;
-      return `
+  const combineTailWithLastProductPage = lastScopeChunk.length > 0
+    && (
+      (lastScopeChunk.length === 1 && lastScopeChunkWeight <= 1.5)
+      || (lastScopeChunk.length === 2 && lastScopeChunkWeight <= 2)
+    );
+  const technicalPageCount = technicalDetailsNeedsOwnPage ? 2 : 1;
+  const totalPageCount = technicalPageCount + productScopeChunks.length + (combineTailWithLastProductPage ? 0 : 1);
+  const technicalFooterHTML = `
+      <div class="technical-page-spacer"></div>
+      <footer class="footer technical-footer avoid-break">
+        <div>
+          <strong style="color:#0F172A">Nextcom Systems</strong><br>
+          Documento generado por Calculadora Vision One
+        </div>
+        <div>Alcance técnico de la propuesta · ${today}</div>
+      </footer>`;
+  const scopeHeroHTML = renderScopeHeader(
+    "Alcance técnico de la propuesta",
+    "Documento descriptivo de productos, servicios, soporte y condiciones técnicas consideradas para la propuesta.",
+    `Página 1 de ${totalPageCount}`
+  );
+  const technicalCoverPagesHTML = `
+    <section class="pdf-page scope-page technical-cover-page">
+      ${scopeHeroHTML}
+      <section class="scope-context-strip avoid-break">
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Moneda: <strong>${currency}</strong></span>
+        </div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Créditos dimensionados: <strong>${fmt(totalCredits)}</strong></span>
+        </div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Productos incluidos: <strong>${active.length}</strong></span>
+        </div>
+        <div class="scope-context-item">
+          <span class="scope-context-dot"></span>
+          <span>Tipo de documento: <strong>Alcance técnico</strong></span>
+        </div>
+      </section>
+      ${technicalGeneralHTML}
+      ${technicalContactHTML}
+      ${technicalDetailsNeedsOwnPage ? "" : technicalProposalHTML}
+      ${technicalFooterHTML}
+    </section>
+    ${technicalDetailsNeedsOwnPage ? `
+    <section class="pdf-page scope-page scope-page-compact technical-cover-page">
+      ${renderScopeSlimHeader(`Página 2 de ${totalPageCount}`)}
+      ${technicalProposalHTML}
+      ${technicalFooterHTML}
+    </section>` : ""}`;
+  const productScopePagesHTML = productScopeChunks.map((chunk, chunkIndex) => {
+    const itemOffset = scopeChunkOffsets[chunkIndex];
+    const includesScopeTail = combineTailWithLastProductPage && chunkIndex === productScopeChunks.length - 1;
+    return `
     <section class="pdf-page scope-page scope-page-compact">
       ${renderScopeSlimHeader(getScopeItemRangeLabel(chunk, itemOffset))}
       ${renderScopeProductSection(chunk, itemOffset)}
       ${includesScopeTail ? scopeTailHTML : ""}
     </section>`;
-    }).join("")}
-    ${combineTailWithLastProductPage ? "" : `
+  }).join("");
+  const standaloneScopeTailHTML = combineTailWithLastProductPage ? "" : `
     <section class="pdf-page scope-page">
-      ${renderScopeSlimHeader("Soporte e ISO")}
+      ${renderScopeSlimHeader("Soporte, condiciones e ISO")}
       ${scopeTailHTML}
-    </section>`}
-    ` : "";
+    </section>`;
 
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Alcance comercial de la propuesta${clientName ? " - " + clientName : ""}</title>
+<title>Alcance técnico de la propuesta${clientName ? " - " + clientName : ""}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#0F172A;background:#fff;font-size:12px;padding:0}
   .container{width:800px;margin:0 auto}
-  .pdf-page{width:800px;min-height:1120px;padding:16px 22px;background:#fff}
+  .pdf-page{width:800px;min-height:1120px;padding:16px 22px;background:#fff;position:relative;isolation:isolate}
+  .pdf-page:before{content:"";position:absolute;inset:0;background:#fff;z-index:0}
+  .pdf-page>*{position:relative;z-index:1}
   .pdf-page + .pdf-page{page-break-before:always;break-before:page}
   .avoid-break{break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;page-break-before:auto;page-break-after:auto}
   .scope-page{display:flex;flex-direction:column;gap:6px}
@@ -2307,6 +2461,27 @@ async function downloadClientScopeReport(data) {
   .label{font-size:9px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
   .meta-value{font-size:12px;font-weight:750;color:#0F172A;line-height:1.35}
   .meta-sub{font-size:10px;color:#94A3B8;margin-top:4px}
+  .technical-cover-page{gap:8px;background-color:#fff;background-image:linear-gradient(#fff,#fff)}
+  .technical-section{border:1px solid #E2E8F0;border-radius:13px;background:#fff;overflow:hidden}
+  .technical-section-heading{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
+  .technical-section-heading span{display:flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:999px;background:#E0F2FE;border:1px solid #BAE6FD;color:#075985;font-family:"SF Mono","Roboto Mono",monospace;font-size:9px;font-weight:850}
+  .technical-section-heading h2{font-size:13.5px;color:#0F172A;letter-spacing:-.015em}
+  .technical-info-grid{display:grid;grid-template-columns:1.1fr 1.25fr .75fr;gap:0;padding:8px 11px}
+  .technical-contact-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:8px 11px}
+  .technical-field{min-width:0;padding:3px 10px;border-right:1px solid #E2E8F0}
+  .technical-field:first-child{padding-left:0}
+  .technical-field:last-child{padding-right:0;border-right:0}
+  .technical-field-wide{grid-column:1 / -1;border-right:0;border-top:1px solid #E2E8F0;margin-top:8px;padding:9px 0 2px}
+  .technical-value{font-size:10.5px;font-weight:700;color:#0F172A;line-height:1.38;overflow-wrap:anywhere}
+  .technical-copy{font-weight:500;color:#475569}
+  .technical-proposal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:9px 11px}
+  .technical-proposal-card{border:1px solid #E2E8F0;border-radius:10px;background:#F8FAFC;padding:8px 9px;min-width:0}
+  .technical-list{list-style:none;display:grid;gap:4px}
+  .technical-list li{position:relative;padding-left:12px;font-size:10px;line-height:1.4;color:#475569;overflow-wrap:anywhere}
+  .technical-list li:before{content:"";position:absolute;left:0;top:.55em;width:4px;height:4px;border-radius:999px;background:#1D4ED8}
+  .technical-empty{font-size:10px;color:#94A3B8;line-height:1.4}
+  .technical-page-spacer{flex:1;min-height:1px;background:#fff}
+  .technical-footer{margin-top:0}
   .scope-card{border:1px solid #E2E8F0;border-radius:14px;background:#fff;overflow:hidden}
   .scope-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 11px;border-bottom:1px solid #E2E8F0;background:#F8FAFC}
   .scope-card-header h2{font-size:14px;letter-spacing:-.02em;color:#0F172A}
@@ -2342,39 +2517,14 @@ async function downloadClientScopeReport(data) {
 </head>
 <body>
   <div class="container pdf-content">
-    <section class="pdf-page scope-page">
-      ${scopeHeroHTML}
-      <section class="scope-context-strip avoid-break">
-        <div class="scope-context-item">
-          <span class="scope-context-dot"></span>
-          <span>Moneda: <strong>${currency}</strong></span>
-        </div>
-        <div class="scope-context-item">
-          <span class="scope-context-dot"></span>
-          <span>Créditos dimensionados: <strong>${fmt(totalCredits)}</strong></span>
-        </div>
-        <div class="scope-context-item">
-          <span class="scope-context-dot"></span>
-          <span>Productos incluidos: <strong>${active.length}</strong></span>
-        </div>
-        <div class="scope-context-item">
-          <span class="scope-context-dot"></span>
-          <span>Tipo de documento: <strong>alcance descriptivo</strong></span>
-        </div>
-      </section>
-      ${!scopeTailNeedsOwnPage ? `
-      ${renderScopeProductSection(active, 0)}
-      ${scopeTailHTML}
-      ` : `
-      ${renderScopeProductSection(scopeChunks[0] || [], 0)}
-      `}
-    </section>
-    ${continuationScopePagesHTML}
+    ${technicalCoverPagesHTML}
+    ${productScopePagesHTML}
+    ${standaloneScopeTailHTML}
   </div>
 </body>
 </html>`;
 
-  const fname = `Alcance_Propuesta_VisionOne_Nextcom_${new Date().toISOString().split("T")[0]}.pdf`;
+  const fname = `Alcance_Tecnico_Propuesta_VisionOne_Nextcom_${new Date().toISOString().split("T")[0]}.pdf`;
 
   return generatePdfFromHtml(html, fname).catch(err => {
     console.error("Error generando PDF de alcance:", err);
@@ -2396,6 +2546,18 @@ function InternalApp() {
   const [soporteDate, setSoporteDate] = useState("");
   const [supportPolicy, setSupportPolicy] = useState("Platinum");
   const [clientName, setClientName] = useState("");
+  const [technicalScope, setTechnicalScope] = useState({
+    caseDescription: "",
+    contactName: "",
+    contactRole: "",
+    contactEmail: "",
+    contactPhone: "",
+    serviceObjectives: "",
+    scopeDetails: "",
+    deliverables: "",
+    coverageStart: "",
+    coverageEnd: "",
+  });
   const [pdfLoading, setPdfLoading] = useState(false);
   const [scopePdfLoading, setScopePdfLoading] = useState(false);
   const isMobile = useIsMobile();
@@ -2585,7 +2747,7 @@ function InternalApp() {
     });
     setRc(c => c+1);
   };
-  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setSupportPolicy("Platinum"); setClientName(""); }};
+  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setSupportPolicy("Platinum"); setClientName(""); setTechnicalScope({ caseDescription:"", contactName:"", contactRole:"", contactEmail:"", contactPhone:"", serviceObjectives:"", scopeDetails:"", deliverables:"", coverageStart:"", coverageEnd:"" }); }};
 
   return (
     <>
@@ -2621,7 +2783,7 @@ function InternalApp() {
             onExportScopePdf={async () => {
               if (scopePdfLoading) return;
               setScopePdfLoading(true);
-              try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency }); }
+              try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, technicalScope }); }
               catch(e){} finally { setScopePdfLoading(false); }
             }}
             pdfLoading={pdfLoading}
@@ -2889,6 +3051,103 @@ function InternalApp() {
         </div>
         </InternalWorkspaceSection>
 
+        <div style={{ height:14 }} />
+
+        <InternalWorkspaceSection
+          title="Datos del alcance técnico"
+          description="Información opcional para la portada y propuesta técnica del documento de alcance."
+        >
+          <div style={{ padding:isMobile?"16px 14px":"20px", background:"#fff", display:"flex", flexDirection:"column", gap:18 }}>
+            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"minmax(220px,.8fr) minmax(320px,1.2fr)", gap:14 }}>
+              <label style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>Nombre del cliente</span>
+                <input
+                  type="text"
+                  value={clientName}
+                  onChange={e => setClientName(e.target.value)}
+                  placeholder="Cliente o empresa"
+                  style={{ fontSize:13, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"10px 11px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
+                />
+              </label>
+              <label style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>Descripción del caso</span>
+                <textarea
+                  value={technicalScope.caseDescription}
+                  onChange={e => setTechnicalScope(current => ({ ...current, caseDescription:e.target.value }))}
+                  placeholder="Contexto técnico y necesidad principal"
+                  rows={2}
+                  style={{ fontFamily:"inherit", fontSize:13, lineHeight:1.45, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 11px", resize:"vertical", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
+                />
+              </label>
+            </div>
+
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:"#64748B", textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Datos de contacto</div>
+              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(2, minmax(0, 1fr))", gap:12 }}>
+                {[
+                  { key:"contactName", label:"Contacto principal", placeholder:"Nombre y apellido", type:"text" },
+                  { key:"contactRole", label:"Cargo del contacto", placeholder:"Cargo o área", type:"text" },
+                  { key:"contactEmail", label:"Correo del contacto", placeholder:"correo@empresa.com", type:"email" },
+                  { key:"contactPhone", label:"Teléfono del contacto", placeholder:"+507 0000-0000", type:"tel" },
+                ].map(field => (
+                  <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>{field.label}</span>
+                    <input
+                      type={field.type}
+                      value={technicalScope[field.key]}
+                      onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
+                      placeholder={field.placeholder}
+                      style={{ fontSize:13, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"10px 11px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:"#64748B", textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Propuesta técnica</div>
+              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(3, minmax(0, 1fr))", gap:12 }}>
+                {[
+                  { key:"serviceObjectives", label:"Objetivos del servicio", placeholder:"Un objetivo por línea" },
+                  { key:"scopeDetails", label:"Alcances", placeholder:"Un alcance por línea" },
+                  { key:"deliverables", label:"Entregables", placeholder:"Un entregable por línea" },
+                ].map(field => (
+                  <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>{field.label}</span>
+                    <textarea
+                      value={technicalScope[field.key]}
+                      onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
+                      placeholder={field.placeholder}
+                      rows={4}
+                      style={{ fontFamily:"inherit", fontSize:13, lineHeight:1.45, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 11px", resize:"vertical", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:"#64748B", textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Periodo de cobertura</div>
+              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(2, minmax(0, 260px))", gap:12 }}>
+                {[
+                  { key:"coverageStart", label:"Desde" },
+                  { key:"coverageEnd", label:"Hasta" },
+                ].map(field => (
+                  <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:7 }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>{field.label}</span>
+                    <input
+                      type="date"
+                      value={technicalScope[field.key]}
+                      onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
+                      style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 11px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        </InternalWorkspaceSection>
+
         <p style={{ fontSize:11, color:C.text3, marginTop:12, textAlign:"center" }}>Créditos calculados para 12 meses · Trend Micro Vision One Jan 2026</p>
       </main>
 
@@ -2927,7 +3186,7 @@ function InternalApp() {
               onClick={async () => {
                 if (scopePdfLoading) return;
                 setScopePdfLoading(true);
-                try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency }); }
+                try { await downloadClientScopeReport({ lines, soporteSale, soporteCost, soporteDate, supportPolicy, clientName, currency, technicalScope }); }
                 catch(e){} finally { setScopePdfLoading(false); }
               }}
               disabled={scopePdfLoading}
