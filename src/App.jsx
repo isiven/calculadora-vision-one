@@ -2019,35 +2019,8 @@ async function downloadClientScopeReport(data) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
   const optionalScopeText = value => value?.trim() ? escapeScopeText(value.trim()) : "No especificado";
-  const technicalLines = value => String(value || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  const renderTechnicalList = value => {
-    const items = technicalLines(value);
-    return items.length > 0
-      ? `<ul class="technical-list">${items.map(item => `<li>${escapeScopeText(item)}</li>`).join("")}</ul>`
-      : `<p class="technical-empty">No especificado</p>`;
-  };
-  const formatTechnicalDate = value => {
-    if (!value) return "";
-    const [year, month, day] = value.split("-").map(Number);
-    if (!year || !month || !day) return "";
-    return new Date(year, month - 1, day).toLocaleDateString("es-PA", { day:"numeric", month:"long", year:"numeric" });
-  };
-  const coverageStartLabel = formatTechnicalDate(technicalScope.coverageStart);
-  const coverageEndLabel = formatTechnicalDate(technicalScope.coverageEnd);
-  const coverageLabel = coverageStartLabel && coverageEndLabel
-    ? `Desde el ${coverageStartLabel} hasta el ${coverageEndLabel}`
-    : coverageStartLabel
-      ? `Desde el ${coverageStartLabel}`
-      : coverageEndLabel
-        ? `Hasta el ${coverageEndLabel}`
-        : "No especificado";
-  const technicalNarrativeLength = [
-    technicalScope.caseDescription,
-    technicalScope.serviceObjectives,
-    technicalScope.scopeDetails,
-    technicalScope.deliverables,
-  ].join(" ").length;
-  const technicalDetailsNeedsOwnPage = technicalNarrativeLength > 1150;
+  const renderTechnicalList = items => `
+      <ul class="technical-list">${items.map(item => `<li>${escapeScopeText(item)}</li>`).join("")}</ul>`;
   const active = lines.filter(l => l.prodId && l.qty > 0).map(l => {
     const p = CATALOG.find(c => c.id===l.prodId);
     const months = monthsBetween(l.startDate, l.date);
@@ -2058,6 +2031,48 @@ async function downloadClientScopeReport(data) {
   const selectedSupportPolicy = normalizeSupportPolicy(supportPolicy);
   const supportPolicyScope = getSupportPolicyScope(selectedSupportPolicy);
   const supportIncluded = soporteSale > 0 || soporteCost > 0;
+  const automaticCaseDescription = "El presente documento describe el alcance técnico de los productos y servicios Trend Vision One / TrendAI considerados para la propuesta, incluyendo cantidades, créditos, vigencias, capacidades incluidas, soporte asociado, condiciones y certificaciones aplicables.";
+  const technicalObjectives = [
+    "Fortalecer la postura de ciberseguridad del cliente mediante las capacidades incluidas en Trend Vision One / TrendAI.",
+    "Centralizar visibilidad, prevención, detección y respuesta sobre los productos dimensionados.",
+    "Reducir exposición operativa mediante monitoreo, priorización de riesgos y controles de seguridad según los módulos incluidos.",
+    "Alinear el uso de créditos y servicios con el alcance técnico definido en la propuesta.",
+  ];
+  const technicalScopes = [
+    "Implementación y/o habilitación de las capacidades asociadas a los productos incluidos.",
+    "Uso de créditos Vision One según las cantidades dimensionadas.",
+    "Cobertura técnica sobre los módulos seleccionados en la propuesta.",
+    supportIncluded
+      ? `Alcance de soporte según la póliza ${selectedSupportPolicy} seleccionada.`
+      : "Soporte comercial Nextcom no incluido en la propuesta.",
+  ];
+  const selectedProductText = active.map(line => `${line.prod.cat || ""} ${line.prod.name || ""}`.toLowerCase());
+  [
+    { pattern:/endpoint|edr/, text:"Cobertura sobre capacidades de Endpoint Security incluidas en el dimensionamiento." },
+    { pattern:/email|collaboration/, text:"Cobertura sobre capacidades de Email and Collaboration Security incluidas en el dimensionamiento." },
+    { pattern:/zero trust|ztsa/, text:"Cobertura sobre capacidades de Zero Trust Secure Access incluidas en el dimensionamiento." },
+    { pattern:/cloud risk management/, text:"Cobertura sobre capacidades de Cloud Risk Management incluidas en el dimensionamiento." },
+    { pattern:/cyber risk exposure/, text:"Cobertura sobre capacidades de Cyber Risk Exposure Management incluidas en el dimensionamiento." },
+    { pattern:/vision one credits|créditos vision one|credits/, text:"Uso del pool de Trend Vision One Credits conforme a los créditos dimensionados." },
+  ].forEach(family => {
+    if (selectedProductText.some(product => family.pattern.test(product))) technicalScopes.push(family.text);
+  });
+  const technicalDeliverables = [
+    "Productos y capacidades habilitadas según el alcance aprobado.",
+    "Documento de alcance técnico de productos, cantidades, vigencias y créditos.",
+    supportIncluded
+      ? `Soporte según la póliza ${selectedSupportPolicy} seleccionada.`
+      : "Confirmación de que la propuesta no incluye una póliza de soporte Nextcom.",
+    "Transferencia de información operativa necesaria para el uso del servicio.",
+    "Validación de condiciones y consideraciones aplicables.",
+  ];
+  const technicalNarrativeLength = [
+    automaticCaseDescription,
+    ...technicalObjectives,
+    ...technicalScopes,
+    ...technicalDeliverables,
+  ].join(" ").length;
+  const technicalDetailsNeedsOwnPage = technicalNarrativeLength > 1150;
   const renderScopeHeader = (title, subtitle, pageLabel) => `
       <section class="scope-doc-header avoid-break">
         <div class="brand-row">
@@ -2165,16 +2180,16 @@ async function downloadClientScopeReport(data) {
             <div class="technical-value">${clientName ? escapeScopeText(clientName) : "No especificado"}</div>
           </div>
           <div class="technical-field">
-            <div class="label">Periodo de cobertura</div>
-            <div class="technical-value">${coverageLabel}</div>
+            <div class="label">Cobertura considerada</div>
+            <div class="technical-value">Según vigencias de los productos y servicios incluidos en esta propuesta.</div>
           </div>
           <div class="technical-field">
-            <div class="label">Tipo de soporte</div>
-            <div class="technical-value">${supportIncluded ? selectedSupportPolicy : "No incluido"}</div>
+            <div class="label">Soporte</div>
+            <div class="technical-value">${supportIncluded ? `Póliza ${selectedSupportPolicy} según vigencia indicada en la sección de soporte.` : "No incluido."}</div>
           </div>
           <div class="technical-field technical-field-wide">
             <div class="label">Descripción del caso</div>
-            <div class="technical-value technical-copy">${optionalScopeText(technicalScope.caseDescription).replace(/\r?\n/g, "<br>")}</div>
+            <div class="technical-value technical-copy">${automaticCaseDescription}</div>
           </div>
         </div>
       </section>`;
@@ -2206,15 +2221,15 @@ async function downloadClientScopeReport(data) {
         <div class="technical-proposal-grid">
           <div class="technical-proposal-card avoid-break">
             <div class="label">Objetivos del servicio</div>
-            ${renderTechnicalList(technicalScope.serviceObjectives)}
+            ${renderTechnicalList(technicalObjectives)}
           </div>
           <div class="technical-proposal-card avoid-break">
             <div class="label">Alcances</div>
-            ${renderTechnicalList(technicalScope.scopeDetails)}
+            ${renderTechnicalList(technicalScopes)}
           </div>
           <div class="technical-proposal-card avoid-break">
             <div class="label">Entregables</div>
-            ${renderTechnicalList(technicalScope.deliverables)}
+            ${renderTechnicalList(technicalDeliverables)}
           </div>
         </div>
       </section>`;
@@ -2547,16 +2562,10 @@ function InternalApp() {
   const [supportPolicy, setSupportPolicy] = useState("Platinum");
   const [clientName, setClientName] = useState("");
   const [technicalScope, setTechnicalScope] = useState({
-    caseDescription: "",
     contactName: "",
     contactRole: "",
     contactEmail: "",
     contactPhone: "",
-    serviceObjectives: "",
-    scopeDetails: "",
-    deliverables: "",
-    coverageStart: "",
-    coverageEnd: "",
   });
   const [pdfLoading, setPdfLoading] = useState(false);
   const [scopePdfLoading, setScopePdfLoading] = useState(false);
@@ -2747,7 +2756,7 @@ function InternalApp() {
     });
     setRc(c => c+1);
   };
-  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setSupportPolicy("Platinum"); setClientName(""); setTechnicalScope({ caseDescription:"", contactName:"", contactRole:"", contactEmail:"", contactPhone:"", serviceObjectives:"", scopeDetails:"", deliverables:"", coverageStart:"", coverageEnd:"" }); }};
+  const clearAll = () => { if(confirm("¿Limpiar todo? Esto incluye los precios configurados.")){ const d = defaultDates(); setLines([{ rowId:rc, prodId:null, qty:0, date:d.date, startDate:d.startDate }]); setRc(c => c+1); setSalePrice(0); setCostPrice(0); setSoporteSale(0); setSoporteCost(0); setSoporteDate(""); setSupportPolicy("Platinum"); setClientName(""); setTechnicalScope({ contactName:"", contactRole:"", contactEmail:"", contactPhone:"" }); }};
 
   return (
     <>
@@ -2889,6 +2898,32 @@ function InternalApp() {
               style={{ fontSize:15, padding:"11px 13px", border:`1px solid ${C.border}`, borderRadius:8, background:C.surface, color:C.text, width:"100%", outline:"none", boxSizing:"border-box" }} />
           </div>
         )}
+
+        <section aria-label="Contacto del cliente" style={{ marginBottom:isMobile?14:18, padding:isMobile?"2px 0 0":"0 2px" }}>
+          <div style={{ display:"flex", alignItems:isMobile?"flex-start":"baseline", gap:isMobile?3:8, flexDirection:isMobile?"column":"row", marginBottom:8 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#334155" }}>Contacto del cliente</div>
+            <div style={{ fontSize:11, color:"#94A3B8" }}>Opcional para la portada del alcance técnico.</div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:supportPolicyGridColumns, gap:8 }}>
+            {[
+              { key:"contactName", label:"Contacto principal", placeholder:"Nombre y apellido", type:"text" },
+              { key:"contactRole", label:"Cargo", placeholder:"Cargo o área", type:"text" },
+              { key:"contactEmail", label:"Correo", placeholder:"correo@empresa.com", type:"email" },
+              { key:"contactPhone", label:"Teléfono", placeholder:"+507 0000-0000", type:"tel" },
+            ].map(field => (
+              <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                <span style={{ fontSize:10.5, fontWeight:600, color:"#64748B" }}>{field.label}</span>
+                <input
+                  type={field.type}
+                  value={technicalScope[field.key]}
+                  onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
+                  placeholder={field.placeholder}
+                  style={{ height:36, boxSizing:"border-box", fontSize:12.5, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:7, padding:"0 10px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
+                />
+              </label>
+            ))}
+          </div>
+        </section>
 
         {/* FX panel — only when VES */}
         {currency === "VES" && (
@@ -3049,103 +3084,6 @@ function InternalApp() {
             </div>
           </div>
         </div>
-        </InternalWorkspaceSection>
-
-        <div style={{ height:14 }} />
-
-        <InternalWorkspaceSection
-          title="Datos del alcance técnico"
-          description="Información opcional para la portada y propuesta técnica del documento de alcance."
-        >
-          <div style={{ padding:isMobile?"16px 14px":"20px", background:"#fff", display:"flex", flexDirection:"column", gap:18 }}>
-            <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"minmax(220px,.8fr) minmax(320px,1.2fr)", gap:14 }}>
-              <label style={{ display:"flex", flexDirection:"column", gap:7 }}>
-                <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>Nombre del cliente</span>
-                <input
-                  type="text"
-                  value={clientName}
-                  onChange={e => setClientName(e.target.value)}
-                  placeholder="Cliente o empresa"
-                  style={{ fontSize:13, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"10px 11px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
-                />
-              </label>
-              <label style={{ display:"flex", flexDirection:"column", gap:7 }}>
-                <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>Descripción del caso</span>
-                <textarea
-                  value={technicalScope.caseDescription}
-                  onChange={e => setTechnicalScope(current => ({ ...current, caseDescription:e.target.value }))}
-                  placeholder="Contexto técnico y necesidad principal"
-                  rows={2}
-                  style={{ fontFamily:"inherit", fontSize:13, lineHeight:1.45, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 11px", resize:"vertical", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
-                />
-              </label>
-            </div>
-
-            <div>
-              <div style={{ fontSize:10, fontWeight:800, color:"#64748B", textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Datos de contacto</div>
-              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(2, minmax(0, 1fr))", gap:12 }}>
-                {[
-                  { key:"contactName", label:"Contacto principal", placeholder:"Nombre y apellido", type:"text" },
-                  { key:"contactRole", label:"Cargo del contacto", placeholder:"Cargo o área", type:"text" },
-                  { key:"contactEmail", label:"Correo del contacto", placeholder:"correo@empresa.com", type:"email" },
-                  { key:"contactPhone", label:"Teléfono del contacto", placeholder:"+507 0000-0000", type:"tel" },
-                ].map(field => (
-                  <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:7 }}>
-                    <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>{field.label}</span>
-                    <input
-                      type={field.type}
-                      value={technicalScope[field.key]}
-                      onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
-                      placeholder={field.placeholder}
-                      style={{ fontSize:13, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"10px 11px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div style={{ fontSize:10, fontWeight:800, color:"#64748B", textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Propuesta técnica</div>
-              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(3, minmax(0, 1fr))", gap:12 }}>
-                {[
-                  { key:"serviceObjectives", label:"Objetivos del servicio", placeholder:"Un objetivo por línea" },
-                  { key:"scopeDetails", label:"Alcances", placeholder:"Un alcance por línea" },
-                  { key:"deliverables", label:"Entregables", placeholder:"Un entregable por línea" },
-                ].map(field => (
-                  <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:7 }}>
-                    <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>{field.label}</span>
-                    <textarea
-                      value={technicalScope[field.key]}
-                      onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
-                      placeholder={field.placeholder}
-                      rows={4}
-                      style={{ fontFamily:"inherit", fontSize:13, lineHeight:1.45, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 11px", resize:"vertical", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div style={{ fontSize:10, fontWeight:800, color:"#64748B", textTransform:"uppercase", letterSpacing:".08em", marginBottom:10 }}>Periodo de cobertura</div>
-              <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"repeat(2, minmax(0, 260px))", gap:12 }}>
-                {[
-                  { key:"coverageStart", label:"Desde" },
-                  { key:"coverageEnd", label:"Hasta" },
-                ].map(field => (
-                  <label key={field.key} style={{ display:"flex", flexDirection:"column", gap:7 }}>
-                    <span style={{ fontSize:12, fontWeight:600, color:"#475569" }}>{field.label}</span>
-                    <input
-                      type="date"
-                      value={technicalScope[field.key]}
-                      onChange={e => setTechnicalScope(current => ({ ...current, [field.key]:e.target.value }))}
-                      style={{ ...mono, fontSize:12, color:"#0F172A", border:"1px solid #E2E8F0", borderRadius:8, padding:"9px 11px", outline:"none", background:"#fff", boxShadow:"0 1px 2px rgba(15,23,42,.03)" }}
-                    />
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
         </InternalWorkspaceSection>
 
         <p style={{ fontSize:11, color:C.text3, marginTop:12, textAlign:"center" }}>Créditos calculados para 12 meses · Trend Micro Vision One Jan 2026</p>
