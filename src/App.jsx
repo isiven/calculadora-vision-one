@@ -6882,32 +6882,86 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
               alignItems:"center",
             }}>
               <div style={{
-                maxWidth:isMobile ? 320 : 390,
+                display:"flex",
+                alignItems:"center",
+                gap:isMobile ? 11 : 13,
+                maxWidth:isMobile ? 340 : 410,
+                minWidth:0,
                 padding:isMobile ? "2px 0" : "0",
               }}>
-                <img
-                  src={trendAiElitePartnerLogo}
-                  alt="TrendAI Elite Partner"
-                  style={{
-                    display:"block",
-                    width:"100%",
-                    height:"auto",
-                    objectFit:"contain",
-                    filter:"drop-shadow(0 10px 22px rgba(0,0,0,.14))",
-                  }}
-                />
+                <span style={{
+                  position:"relative",
+                  display:"block",
+                  width:isMobile ? 44 : 52,
+                  height:isMobile ? 34 : 40,
+                  overflow:"hidden",
+                  flex:"0 0 auto",
+                  filter:"drop-shadow(0 10px 22px rgba(0,0,0,.16))",
+                }}>
+                  <img
+                    src={trendAiElitePartnerLogo}
+                    alt=""
+                    aria-hidden="true"
+                    style={{
+                      position:"absolute",
+                      left:0,
+                      top:0,
+                      height:"100%",
+                      width:"auto",
+                      maxWidth:"none",
+                      objectFit:"contain",
+                      objectPosition:"left center",
+                    }}
+                  />
+                </span>
+                <div style={{
+                  display:"flex",
+                  alignItems:"baseline",
+                  gap:isMobile ? 8 : 11,
+                  minWidth:0,
+                  color:"#FFFFFF",
+                  lineHeight:1,
+                  whiteSpace:"nowrap",
+                  filter:"drop-shadow(0 10px 22px rgba(0,0,0,.16))",
+                }} aria-label="TrendAI Elite Partner">
+                  <span style={{ fontSize:isMobile ? 29 : 36, fontWeight:850, letterSpacing:"-.045em" }}>TrendAI</span>
+                  <span style={{ width:1, height:isMobile ? 26 : 31, background:"rgba(255,255,255,.42)", display:"inline-block" }} />
+                  <span style={{ fontSize:isMobile ? 25 : 32, fontWeight:760, letterSpacing:"-.035em", color:"rgba(255,255,255,.9)" }}>Elite Partner</span>
+                </div>
               </div>
               <div style={{
                 display:"grid",
-                gap:8,
+                gap:10,
                 paddingLeft:isMobile ? 0 : 18,
                 borderLeft:isMobile ? "none" : "1px solid rgba(226,242,255,.16)",
                 color:"rgba(248,250,252,.82)",
                 fontSize:isMobile ? 12.5 : 13,
                 lineHeight:1.45,
               }}>
-                <div>ISO 9001:2015 · Gestión de Calidad</div>
-                <div>ISO 27001:2022 · Seguridad de la Información</div>
+                {[
+                  { src:iso9001Logo, alt:"ISO 9001", label:"ISO 9001:2015 · Gestión de Calidad" },
+                  { src:iso27001Logo, alt:"ISO/IEC 27001", label:"ISO 27001:2022 · Seguridad de la Información" },
+                ].map((cert) => (
+                  <div key={cert.label} style={{
+                    display:"grid",
+                    gridTemplateColumns:"30px minmax(0, 1fr)",
+                    alignItems:"center",
+                    gap:10,
+                  }}>
+                    <img
+                      src={cert.src}
+                      alt={cert.alt}
+                      style={{
+                        width:30,
+                        height:30,
+                        objectFit:"contain",
+                        display:"block",
+                        filter:"drop-shadow(0 6px 12px rgba(0,0,0,.16))",
+                      }}
+                    />
+                    <span>{cert.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
