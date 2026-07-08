@@ -6742,6 +6742,73 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
   const [internalLoginLoading, setInternalLoginLoading] = useState(false);
   const [internalLoginError, setInternalLoginError] = useState(false);
 
+  const NextcomEmployeeIcon = ({ size = 23, color = "#334155" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path
+        d="M4.75 20.25c.55-3.15 3.18-5.35 7.25-5.35s6.7 2.2 7.25 5.35"
+        stroke={color}
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8.25 11.35c-1.1-.86-1.8-2.2-1.8-3.7A4.62 4.62 0 0 1 11.1 3h1.8a4.62 4.62 0 0 1 4.65 4.65c0 1.5-.7 2.84-1.8 3.7"
+        stroke={color}
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <rect
+        x="8.35"
+        y="4.85"
+        width="7.3"
+        height="7.3"
+        rx="1.55"
+        transform="rotate(45 12 8.5)"
+        fill={color}
+      />
+      <path
+        d="M10.3 9.05V7.1c0-.45.37-.82.82-.82h1.76c.45 0 .82.37.82.82v3.18"
+        stroke="#FFFFFF"
+        strokeWidth="1.28"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const TrendAiEliteMark = ({ compact = false }) => (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:compact ? 8 : 10, color:"#FFFFFF", lineHeight:1 }}>
+      <span style={{
+        position:"relative",
+        display:"block",
+        width:compact ? 38 : 52,
+        height:compact ? 30 : 40,
+        overflow:"hidden",
+        flex:"0 0 auto",
+      }}>
+        <img
+          src={trendAiElitePartnerLogo}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position:"absolute",
+            left:0,
+            top:0,
+            height:"100%",
+            width:"auto",
+            maxWidth:"none",
+            objectFit:"contain",
+            objectPosition:"left center",
+          }}
+        />
+      </span>
+      <span style={{ display:"grid", gap:compact ? 2 : 4 }}>
+        <span style={{ display:"flex", alignItems:"baseline", gap:compact ? 7 : 9, whiteSpace:"nowrap" }}>
+          <span style={{ fontSize:compact ? 24 : 34, fontWeight:850, letterSpacing:"-.045em" }}>TrendAI</span>
+        </span>
+        <span style={{ fontSize:compact ? 13 : 17, fontWeight:760, color:"rgba(255,255,255,.82)", letterSpacing:"-.01em" }}>Elite Partner</span>
+      </span>
+    </span>
+  );
+
   const submitInternalLogin = (event) => {
     event.preventDefault();
     if (internalLoginLoading) return;
@@ -6772,7 +6839,7 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
     {
       title: "Equipo Nextcom",
       description: "Acceso interno para análisis, PDF y gestión comercial",
-      icon: ShieldCheck,
+      icon: NextcomEmployeeIcon,
       action: () => {
         setInternalLoginOpen(true);
         setInternalLoginError(false);
@@ -6791,7 +6858,7 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
       minHeight:isMobile ? "100dvh" : "620px",
       background:"#F7FAFC",
       display:"grid",
-      gridTemplateColumns:isMobile ? "1fr" : "minmax(420px, 48%) minmax(420px, 52%)",
+      gridTemplateColumns:isMobile ? "1fr" : "minmax(520px, 50%) minmax(520px, 50%)",
       overflow:isMobile ? "visible" : "hidden",
       fontFamily:"system-ui,-apple-system,sans-serif"
     }}>
@@ -6799,28 +6866,41 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
         position:"relative",
         overflow:"hidden",
         minHeight:isMobile ? "auto" : "100dvh",
-        padding:isMobile ? "28px 22px 34px" : "clamp(28px,4vh,42px) clamp(34px,4.5vw,48px)",
+        padding:isMobile ? "30px 24px 36px" : "clamp(48px,7vh,78px) clamp(54px,5vw,74px) clamp(34px,5vh,52px)",
         color:"#fff",
         display:"flex",
         flexDirection:"column",
         justifyContent:"space-between",
-        background:"linear-gradient(145deg,#061A2B 0%,#082C46 58%,#0A3A55 100%)",
+        background:"radial-gradient(circle at 82% 46%, rgba(0,132,255,.2), transparent 34%), linear-gradient(145deg,#04172A 0%,#06233D 56%,#073250 100%)",
       }}>
         <div aria-hidden="true" style={{
           position:"absolute",
           inset:0,
-          opacity:.18,
-          backgroundImage:"radial-gradient(circle at 1px 1px, rgba(186,230,253,.28) 1px, transparent 0)",
-          backgroundSize:"32px 32px",
-          maskImage:"linear-gradient(120deg, rgba(0,0,0,.8), rgba(0,0,0,.12) 78%, transparent)",
+          opacity:.22,
+          backgroundImage:"radial-gradient(circle at 1px 1px, rgba(80,180,255,.34) 1.2px, transparent 0)",
+          backgroundSize:"26px 26px",
+          maskImage:"linear-gradient(100deg, rgba(0,0,0,.18), rgba(0,0,0,.75) 70%, transparent)",
         }} />
         <div aria-hidden="true" style={{
           position:"absolute",
-          inset:"12% -18% auto auto",
-          width:isMobile ? 320 : 520,
-          height:isMobile ? 320 : 520,
-          border:"1px solid rgba(125,211,252,.18)",
+          right:isMobile ? -160 : -120,
+          top:isMobile ? 130 : 132,
+          width:isMobile ? 390 : "min(560px,42vw)",
+          height:isMobile ? 390 : "min(560px,42vw)",
+          border:"1px solid rgba(0,132,255,.22)",
           borderRadius:"50%",
+        }} />
+        <div aria-hidden="true" style={{
+          position:"absolute",
+          right:isMobile ? -135 : -88,
+          top:isMobile ? 172 : 190,
+          width:isMobile ? 330 : "min(470px,35vw)",
+          height:isMobile ? 330 : "min(470px,35vw)",
+          borderRadius:"50%",
+          backgroundImage:"radial-gradient(circle at 1px 1px, rgba(0,132,255,.58) 1.25px, transparent 0)",
+          backgroundSize:"9px 9px",
+          maskImage:"radial-gradient(circle, rgba(0,0,0,.72), transparent 68%)",
+          opacity:.72,
         }} />
         <div aria-hidden="true" style={{
           position:"absolute",
@@ -6836,25 +6916,25 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
           <div style={{
             display:"flex",
             alignItems:"center",
-            gap:isMobile ? 13 : 16,
-            marginBottom:isMobile ? 34 : "clamp(34px,6vh,58px)",
+            gap:isMobile ? 14 : 26,
+            marginBottom:isMobile ? 42 : "clamp(54px,8vh,82px)",
             flexWrap:"wrap",
           }}>
-            <img src={NEXTCOM_LOGO_REVERSE} alt="Nextcom Systems" style={{ height:isMobile ? 34 : "clamp(34px,4.2vh,39px)", width:"auto", maxWidth:isMobile ? 150 : 176, objectFit:"contain" }} />
-            <div style={{ width:1, height:isMobile ? 28 : 34, background:"rgba(255,255,255,.28)" }} />
-            <img src={trendAiSidebarLogo} alt="TrendAI" style={{ height:isMobile ? 28 : "clamp(28px,3.7vh,33px)", width:"auto", maxWidth:isMobile ? 132 : 158, objectFit:"contain" }} />
+            <img src={NEXTCOM_LOGO_REVERSE} alt="Nextcom Systems" style={{ height:isMobile ? 36 : "clamp(36px,5vh,46px)", width:"auto", maxWidth:isMobile ? 162 : 210, objectFit:"contain" }} />
+            <div style={{ width:1, height:isMobile ? 34 : 52, background:"rgba(255,255,255,.34)" }} />
+            <TrendAiEliteMark compact={isMobile} />
           </div>
 
           <div style={{ maxWidth:560 }}>
-            <div style={{ fontSize:isMobile ? 42 : "clamp(46px,6.5vh,58px)", lineHeight:.98, fontWeight:820, letterSpacing:"-.05em", marginBottom:isMobile ? 18 : "clamp(12px,2vh,18px)" }}>
+            <div style={{ fontSize:isMobile ? 46 : "clamp(58px,8.2vh,78px)", lineHeight:1.02, fontWeight:850, letterSpacing:"-.06em", marginBottom:isMobile ? 18 : "clamp(18px,2.6vh,24px)" }}>
               <div>Calculadora</div>
-              <div style={{ color:"#38BDF8" }}>Vision One</div>
+              <div style={{ color:"#1084FF" }}>Vision One</div>
             </div>
             <p style={{
-              maxWidth:500,
-              fontSize:isMobile ? 15 : "clamp(15px,2vh,18px)",
-              lineHeight:1.52,
-              color:"rgba(226,242,255,.82)",
+              maxWidth:515,
+              fontSize:isMobile ? 16 : "clamp(17px,2.2vh,20px)",
+              lineHeight:1.55,
+              color:"rgba(241,248,255,.86)",
               margin:0,
             }}>
               Estimación, análisis y documentación técnica para soluciones Trend Vision One.
@@ -6862,77 +6942,34 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
           </div>
 
           <div style={{
-            marginTop:isMobile ? 28 : "clamp(24px,4vh,36px)",
-            paddingTop:isMobile ? 18 : "clamp(16px,2.8vh,22px)",
-            borderTop:"1px solid rgba(226,242,255,.18)",
+            marginTop:isMobile ? 32 : "clamp(36px,5.8vh,58px)",
             maxWidth:560,
           }}>
-            <div style={{
-              fontSize:10,
-              fontWeight:780,
-              letterSpacing:".16em",
-              textTransform:"uppercase",
-              color:"rgba(226,242,255,.62)",
-              marginBottom:isMobile ? 14 : "clamp(10px,1.8vh,13px)",
-            }}>
-              Credenciales y alianzas
+            <div style={{ display:"flex", alignItems:"center", gap:18, marginBottom:isMobile ? 18 : 22 }}>
+              <div style={{
+                fontSize:12,
+                fontWeight:780,
+                letterSpacing:".2em",
+                textTransform:"uppercase",
+                color:"rgba(226,242,255,.72)",
+                whiteSpace:"nowrap",
+              }}>
+                Credenciales y alianzas
+              </div>
+              <div style={{ height:1, flex:1, background:"rgba(226,242,255,.24)" }} />
             </div>
             <div style={{
-              display:"grid",
-              gap:isMobile ? 15 : "clamp(12px,2vh,16px)",
-              alignItems:"start",
-              justifyItems:"start",
+              display:"flex",
+              alignItems:"center",
+              gap:isMobile ? 18 : 28,
+              flexWrap:"wrap",
             }}>
+              <TrendAiEliteMark compact />
+              <div style={{ width:1, height:isMobile ? 44 : 70, background:"rgba(226,242,255,.28)" }} />
               <div style={{
                 display:"flex",
                 alignItems:"center",
-                gap:isMobile ? 9 : 11,
-                maxWidth:isMobile ? 300 : 320,
-                minWidth:0,
-                padding:isMobile ? "2px 0" : "0",
-              }}>
-                <span style={{
-                  position:"relative",
-                  display:"block",
-                  width:isMobile ? 34 : "clamp(32px,3.8vh,38px)",
-                  height:isMobile ? 26 : "clamp(25px,3vh,29px)",
-                  overflow:"hidden",
-                  flex:"0 0 auto",
-                }}>
-                  <img
-                    src={trendAiElitePartnerLogo}
-                    alt=""
-                    aria-hidden="true"
-                    style={{
-                      position:"absolute",
-                      left:0,
-                      top:0,
-                      height:"100%",
-                      width:"auto",
-                      maxWidth:"none",
-                      objectFit:"contain",
-                      objectPosition:"left center",
-                    }}
-                  />
-                </span>
-                <div style={{
-                  display:"flex",
-                  alignItems:"baseline",
-                  gap:isMobile ? 7 : 8,
-                  minWidth:0,
-                  color:"#FFFFFF",
-                  lineHeight:1,
-                  whiteSpace:"nowrap",
-                }} aria-label="TrendAI Elite Partner">
-                  <span style={{ fontSize:isMobile ? 23 : "clamp(22px,3.1vh,26px)", fontWeight:850, letterSpacing:"-.04em" }}>TrendAI</span>
-                  <span style={{ width:1, height:isMobile ? 20 : "clamp(19px,2.7vh,22px)", background:"rgba(255,255,255,.36)", display:"inline-block" }} />
-                  <span style={{ fontSize:isMobile ? 20 : "clamp(19px,2.8vh,23px)", fontWeight:740, letterSpacing:"-.03em", color:"rgba(255,255,255,.86)" }}>Elite Partner</span>
-                </div>
-              </div>
-              <div style={{
-                display:"flex",
-                alignItems:"center",
-                gap:12,
+                gap:isMobile ? 12 : 14,
                 flexWrap:"wrap",
               }}>
                 {[{ src:iso9001Logo, alt:"ISO 9001" }, { src:iso27001Logo, alt:"ISO/IEC 27001" }].map((cert) => (
@@ -6941,8 +6978,8 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                     src={cert.src}
                     alt={cert.alt}
                     style={{
-                      width:isMobile ? 42 : "clamp(34px,4.6vh,42px)",
-                      height:isMobile ? 42 : "clamp(34px,4.6vh,42px)",
+                      width:isMobile ? 74 : "clamp(82px,10vh,104px)",
+                      height:isMobile ? 74 : "clamp(82px,10vh,104px)",
                       objectFit:"contain",
                       display:"block",
                       opacity:.92,
@@ -6954,11 +6991,14 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
           </div>
         </div>
 
-        <div style={{ position:"relative", zIndex:1, marginTop:isMobile ? 32 : "clamp(28px,5vh,52px)" }}>
+        <div style={{ position:"relative", zIndex:1, marginTop:isMobile ? 32 : "clamp(26px,4.2vh,40px)" }}>
           <div style={{
+            borderTop:"1px solid rgba(226,242,255,.2)",
+            borderBottom:"1px solid rgba(226,242,255,.2)",
+            padding:isMobile ? "18px 0" : "clamp(16px,2.4vh,22px) 0",
             display:"grid",
             gap:isMobile ? 13 : "clamp(10px,1.8vh,14px)",
-            marginBottom:isMobile ? 28 : "clamp(20px,3.7vh,36px)",
+            marginBottom:isMobile ? 28 : "clamp(20px,3.4vh,32px)",
             maxWidth:520,
           }}>
             {benefits.map(({ icon: Icon, label }) => (
@@ -6976,12 +7016,12 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                   alignItems:"center",
                   justifyContent:"center",
                   background:"rgba(125,211,252,.1)",
-                  border:"1px solid rgba(125,211,252,.18)",
+                  border:"none",
                   flex:"0 0 auto",
                 }}>
-                  <Icon size={17} color="#7DD3FC" strokeWidth={2} />
+                  <Icon size={22} color="#1084FF" strokeWidth={1.9} />
                 </span>
-                <div style={{ fontSize:isMobile ? 13.5 : "clamp(12.5px,1.65vh,13.5px)", fontWeight:680, lineHeight:1.35, color:"#EAF6FF" }}>
+                <div style={{ fontSize:isMobile ? 14 : "clamp(14px,1.8vh,16px)", fontWeight:520, lineHeight:1.35, color:"rgba(241,248,255,.9)" }}>
                   {label}
                 </div>
               </div>
@@ -7015,19 +7055,19 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
           backgroundSize:"18px 18px",
           maskImage:"radial-gradient(circle, rgba(0,0,0,.9), transparent 72%)",
         }} />
-        <div style={{ width:"100%", maxWidth:520, position:"relative", zIndex:1 }}>
+        <div style={{ width:"100%", maxWidth:internalLoginOpen ? 462 : 540, position:"relative", zIndex:1 }}>
           {!internalLoginOpen ? (
             <>
-              <div style={{ marginBottom:isMobile ? 28 : 36 }}>
-                <div style={{ fontSize:isMobile ? 28 : 34, lineHeight:1.12, fontWeight:850, color:"#0F172A", letterSpacing:"-.035em", marginBottom:10 }}>
+              <div style={{ marginBottom:isMobile ? 28 : 44 }}>
+                <div style={{ fontSize:isMobile ? 30 : 38, lineHeight:1.08, fontWeight:850, color:"#0F172A", letterSpacing:"-.04em", marginBottom:18 }}>
                   Selecciona el tipo de acceso
                 </div>
-                <p style={{ fontSize:isMobile ? 14 : 15, color:"#64748B", lineHeight:1.55, margin:0 }}>
+                <p style={{ fontSize:isMobile ? 15 : 19, color:"#1F2A44", lineHeight:1.45, margin:0 }}>
                   Elige cómo deseas continuar.
                 </p>
               </div>
 
-              <div style={{ display:"grid", gap:14 }}>
+              <div style={{ display:"grid", gap:isMobile ? 16 : 24 }}>
                 {accessCards.map(({ title, description, icon: Icon, action, highlighted }) => (
                   <button
                     key={title}
@@ -7035,15 +7075,15 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                     onClick={action}
                     style={{
                       width:"100%",
-                      minHeight:isMobile ? 92 : 104,
-                      padding:isMobile ? "18px 18px" : "20px 22px",
-                      borderRadius:16,
-                      border:highlighted ? "1.5px solid #2563EB" : "1px solid #E2E8F0",
+                      minHeight:isMobile ? 104 : 132,
+                      padding:isMobile ? "18px 18px" : "24px 28px",
+                      borderRadius:10,
+                      border:highlighted ? "2px solid #1478FF" : "1px solid #D8DEE8",
                       background:highlighted ? "linear-gradient(180deg,#FFFFFF 0%,#F8FBFF 100%)" : "#FFFFFF",
-                      boxShadow:highlighted ? "0 18px 38px rgba(37,99,235,.13), 0 1px 0 rgba(255,255,255,.8) inset" : "0 10px 24px rgba(15,23,42,.045)",
+                      boxShadow:highlighted ? "0 18px 42px rgba(20,120,255,.08), 0 1px 0 rgba(255,255,255,.8) inset" : "0 12px 28px rgba(15,23,42,.035)",
                       display:"flex",
                       alignItems:"center",
-                      gap:16,
+                      gap:isMobile ? 16 : 24,
                       textAlign:"left",
                       cursor:"pointer",
                       color:"#0F172A",
@@ -7061,52 +7101,51 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                     }}
                   >
                     <span style={{
-                      width:46,
-                      height:46,
-                      borderRadius:14,
+                      width:isMobile ? 58 : 78,
+                      height:isMobile ? 58 : 78,
+                      borderRadius:"50%",
                       display:"inline-flex",
                       alignItems:"center",
                       justifyContent:"center",
                       flex:"0 0 auto",
-                      background:highlighted ? "#EFF6FF" : "#F8FAFC",
+                      background:highlighted ? "#EAF2FF" : "#F1F3F6",
                       color:highlighted ? "#1D4ED8" : "#334155",
-                      border:highlighted ? "1px solid #BFDBFE" : "1px solid #E2E8F0",
+                      border:"none",
                     }}>
-                      <Icon size={23} strokeWidth={2.15} />
+                      <Icon size={highlighted ? 34 : 36} color={highlighted ? "#1478FF" : "#0F2C44"} strokeWidth={highlighted ? 1.95 : 2.05} />
                     </span>
                     <span style={{ flex:1, minWidth:0 }}>
-                      <span style={{ display:"block", fontSize:isMobile ? 17 : 18, fontWeight:800, letterSpacing:"-.015em", marginBottom:5 }}>
+                      <span style={{ display:"block", fontSize:isMobile ? 18 : 23, fontWeight:850, letterSpacing:"-.025em", marginBottom:8 }}>
                         {title}
                       </span>
-                      <span style={{ display:"block", fontSize:isMobile ? 12.5 : 13.5, color:"#64748B", lineHeight:1.45 }}>
+                      <span style={{ display:"block", fontSize:isMobile ? 13 : 15, color:"#1F2A44", lineHeight:1.45 }}>
                         {description}
                       </span>
                     </span>
-                    <ArrowRight size={20} color={highlighted ? "#1D4ED8" : "#94A3B8"} strokeWidth={2.2} />
+                    <ArrowRight size={highlighted ? 32 : 30} color={highlighted ? "#1478FF" : "#9AA3B2"} strokeWidth={2.1} />
                   </button>
                 ))}
               </div>
 
-              <div style={{ height:1, background:"#E2E8F0", margin:isMobile ? "26px 0 20px" : "32px 0 22px" }} />
-
-              <div style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"14px 0 0" }}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", alignItems:"center", gap:18, margin:isMobile ? "30px 0 20px" : "46px 0 26px" }}>
+                <div style={{ height:1, background:"#DDE4EF" }} />
                 <span style={{
-                  width:34,
-                  height:34,
-                  borderRadius:12,
+                  width:28,
+                  height:28,
+                  borderRadius:"50%",
                   display:"inline-flex",
                   alignItems:"center",
                   justifyContent:"center",
-                  background:"#F1F5F9",
-                  color:"#475569",
-                  flex:"0 0 auto",
+                  color:"#9AA3B2",
                 }}>
-                  <LockKeyhole size={17} strokeWidth={2.15} />
+                  <LockKeyhole size={18} strokeWidth={2.1} />
                 </span>
-                <div style={{ fontSize:13, lineHeight:1.55, color:"#64748B" }}>
-                  <div style={{ color:"#334155", fontWeight:750 }}>El acceso interno requiere credenciales autorizadas.</div>
-                  <div>Si no tienes acceso, contacta al equipo de Nextcom.</div>
-                </div>
+                <div style={{ height:1, background:"#DDE4EF" }} />
+              </div>
+
+              <div style={{ textAlign:"center", fontSize:isMobile ? 13.5 : 15.5, lineHeight:1.55, color:"#1F2A44" }}>
+                <div>El acceso interno requiere credenciales autorizadas.</div>
+                <div>Si no tienes acceso, contacta al equipo de Nextcom.</div>
               </div>
             </>
           ) : (
@@ -7149,7 +7188,7 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                   display:"flex",
                   alignItems:"flex-start",
                   gap:14,
-                  padding:isMobile ? "20px 20px 18px" : "24px 24px 20px",
+                padding:isMobile ? "20px 20px 18px" : "26px 28px 22px",
                   background:"linear-gradient(180deg,#F8FAFC 0%,#FFFFFF 100%)",
                   borderBottom:"1px solid #E2E8F0",
                 }}>
@@ -7168,24 +7207,21 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                     <ShieldCheck size={21} strokeWidth={2.2} />
                   </span>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:11, fontWeight:850, color:"#64748B", textTransform:"uppercase", letterSpacing:".12em", marginBottom:7 }}>
-                      Área privada Nextcom
-                    </div>
                     <div style={{ fontSize:isMobile ? 25 : 29, lineHeight:1.12, fontWeight:820, color:"#0F172A", letterSpacing:"-.032em", marginBottom:9 }}>
-                      Acceso interno
+                      Acceso interno Nextcom
                     </div>
                     <p style={{ fontSize:isMobile ? 13.5 : 14.5, color:"#53627A", lineHeight:1.55, margin:0 }}>
-                      Ingresa con tu cuenta corporativa para continuar al panel de análisis, documentos y gestión comercial.
+                      Ingresa tus credenciales autorizadas para continuar.
                     </p>
                   </div>
                 </div>
 
-                <div style={{ padding:isMobile ? "20px" : "22px 24px 24px" }}>
+                <div style={{ padding:isMobile ? "20px" : "24px 28px 28px" }}>
                   <div style={{
                     display:"flex",
                     alignItems:"center",
                     gap:10,
-                    padding:"11px 12px",
+                    padding:"12px 14px",
                     borderRadius:13,
                     background:"#F8FAFC",
                     border:"1px solid #E2E8F0",
@@ -7198,8 +7234,8 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                     <span>Solo equipo autorizado de Nextcom Systems.</span>
                   </div>
 
-                  <div style={{ display:"grid", gap:15 }}>
-                    <label style={{ display:"grid", gap:7 }}>
+                  <div style={{ display:"grid", gap:16, width:"100%", maxWidth:380, margin:"0 auto", boxSizing:"border-box" }}>
+                    <label style={{ display:"grid", gap:7, minWidth:0 }}>
                       <span style={{ fontSize:12, fontWeight:760, color:"#334155", letterSpacing:".01em" }}>Usuario</span>
                       <input
                         type="email"
@@ -7212,6 +7248,7 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                         autoComplete="username"
                         style={{
                           width:"100%",
+                          boxSizing:"border-box",
                           height:46,
                           border:"1px solid #CAD7E3",
                           borderRadius:10,
@@ -7225,9 +7262,9 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                       />
                     </label>
 
-                    <label style={{ display:"grid", gap:7 }}>
+                    <label style={{ display:"grid", gap:7, minWidth:0 }}>
                       <span style={{ fontSize:12, fontWeight:760, color:"#334155", letterSpacing:".01em" }}>Contraseña</span>
-                      <div style={{ position:"relative" }}>
+                      <div style={{ position:"relative", minWidth:0 }}>
                         <input
                           type={showInternalPassword ? "text" : "password"}
                           value={internalPassword}
@@ -7239,6 +7276,7 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                           autoComplete="current-password"
                           style={{
                             width:"100%",
+                            boxSizing:"border-box",
                             height:46,
                             border:"1px solid #CAD7E3",
                             borderRadius:10,
@@ -7287,6 +7325,9 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                     disabled={internalLoginLoading}
                     style={{
                       width:"100%",
+                      maxWidth:380,
+                      boxSizing:"border-box",
+                      display:"block",
                       height:48,
                       border:"none",
                       borderRadius:10,
@@ -7295,7 +7336,7 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                       fontSize:14,
                       fontWeight:800,
                       cursor:internalLoginLoading ? "wait" : "pointer",
-                      marginTop:20,
+                      margin:"20px auto 0",
                       boxShadow:"0 14px 28px rgba(8,47,73,.16)",
                     }}
                   >
