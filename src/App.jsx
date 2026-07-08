@@ -7044,155 +7044,198 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
             </>
           ) : (
             <form onSubmit={submitInternalLogin}>
-              <div style={{ marginBottom:isMobile ? 24 : 30 }}>
-                <div style={{ display:"inline-flex", alignItems:"center", gap:9, padding:"7px 10px", borderRadius:999, background:"#F1F5F9", color:"#334155", fontSize:11.5, fontWeight:750, marginBottom:18 }}>
-                  <ShieldCheck size={23} strokeWidth={2.2} />
-                  Equipo Nextcom
-                </div>
-                <div style={{ fontSize:isMobile ? 26 : 31, lineHeight:1.12, fontWeight:820, color:"#0F172A", letterSpacing:"-.032em", marginBottom:10 }}>
-                  Acceso interno Nextcom
-                </div>
-                <p style={{ fontSize:isMobile ? 14 : 15, color:"#64748B", lineHeight:1.55, margin:0 }}>
-                  Usa tus credenciales internas para acceder a análisis, documentos y gestión comercial.
-                </p>
+              <div style={{ marginBottom:20 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInternalLoginOpen(false);
+                    setInternalLoginError(false);
+                    setInternalLoginLoading(false);
+                    setInternalPassword("");
+                  }}
+                  style={{
+                    display:"inline-flex",
+                    alignItems:"center",
+                    gap:7,
+                    padding:0,
+                    border:"none",
+                    background:"transparent",
+                    color:"#475569",
+                    fontSize:13,
+                    fontWeight:750,
+                    cursor:"pointer",
+                  }}
+                >
+                  <ArrowLeft size={15} strokeWidth={2.2} />
+                  Volver a selección de acceso
+                </button>
               </div>
 
-              <div style={{ display:"grid", gap:16 }}>
-                <label style={{ display:"grid", gap:7 }}>
-                  <span style={{ fontSize:12, fontWeight:750, color:"#334155", letterSpacing:".01em" }}>Usuario</span>
-                  <input
-                    type="email"
-                    value={internalUser}
-                    onChange={e => {
-                      setInternalUser(e.target.value);
-                      if (internalLoginError) setInternalLoginError(false);
-                    }}
-                    placeholder="usuario@nextcomsystems.com"
-                    autoComplete="username"
+              <section style={{
+                border:"1px solid #DDE7EF",
+                borderRadius:22,
+                background:"#FFFFFF",
+                boxShadow:"0 24px 60px rgba(15,23,42,.08)",
+                overflow:"hidden",
+              }}>
+                <div style={{
+                  display:"flex",
+                  alignItems:"flex-start",
+                  gap:14,
+                  padding:isMobile ? "20px 20px 18px" : "24px 24px 20px",
+                  background:"linear-gradient(180deg,#F8FAFC 0%,#FFFFFF 100%)",
+                  borderBottom:"1px solid #E2E8F0",
+                }}>
+                  <span style={{
+                    width:42,
+                    height:42,
+                    borderRadius:13,
+                    display:"inline-flex",
+                    alignItems:"center",
+                    justifyContent:"center",
+                    background:"#082F49",
+                    color:"#E0F2FE",
+                    flex:"0 0 auto",
+                    boxShadow:"0 10px 22px rgba(8,47,73,.16)",
+                  }}>
+                    <ShieldCheck size={21} strokeWidth={2.2} />
+                  </span>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:11, fontWeight:850, color:"#64748B", textTransform:"uppercase", letterSpacing:".12em", marginBottom:7 }}>
+                      Área privada Nextcom
+                    </div>
+                    <div style={{ fontSize:isMobile ? 25 : 29, lineHeight:1.12, fontWeight:820, color:"#0F172A", letterSpacing:"-.032em", marginBottom:9 }}>
+                      Acceso interno
+                    </div>
+                    <p style={{ fontSize:isMobile ? 13.5 : 14.5, color:"#53627A", lineHeight:1.55, margin:0 }}>
+                      Ingresa con tu cuenta corporativa para continuar al panel de análisis, documentos y gestión comercial.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ padding:isMobile ? "20px" : "22px 24px 24px" }}>
+                  <div style={{
+                    display:"flex",
+                    alignItems:"center",
+                    gap:10,
+                    padding:"11px 12px",
+                    borderRadius:13,
+                    background:"#F8FAFC",
+                    border:"1px solid #E2E8F0",
+                    marginBottom:18,
+                    color:"#475569",
+                    fontSize:12.5,
+                    lineHeight:1.45,
+                  }}>
+                    <LockKeyhole size={16} strokeWidth={2.1} />
+                    <span>Solo equipo autorizado de Nextcom Systems.</span>
+                  </div>
+
+                  <div style={{ display:"grid", gap:15 }}>
+                    <label style={{ display:"grid", gap:7 }}>
+                      <span style={{ fontSize:12, fontWeight:760, color:"#334155", letterSpacing:".01em" }}>Usuario</span>
+                      <input
+                        type="email"
+                        value={internalUser}
+                        onChange={e => {
+                          setInternalUser(e.target.value);
+                          if (internalLoginError) setInternalLoginError(false);
+                        }}
+                        placeholder="usuario@nextcomsystems.com"
+                        autoComplete="username"
+                        style={{
+                          width:"100%",
+                          height:46,
+                          border:"1px solid #CAD7E3",
+                          borderRadius:10,
+                          background:"#FDFEFF",
+                          padding:"0 14px",
+                          fontSize:14,
+                          color:"#0F172A",
+                          outline:"none",
+                          boxShadow:"0 1px 2px rgba(15,23,42,.035)",
+                        }}
+                      />
+                    </label>
+
+                    <label style={{ display:"grid", gap:7 }}>
+                      <span style={{ fontSize:12, fontWeight:760, color:"#334155", letterSpacing:".01em" }}>Contraseña</span>
+                      <div style={{ position:"relative" }}>
+                        <input
+                          type={showInternalPassword ? "text" : "password"}
+                          value={internalPassword}
+                          onChange={e => {
+                            setInternalPassword(e.target.value);
+                            if (internalLoginError) setInternalLoginError(false);
+                          }}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          style={{
+                            width:"100%",
+                            height:46,
+                            border:"1px solid #CAD7E3",
+                            borderRadius:10,
+                            background:"#FDFEFF",
+                            padding:"0 48px 0 14px",
+                            fontSize:14,
+                            color:"#0F172A",
+                            outline:"none",
+                            boxShadow:"0 1px 2px rgba(15,23,42,.035)",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label={showInternalPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          onClick={() => setShowInternalPassword(v => !v)}
+                          style={{
+                            position:"absolute",
+                            right:8,
+                            top:6,
+                            width:34,
+                            height:34,
+                            border:"none",
+                            borderRadius:10,
+                            background:"transparent",
+                            color:"#64748B",
+                            cursor:"pointer",
+                            display:"inline-flex",
+                            alignItems:"center",
+                            justifyContent:"center",
+                          }}
+                        >
+                          {showInternalPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+
+                  {internalLoginError && (
+                    <div style={{ marginTop:14, border:"1px solid #FECACA", background:"#FEF2F2", color:"#B91C1C", borderRadius:12, padding:"10px 12px", fontSize:12.5, fontWeight:650 }}>
+                      Credenciales inválidas. Verifica tu usuario y contraseña.
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={internalLoginLoading}
                     style={{
                       width:"100%",
-                      height:46,
-                      border:"1px solid #CBD5E1",
-                      borderRadius:11,
-                      background:"#FFFFFF",
-                      padding:"0 14px",
+                      height:48,
+                      border:"none",
+                      borderRadius:10,
+                      background:internalLoginLoading ? "#94A3B8" : "#082F49",
+                      color:"#FFFFFF",
                       fontSize:14,
-                      color:"#0F172A",
-                      outline:"none",
-                      boxShadow:"0 1px 2px rgba(15,23,42,.04)",
+                      fontWeight:800,
+                      cursor:internalLoginLoading ? "wait" : "pointer",
+                      marginTop:20,
+                      boxShadow:"0 14px 28px rgba(8,47,73,.16)",
                     }}
-                  />
-                </label>
-
-                <label style={{ display:"grid", gap:7 }}>
-                  <span style={{ fontSize:12, fontWeight:750, color:"#334155", letterSpacing:".01em" }}>Contraseña</span>
-                  <div style={{ position:"relative" }}>
-                    <input
-                      type={showInternalPassword ? "text" : "password"}
-                      value={internalPassword}
-                      onChange={e => {
-                        setInternalPassword(e.target.value);
-                        if (internalLoginError) setInternalLoginError(false);
-                      }}
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      style={{
-                        width:"100%",
-                        height:46,
-                        border:"1px solid #CBD5E1",
-                        borderRadius:11,
-                        background:"#FFFFFF",
-                        padding:"0 48px 0 14px",
-                        fontSize:14,
-                        color:"#0F172A",
-                        outline:"none",
-                        boxShadow:"0 1px 2px rgba(15,23,42,.04)",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      aria-label={showInternalPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                      onClick={() => setShowInternalPassword(v => !v)}
-                      style={{
-                        position:"absolute",
-                        right:8,
-                        top:6,
-                        width:34,
-                        height:34,
-                        border:"none",
-                        borderRadius:10,
-                        background:"transparent",
-                        color:"#64748B",
-                        cursor:"pointer",
-                        display:"inline-flex",
-                        alignItems:"center",
-                        justifyContent:"center",
-                      }}
-                    >
-                      {showInternalPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
-                    </button>
-                  </div>
-                </label>
-              </div>
-
-              {internalLoginError && (
-                <div style={{ marginTop:14, border:"1px solid #FECACA", background:"#FEF2F2", color:"#B91C1C", borderRadius:12, padding:"10px 12px", fontSize:12.5, fontWeight:650 }}>
-                  Credenciales inválidas. Verifica tu usuario y contraseña.
+                  >
+                    {internalLoginLoading ? "Validando acceso..." : "Ingresar al panel interno"}
+                  </button>
                 </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={internalLoginLoading}
-                style={{
-                  width:"100%",
-                  height:48,
-                  border:"none",
-                  borderRadius:11,
-                  background:internalLoginLoading ? "#94A3B8" : "#082F49",
-                  color:"#FFFFFF",
-                  fontSize:14,
-                  fontWeight:800,
-                  cursor:internalLoginLoading ? "wait" : "pointer",
-                  marginTop:20,
-                  boxShadow:"0 14px 28px rgba(8,47,73,.16)",
-                }}
-              >
-                {internalLoginLoading ? "Validando acceso..." : "Ingresar al panel interno"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setInternalLoginOpen(false);
-                  setInternalLoginError(false);
-                  setInternalLoginLoading(false);
-                  setInternalPassword("");
-                }}
-                style={{
-                  display:"inline-flex",
-                  alignItems:"center",
-                  gap:6,
-                  marginTop:18,
-                  padding:0,
-                  border:"none",
-                  background:"transparent",
-                  color:"#475569",
-                  fontSize:13,
-                  fontWeight:750,
-                  cursor:"pointer",
-                }}
-              >
-                <ArrowLeft size={15} strokeWidth={2.2} />
-                Volver a selección de acceso
-              </button>
-
-              <div style={{ height:1, background:"#E2E8F0", margin:isMobile ? "24px 0 18px" : "30px 0 20px" }} />
-
-              <div style={{ display:"flex", alignItems:"center", gap:10, color:"#64748B", fontSize:12.5, lineHeight:1.45 }}>
-                <LockKeyhole size={16} strokeWidth={2.1} />
-                <span>Acceso restringido al equipo autorizado de Nextcom.</span>
-              </div>
+              </section>
             </form>
           )}
 
