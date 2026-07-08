@@ -6787,17 +6787,19 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
   ];
   return (
     <div style={{
-      minHeight:"100vh",
+      height:isMobile ? "auto" : "100dvh",
+      minHeight:isMobile ? "100dvh" : "620px",
       background:"#F7FAFC",
       display:"grid",
       gridTemplateColumns:isMobile ? "1fr" : "minmax(420px, 48%) minmax(420px, 52%)",
+      overflow:isMobile ? "visible" : "hidden",
       fontFamily:"system-ui,-apple-system,sans-serif"
     }}>
       <section style={{
         position:"relative",
         overflow:"hidden",
-        minHeight:isMobile ? "auto" : "100vh",
-        padding:isMobile ? "28px 22px 34px" : "44px 48px",
+        minHeight:isMobile ? "auto" : "100dvh",
+        padding:isMobile ? "28px 22px 34px" : "clamp(28px,4vh,42px) clamp(34px,4.5vw,48px)",
         color:"#fff",
         display:"flex",
         flexDirection:"column",
@@ -6835,23 +6837,23 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
             display:"flex",
             alignItems:"center",
             gap:isMobile ? 13 : 16,
-          marginBottom:isMobile ? 38 : 76,
+            marginBottom:isMobile ? 34 : "clamp(34px,6vh,58px)",
             flexWrap:"wrap",
           }}>
-            <img src={NEXTCOM_LOGO_REVERSE} alt="Nextcom Systems" style={{ height:isMobile ? 34 : 39, width:"auto", maxWidth:isMobile ? 150 : 176, objectFit:"contain" }} />
+            <img src={NEXTCOM_LOGO_REVERSE} alt="Nextcom Systems" style={{ height:isMobile ? 34 : "clamp(34px,4.2vh,39px)", width:"auto", maxWidth:isMobile ? 150 : 176, objectFit:"contain" }} />
             <div style={{ width:1, height:isMobile ? 28 : 34, background:"rgba(255,255,255,.28)" }} />
-            <img src={trendAiSidebarLogo} alt="TrendAI" style={{ height:isMobile ? 28 : 33, width:"auto", maxWidth:isMobile ? 132 : 158, objectFit:"contain" }} />
+            <img src={trendAiSidebarLogo} alt="TrendAI" style={{ height:isMobile ? 28 : "clamp(28px,3.7vh,33px)", width:"auto", maxWidth:isMobile ? 132 : 158, objectFit:"contain" }} />
           </div>
 
           <div style={{ maxWidth:560 }}>
-            <div style={{ fontSize:isMobile ? 42 : 58, lineHeight:.98, fontWeight:820, letterSpacing:"-.05em", marginBottom:18 }}>
+            <div style={{ fontSize:isMobile ? 42 : "clamp(46px,6.5vh,58px)", lineHeight:.98, fontWeight:820, letterSpacing:"-.05em", marginBottom:isMobile ? 18 : "clamp(12px,2vh,18px)" }}>
               <div>Calculadora</div>
               <div style={{ color:"#38BDF8" }}>Vision One</div>
             </div>
             <p style={{
               maxWidth:500,
-              fontSize:isMobile ? 15 : 18,
-              lineHeight:1.58,
+              fontSize:isMobile ? 15 : "clamp(15px,2vh,18px)",
+              lineHeight:1.52,
               color:"rgba(226,242,255,.82)",
               margin:0,
             }}>
@@ -6860,8 +6862,8 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
           </div>
 
           <div style={{
-            marginTop:isMobile ? 30 : 42,
-            paddingTop:isMobile ? 20 : 24,
+            marginTop:isMobile ? 28 : "clamp(24px,4vh,36px)",
+            paddingTop:isMobile ? 18 : "clamp(16px,2.8vh,22px)",
             borderTop:"1px solid rgba(226,242,255,.18)",
             maxWidth:560,
           }}>
@@ -6871,13 +6873,13 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
               letterSpacing:".16em",
               textTransform:"uppercase",
               color:"rgba(226,242,255,.62)",
-              marginBottom:14,
+              marginBottom:isMobile ? 14 : "clamp(10px,1.8vh,13px)",
             }}>
               Credenciales y alianzas
             </div>
             <div style={{
               display:"grid",
-              gap:isMobile ? 15 : 17,
+              gap:isMobile ? 15 : "clamp(12px,2vh,16px)",
               alignItems:"start",
               justifyItems:"start",
             }}>
@@ -6885,15 +6887,15 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                 display:"flex",
                 alignItems:"center",
                 gap:isMobile ? 9 : 11,
-                maxWidth:isMobile ? 300 : 345,
+                maxWidth:isMobile ? 300 : 320,
                 minWidth:0,
                 padding:isMobile ? "2px 0" : "0",
               }}>
                 <span style={{
                   position:"relative",
                   display:"block",
-                  width:isMobile ? 34 : 40,
-                  height:isMobile ? 26 : 31,
+                  width:isMobile ? 34 : "clamp(32px,3.8vh,38px)",
+                  height:isMobile ? 26 : "clamp(25px,3vh,29px)",
                   overflow:"hidden",
                   flex:"0 0 auto",
                 }}>
@@ -6922,30 +6924,41 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                   lineHeight:1,
                   whiteSpace:"nowrap",
                 }} aria-label="TrendAI Elite Partner">
-                  <span style={{ fontSize:isMobile ? 23 : 27, fontWeight:850, letterSpacing:"-.04em" }}>TrendAI</span>
-                  <span style={{ width:1, height:isMobile ? 20 : 23, background:"rgba(255,255,255,.36)", display:"inline-block" }} />
-                  <span style={{ fontSize:isMobile ? 20 : 24, fontWeight:740, letterSpacing:"-.03em", color:"rgba(255,255,255,.86)" }}>Elite Partner</span>
+                  <span style={{ fontSize:isMobile ? 23 : "clamp(22px,3.1vh,26px)", fontWeight:850, letterSpacing:"-.04em" }}>TrendAI</span>
+                  <span style={{ width:1, height:isMobile ? 20 : "clamp(19px,2.7vh,22px)", background:"rgba(255,255,255,.36)", display:"inline-block" }} />
+                  <span style={{ fontSize:isMobile ? 20 : "clamp(19px,2.8vh,23px)", fontWeight:740, letterSpacing:"-.03em", color:"rgba(255,255,255,.86)" }}>Elite Partner</span>
                 </div>
               </div>
               <div style={{
-                display:"grid",
-                gap:5,
-                color:"rgba(248,250,252,.74)",
-                fontSize:isMobile ? 12.5 : 13,
-                lineHeight:1.5,
+                display:"flex",
+                alignItems:"center",
+                gap:12,
+                flexWrap:"wrap",
               }}>
-                <div>ISO 9001:2015 · Gestión de Calidad</div>
-                <div>ISO 27001:2022 · Seguridad de la Información</div>
+                {[{ src:iso9001Logo, alt:"ISO 9001" }, { src:iso27001Logo, alt:"ISO/IEC 27001" }].map((cert) => (
+                  <img
+                    key={cert.alt}
+                    src={cert.src}
+                    alt={cert.alt}
+                    style={{
+                      width:isMobile ? 42 : "clamp(34px,4.6vh,42px)",
+                      height:isMobile ? 42 : "clamp(34px,4.6vh,42px)",
+                      objectFit:"contain",
+                      display:"block",
+                      opacity:.92,
+                    }}
+                  />
+                ))}
               </div>
             </div>
           </div>
         </div>
 
-        <div style={{ position:"relative", zIndex:1, marginTop:isMobile ? 34 : 70 }}>
+        <div style={{ position:"relative", zIndex:1, marginTop:isMobile ? 32 : "clamp(28px,5vh,52px)" }}>
           <div style={{
             display:"grid",
-            gap:isMobile ? 13 : 15,
-            marginBottom:isMobile ? 30 : 48,
+            gap:isMobile ? 13 : "clamp(10px,1.8vh,14px)",
+            marginBottom:isMobile ? 28 : "clamp(20px,3.7vh,36px)",
             maxWidth:520,
           }}>
             {benefits.map(({ icon: Icon, label }) => (
@@ -6968,13 +6981,13 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
                 }}>
                   <Icon size={17} color="#7DD3FC" strokeWidth={2} />
                 </span>
-                <div style={{ fontSize:13.5, fontWeight:680, lineHeight:1.35, color:"#EAF6FF" }}>
+                <div style={{ fontSize:isMobile ? 13.5 : "clamp(12.5px,1.65vh,13.5px)", fontWeight:680, lineHeight:1.35, color:"#EAF6FF" }}>
                   {label}
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ fontSize:isMobile ? 11 : 12, color:"rgba(226,242,255,.66)", lineHeight:1.7 }}>
+          <div style={{ fontSize:isMobile ? 11 : "clamp(10.5px,1.45vh,12px)", color:"rgba(226,242,255,.66)", lineHeight:1.55 }}>
             <div>Nextcom Systems, Inc. · Panamá · Venezuela · Estados Unidos</div>
             <div style={{ color:"rgba(226,242,255,.86)", fontWeight:700 }}>www.nextcomsystem.com</div>
           </div>
@@ -6984,11 +6997,11 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
       <section style={{
         position:"relative",
         overflow:"hidden",
-        minHeight:isMobile ? "auto" : "100vh",
+        minHeight:isMobile ? "auto" : "100dvh",
         display:"flex",
         alignItems:"center",
         justifyContent:"center",
-        padding:isMobile ? "34px 20px 28px" : "56px 7vw",
+        padding:isMobile ? "34px 20px 28px" : "clamp(28px,5vh,46px) 7vw",
         background:"linear-gradient(180deg,#FFFFFF 0%,#F8FAFC 100%)",
       }}>
         <div aria-hidden="true" style={{
