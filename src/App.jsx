@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   AlertTriangle, BarChart3, ChevronRight, Download, FileText, Info, Mail, MessageSquare, Package,
-  Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X
+  Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X,
+  ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound, UsersRound
 } from "lucide-react";
 import { AssistantAvatar } from "@/components/assistant/AssistantAvatar";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
@@ -19,6 +20,7 @@ import {
   normalizeSupportPolicy,
 } from "@/data/visionOneProductScopes";
 import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png";
+import trendAiElitePartnerLogo from "@/assets/trendai-elite-partner.png";
 import nextcomLogo from "@/assets/nextcom-logo.png";
 import nextcomLogoReverse from "@/assets/nextcom-logo-reverse.png";
 import iso9001Logo from "@/assets/iso-9001.png";
@@ -6733,96 +6735,624 @@ const PIN_STORAGE_KEY = "nextcom_pin_remembered";
 
 function WelcomeScreen({ onChooseClient, onChooseInternal }) {
   const isMobile = useIsMobile();
+  const [internalLoginOpen, setInternalLoginOpen] = useState(false);
+  const [internalUser, setInternalUser] = useState("");
+  const [internalPassword, setInternalPassword] = useState("");
+  const [showInternalPassword, setShowInternalPassword] = useState(false);
+  const [internalLoginLoading, setInternalLoginLoading] = useState(false);
+  const [internalLoginError, setInternalLoginError] = useState(false);
+
+  const NextcomEmployeeIcon = ({ size = 23, color = "#334155" }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path
+        d="M4.75 20.25c.55-3.15 3.18-5.35 7.25-5.35s6.7 2.2 7.25 5.35"
+        stroke={color}
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <path
+        d="M8.25 11.35c-1.1-.86-1.8-2.2-1.8-3.7A4.62 4.62 0 0 1 11.1 3h1.8a4.62 4.62 0 0 1 4.65 4.65c0 1.5-.7 2.84-1.8 3.7"
+        stroke={color}
+        strokeWidth="1.9"
+        strokeLinecap="round"
+      />
+      <rect
+        x="8.35"
+        y="4.85"
+        width="7.3"
+        height="7.3"
+        rx="1.55"
+        transform="rotate(45 12 8.5)"
+        fill={color}
+      />
+      <path
+        d="M10.3 9.05V7.1c0-.45.37-.82.82-.82h1.76c.45 0 .82.37.82.82v3.18"
+        stroke="#FFFFFF"
+        strokeWidth="1.28"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+  const TrendAiEliteMark = ({ compact = false }) => (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:compact ? 8 : 10, color:"#FFFFFF", lineHeight:1 }}>
+      <span style={{
+        position:"relative",
+        display:"block",
+        width:compact ? 38 : 52,
+        height:compact ? 30 : 40,
+        overflow:"hidden",
+        flex:"0 0 auto",
+      }}>
+        <img
+          src={trendAiElitePartnerLogo}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position:"absolute",
+            left:0,
+            top:0,
+            height:"100%",
+            width:"auto",
+            maxWidth:"none",
+            objectFit:"contain",
+            objectPosition:"left center",
+          }}
+        />
+      </span>
+      <span style={{ display:"grid", gap:compact ? 2 : 4 }}>
+        <span style={{ display:"flex", alignItems:"baseline", gap:compact ? 7 : 9, whiteSpace:"nowrap" }}>
+          <span style={{ fontSize:compact ? 24 : 34, fontWeight:850, letterSpacing:"-.045em" }}>TrendAI</span>
+        </span>
+        <span style={{ fontSize:compact ? 13 : 17, fontWeight:760, color:"rgba(255,255,255,.82)", letterSpacing:"-.01em" }}>Elite Partner</span>
+      </span>
+    </span>
+  );
+
+  const submitInternalLogin = (event) => {
+    event.preventDefault();
+    if (internalLoginLoading) return;
+    setInternalLoginLoading(true);
+    setInternalLoginError(false);
+
+    window.setTimeout(() => {
+      const isValidUser = internalUser.trim().length > 0;
+      const isValidPassword = internalPassword.trim().toUpperCase() === NEXTCOM_PIN.toUpperCase();
+      if (isValidUser && isValidPassword) {
+        onChooseInternal();
+        return;
+      }
+      setInternalLoginError(true);
+      setInternalLoginLoading(false);
+      setInternalPassword("");
+    }, 450);
+  };
+
+  const accessCards = [
+    {
+      title: "Cliente",
+      description: "Estimar mis créditos Vision One",
+      icon: UserRound,
+      action: onChooseClient,
+      highlighted: true,
+    },
+    {
+      title: "Equipo Nextcom",
+      description: "Acceso interno para análisis, PDF y gestión comercial",
+      icon: NextcomEmployeeIcon,
+      action: () => {
+        setInternalLoginOpen(true);
+        setInternalLoginError(false);
+      },
+      highlighted: false,
+    },
+  ];
+  const benefits = [
+    { icon: ShieldCheck, label: "Soluciones de ciberseguridad empresarial" },
+    { icon: BarChart3, label: "Decisiones basadas en datos y experiencia Nextcom" },
+    { icon: UsersRound, label: "Acompañamiento especializado en todo el ciclo" },
+  ];
   return (
     <div style={{
-      minHeight:"100vh",
-      background:`linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 50%, #0F172A 100%)`,
-      display:"flex", alignItems:"center", justifyContent:"center",
-      padding: isMobile ? "20px 16px" : "40px",
+      height:isMobile ? "auto" : "100dvh",
+      minHeight:isMobile ? "100dvh" : "620px",
+      background:"#F7FAFC",
+      display:"grid",
+      gridTemplateColumns:isMobile ? "1fr" : "minmax(520px, 50%) minmax(520px, 50%)",
+      overflow:isMobile ? "visible" : "hidden",
       fontFamily:"system-ui,-apple-system,sans-serif"
     }}>
-      <div style={{
-        background:C.surface,
-        borderRadius: 16,
-        padding: isMobile ? "32px 24px" : "48px 56px",
-        maxWidth: 520, width:"100%",
-        boxShadow:"0 20px 60px rgba(0,0,0,.3)"
+      <section style={{
+        position:"relative",
+        overflow:"hidden",
+        minHeight:isMobile ? "auto" : "100dvh",
+        padding:isMobile ? "30px 24px 36px" : "clamp(48px,7vh,78px) clamp(54px,5vw,74px) clamp(34px,5vh,52px)",
+        color:"#fff",
+        display:"flex",
+        flexDirection:"column",
+        justifyContent:"space-between",
+        background:"radial-gradient(circle at 82% 46%, rgba(0,132,255,.2), transparent 34%), linear-gradient(145deg,#04172A 0%,#06233D 56%,#073250 100%)",
       }}>
-        {/* Header with logos */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginBottom:isMobile?24:32, paddingBottom:20, borderBottom:`1px solid ${C.border}` }}>
-          <img src={NEXTCOM_LOGO} alt="Nextcom" style={{ height:isMobile?32:38, width:"auto" }} />
-          <div style={{ height:30, width:1, background:C.border }} />
-          <img src={TRENDAI_LOGO} alt="TrendAI" style={{ height:isMobile?32:38, width:"auto" }} />
-        </div>
+        <div aria-hidden="true" style={{
+          position:"absolute",
+          inset:0,
+          opacity:.22,
+          backgroundImage:"radial-gradient(circle at 1px 1px, rgba(80,180,255,.34) 1.2px, transparent 0)",
+          backgroundSize:"26px 26px",
+          maskImage:"linear-gradient(100deg, rgba(0,0,0,.18), rgba(0,0,0,.75) 70%, transparent)",
+        }} />
+        <div aria-hidden="true" style={{
+          position:"absolute",
+          right:isMobile ? -160 : -120,
+          top:isMobile ? 130 : 132,
+          width:isMobile ? 390 : "min(560px,42vw)",
+          height:isMobile ? 390 : "min(560px,42vw)",
+          border:"1px solid rgba(0,132,255,.22)",
+          borderRadius:"50%",
+        }} />
+        <div aria-hidden="true" style={{
+          position:"absolute",
+          right:isMobile ? -135 : -88,
+          top:isMobile ? 172 : 190,
+          width:isMobile ? 330 : "min(470px,35vw)",
+          height:isMobile ? 330 : "min(470px,35vw)",
+          borderRadius:"50%",
+          backgroundImage:"radial-gradient(circle at 1px 1px, rgba(0,132,255,.58) 1.25px, transparent 0)",
+          backgroundSize:"9px 9px",
+          maskImage:"radial-gradient(circle, rgba(0,0,0,.72), transparent 68%)",
+          opacity:.72,
+        }} />
+        <div aria-hidden="true" style={{
+          position:"absolute",
+          left:"8%",
+          right:"10%",
+          bottom:isMobile ? 18 : 54,
+          height:1,
+          background:"linear-gradient(90deg,transparent,rgba(125,211,252,.26),transparent)",
+          transform:"rotate(-8deg)",
+        }} />
 
-        {/* Title */}
-        <div style={{ textAlign:"center", marginBottom:isMobile?28:36 }}>
-          <div style={{ fontSize: isMobile?22:26, fontWeight:800, letterSpacing:"-.02em", marginBottom:8, color:C.text }}>
-            Calculadora Vision One
+        <div style={{ position:"relative", zIndex:1 }}>
+          <div style={{
+            display:"flex",
+            alignItems:"center",
+            gap:isMobile ? 14 : 26,
+            marginBottom:isMobile ? 42 : "clamp(54px,8vh,82px)",
+            flexWrap:"wrap",
+          }}>
+            <img src={NEXTCOM_LOGO_REVERSE} alt="Nextcom Systems" style={{ height:isMobile ? 36 : "clamp(36px,5vh,46px)", width:"auto", maxWidth:isMobile ? 162 : 210, objectFit:"contain" }} />
+            <div style={{ width:1, height:isMobile ? 34 : 52, background:"rgba(255,255,255,.34)" }} />
+            <TrendAiEliteMark compact={isMobile} />
           </div>
-          <div style={{ fontSize: isMobile?13:14, color:C.text2, lineHeight:1.5 }}>
-            ¿Cómo deseas ingresar?
-          </div>
-        </div>
 
-        {/* Two buttons */}
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-          {/* Cliente */}
-          <button onClick={onChooseClient}
-            style={{
-              padding: isMobile ? "18px 20px" : "20px 24px",
-              background:C.surface, color:C.text,
-              border:`2px solid ${C.blue}`, borderRadius:12, cursor:"pointer",
-              textAlign:"left", display:"flex", alignItems:"center", gap:14,
-              boxShadow:"0 4px 14px rgba(30,64,175,.18)",
-              transition:"transform .1s, box-shadow .1s"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(30,64,175,.28)"; }}
-            onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 14px rgba(30,64,175,.18)"; e.currentTarget.style.transform = "scale(1)"; }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-            <span style={{ fontSize:32 }}>👤</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:isMobile?16:18, fontWeight:700, marginBottom:3, color:C.text }}>Cliente</div>
-              <div style={{ fontSize:isMobile?12:13, color:C.text2, lineHeight:1.4 }}>
-                Estimar mis créditos Vision One
+          <div style={{ maxWidth:560 }}>
+            <div style={{ fontSize:isMobile ? 46 : "clamp(58px,8.2vh,78px)", lineHeight:1.02, fontWeight:850, letterSpacing:"-.06em", marginBottom:isMobile ? 18 : "clamp(18px,2.6vh,24px)" }}>
+              <div>Calculadora</div>
+              <div style={{ color:"#1084FF" }}>Vision One</div>
+            </div>
+            <p style={{
+              maxWidth:515,
+              fontSize:isMobile ? 16 : "clamp(17px,2.2vh,20px)",
+              lineHeight:1.55,
+              color:"rgba(241,248,255,.86)",
+              margin:0,
+            }}>
+              Estimación, análisis y documentación técnica para soluciones Trend Vision One.
+            </p>
+          </div>
+
+          <div style={{
+            marginTop:isMobile ? 32 : "clamp(36px,5.8vh,58px)",
+            maxWidth:560,
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:18, marginBottom:isMobile ? 18 : 22 }}>
+              <div style={{
+                fontSize:12,
+                fontWeight:780,
+                letterSpacing:".2em",
+                textTransform:"uppercase",
+                color:"rgba(226,242,255,.72)",
+                whiteSpace:"nowrap",
+              }}>
+                Credenciales y alianzas
+              </div>
+              <div style={{ height:1, flex:1, background:"rgba(226,242,255,.24)" }} />
+            </div>
+            <div style={{
+              display:"flex",
+              alignItems:"center",
+              gap:isMobile ? 18 : 28,
+              flexWrap:"wrap",
+            }}>
+              <TrendAiEliteMark compact />
+              <div style={{ width:1, height:isMobile ? 44 : 70, background:"rgba(226,242,255,.28)" }} />
+              <div style={{
+                display:"flex",
+                alignItems:"center",
+                gap:isMobile ? 12 : 14,
+                flexWrap:"wrap",
+              }}>
+                {[{ src:iso9001Logo, alt:"ISO 9001" }, { src:iso27001Logo, alt:"ISO/IEC 27001" }].map((cert) => (
+                  <img
+                    key={cert.alt}
+                    src={cert.src}
+                    alt={cert.alt}
+                    style={{
+                      width:isMobile ? 74 : "clamp(82px,10vh,104px)",
+                      height:isMobile ? 74 : "clamp(82px,10vh,104px)",
+                      objectFit:"contain",
+                      display:"block",
+                      opacity:.92,
+                    }}
+                  />
+                ))}
               </div>
             </div>
-            <span style={{ fontSize:18, color:C.blue, fontWeight:700 }}>→</span>
-          </button>
-
-          {/* Nextcom interno */}
-          <button onClick={onChooseInternal}
-            style={{
-              padding: isMobile ? "18px 20px" : "20px 24px",
-              background:C.surface, color:C.text,
-              border:`1.5px solid ${C.border}`, borderRadius:12, cursor:"pointer",
-              textAlign:"left", display:"flex", alignItems:"center", gap:14,
-              transition:"transform .1s, border-color .1s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = C.text2}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "scale(1)"; }}
-            onMouseDown={e => e.currentTarget.style.transform = "scale(0.98)"}
-            onMouseUp={e => e.currentTarget.style.transform = "scale(1)"}>
-            <span style={{ fontSize:32 }}>🔐</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:isMobile?16:18, fontWeight:700, marginBottom:3, color:C.text }}>Equipo Nextcom</div>
-              <div style={{ fontSize:isMobile?12:13, color:C.text2, lineHeight:1.4 }}>
-                Acceso interno · requiere clave
-              </div>
-            </div>
-            <span style={{ fontSize:18, color:C.text2, fontWeight:700 }}>→</span>
-          </button>
-        </div>
-
-        {/* Footer */}
-        <div style={{ marginTop:isMobile?28:36, paddingTop:20, borderTop:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:10, color:C.text3, lineHeight:1.5 }}>
-            Nextcom Systems, Inc. · Trend Micro Platinum Partner · Panamá<br/>
-            ISO 9001:2015 · ISO 27001:2022
           </div>
         </div>
-      </div>
+
+        <div style={{ position:"relative", zIndex:1, marginTop:isMobile ? 32 : "clamp(26px,4.2vh,40px)" }}>
+          <div style={{
+            borderTop:"1px solid rgba(226,242,255,.2)",
+            borderBottom:"1px solid rgba(226,242,255,.2)",
+            padding:isMobile ? "18px 0" : "clamp(16px,2.4vh,22px) 0",
+            display:"grid",
+            gap:isMobile ? 13 : "clamp(10px,1.8vh,14px)",
+            marginBottom:isMobile ? 28 : "clamp(20px,3.4vh,32px)",
+            maxWidth:520,
+          }}>
+            {benefits.map(({ icon: Icon, label }) => (
+              <div key={label} style={{
+                display:"flex",
+                alignItems:"center",
+                gap:12,
+                padding:"0 0 0 2px",
+              }}>
+                <span style={{
+                  width:32,
+                  height:32,
+                  borderRadius:10,
+                  display:"inline-flex",
+                  alignItems:"center",
+                  justifyContent:"center",
+                  background:"rgba(125,211,252,.1)",
+                  border:"none",
+                  flex:"0 0 auto",
+                }}>
+                  <Icon size={22} color="#1084FF" strokeWidth={1.9} />
+                </span>
+                <div style={{ fontSize:isMobile ? 14 : "clamp(14px,1.8vh,16px)", fontWeight:520, lineHeight:1.35, color:"rgba(241,248,255,.9)" }}>
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize:isMobile ? 11 : "clamp(10.5px,1.45vh,12px)", color:"rgba(226,242,255,.66)", lineHeight:1.55 }}>
+            <div>Nextcom Systems, Inc. · Panamá · Venezuela · Estados Unidos</div>
+            <div style={{ color:"rgba(226,242,255,.86)", fontWeight:700 }}>www.nextcomsystem.com</div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{
+        position:"relative",
+        overflow:"hidden",
+        minHeight:isMobile ? "auto" : "100dvh",
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"center",
+        padding:isMobile ? "34px 20px 28px" : "clamp(28px,5vh,46px) 7vw",
+        background:"linear-gradient(180deg,#FFFFFF 0%,#F8FAFC 100%)",
+      }}>
+        <div aria-hidden="true" style={{
+          position:"absolute",
+          top:-80,
+          right:-70,
+          width:260,
+          height:260,
+          opacity:.45,
+          backgroundImage:"radial-gradient(circle at 1px 1px, #CBD5E1 1px, transparent 0)",
+          backgroundSize:"18px 18px",
+          maskImage:"radial-gradient(circle, rgba(0,0,0,.9), transparent 72%)",
+        }} />
+        <div style={{ width:"100%", maxWidth:internalLoginOpen ? 462 : 540, position:"relative", zIndex:1 }}>
+          {!internalLoginOpen ? (
+            <>
+              <div style={{ marginBottom:isMobile ? 28 : 44 }}>
+                <div style={{ fontSize:isMobile ? 30 : 38, lineHeight:1.08, fontWeight:850, color:"#0F172A", letterSpacing:"-.04em", marginBottom:18 }}>
+                  Selecciona el tipo de acceso
+                </div>
+                <p style={{ fontSize:isMobile ? 15 : 19, color:"#1F2A44", lineHeight:1.45, margin:0 }}>
+                  Elige cómo deseas continuar.
+                </p>
+              </div>
+
+              <div style={{ display:"grid", gap:isMobile ? 16 : 24 }}>
+                {accessCards.map(({ title, description, icon: Icon, action, highlighted }) => (
+                  <button
+                    key={title}
+                    type="button"
+                    onClick={action}
+                    style={{
+                      width:"100%",
+                      minHeight:isMobile ? 104 : 132,
+                      padding:isMobile ? "18px 18px" : "24px 28px",
+                      borderRadius:10,
+                      border:highlighted ? "2px solid #1478FF" : "1px solid #D8DEE8",
+                      background:highlighted ? "linear-gradient(180deg,#FFFFFF 0%,#F8FBFF 100%)" : "#FFFFFF",
+                      boxShadow:highlighted ? "0 18px 42px rgba(20,120,255,.08), 0 1px 0 rgba(255,255,255,.8) inset" : "0 12px 28px rgba(15,23,42,.035)",
+                      display:"flex",
+                      alignItems:"center",
+                      gap:isMobile ? 16 : 24,
+                      textAlign:"left",
+                      cursor:"pointer",
+                      color:"#0F172A",
+                      transition:"transform .16s ease, box-shadow .16s ease, border-color .16s ease",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.boxShadow = highlighted ? "0 22px 44px rgba(37,99,235,.18)" : "0 16px 32px rgba(15,23,42,.08)";
+                      e.currentTarget.style.borderColor = highlighted ? "#1D4ED8" : "#CBD5E1";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = highlighted ? "0 18px 38px rgba(37,99,235,.13), 0 1px 0 rgba(255,255,255,.8) inset" : "0 10px 24px rgba(15,23,42,.045)";
+                      e.currentTarget.style.borderColor = highlighted ? "#2563EB" : "#E2E8F0";
+                    }}
+                  >
+                    <span style={{
+                      width:isMobile ? 58 : 78,
+                      height:isMobile ? 58 : 78,
+                      borderRadius:"50%",
+                      display:"inline-flex",
+                      alignItems:"center",
+                      justifyContent:"center",
+                      flex:"0 0 auto",
+                      background:highlighted ? "#EAF2FF" : "#F1F3F6",
+                      color:highlighted ? "#1D4ED8" : "#334155",
+                      border:"none",
+                    }}>
+                      <Icon size={highlighted ? 34 : 36} color={highlighted ? "#1478FF" : "#0F2C44"} strokeWidth={highlighted ? 1.95 : 2.05} />
+                    </span>
+                    <span style={{ flex:1, minWidth:0 }}>
+                      <span style={{ display:"block", fontSize:isMobile ? 18 : 23, fontWeight:850, letterSpacing:"-.025em", marginBottom:8 }}>
+                        {title}
+                      </span>
+                      <span style={{ display:"block", fontSize:isMobile ? 13 : 15, color:"#1F2A44", lineHeight:1.45 }}>
+                        {description}
+                      </span>
+                    </span>
+                    <ArrowRight size={highlighted ? 32 : 30} color={highlighted ? "#1478FF" : "#9AA3B2"} strokeWidth={2.1} />
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", alignItems:"center", gap:18, margin:isMobile ? "30px 0 20px" : "46px 0 26px" }}>
+                <div style={{ height:1, background:"#DDE4EF" }} />
+                <span style={{
+                  width:28,
+                  height:28,
+                  borderRadius:"50%",
+                  display:"inline-flex",
+                  alignItems:"center",
+                  justifyContent:"center",
+                  color:"#9AA3B2",
+                }}>
+                  <LockKeyhole size={18} strokeWidth={2.1} />
+                </span>
+                <div style={{ height:1, background:"#DDE4EF" }} />
+              </div>
+
+              <div style={{ textAlign:"center", fontSize:isMobile ? 13.5 : 15.5, lineHeight:1.55, color:"#1F2A44" }}>
+                <div>El acceso interno requiere credenciales autorizadas.</div>
+                <div>Si no tienes acceso, contacta al equipo de Nextcom.</div>
+              </div>
+            </>
+          ) : (
+            <form onSubmit={submitInternalLogin}>
+              <div style={{ marginBottom:20 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInternalLoginOpen(false);
+                    setInternalLoginError(false);
+                    setInternalLoginLoading(false);
+                    setInternalPassword("");
+                  }}
+                  style={{
+                    display:"inline-flex",
+                    alignItems:"center",
+                    gap:7,
+                    padding:0,
+                    border:"none",
+                    background:"transparent",
+                    color:"#475569",
+                    fontSize:13,
+                    fontWeight:750,
+                    cursor:"pointer",
+                  }}
+                >
+                  <ArrowLeft size={15} strokeWidth={2.2} />
+                  Volver a selección de acceso
+                </button>
+              </div>
+
+              <section style={{
+                border:"1px solid #DDE7EF",
+                borderRadius:22,
+                background:"#FFFFFF",
+                boxShadow:"0 24px 60px rgba(15,23,42,.08)",
+                overflow:"hidden",
+              }}>
+                <div style={{
+                  display:"flex",
+                  alignItems:"flex-start",
+                  gap:14,
+                padding:isMobile ? "20px 20px 18px" : "26px 28px 22px",
+                  background:"linear-gradient(180deg,#F8FAFC 0%,#FFFFFF 100%)",
+                  borderBottom:"1px solid #E2E8F0",
+                }}>
+                  <span style={{
+                    width:42,
+                    height:42,
+                    borderRadius:13,
+                    display:"inline-flex",
+                    alignItems:"center",
+                    justifyContent:"center",
+                    background:"#082F49",
+                    color:"#E0F2FE",
+                    flex:"0 0 auto",
+                    boxShadow:"0 10px 22px rgba(8,47,73,.16)",
+                  }}>
+                    <ShieldCheck size={21} strokeWidth={2.2} />
+                  </span>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:isMobile ? 25 : 29, lineHeight:1.12, fontWeight:820, color:"#0F172A", letterSpacing:"-.032em", marginBottom:9 }}>
+                      Acceso interno Nextcom
+                    </div>
+                    <p style={{ fontSize:isMobile ? 13.5 : 14.5, color:"#53627A", lineHeight:1.55, margin:0 }}>
+                      Ingresa tus credenciales autorizadas para continuar.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ padding:isMobile ? "20px" : "24px 28px 28px" }}>
+                  <div style={{
+                    display:"flex",
+                    alignItems:"center",
+                    gap:10,
+                    padding:"12px 14px",
+                    borderRadius:13,
+                    background:"#F8FAFC",
+                    border:"1px solid #E2E8F0",
+                    marginBottom:18,
+                    color:"#475569",
+                    fontSize:12.5,
+                    lineHeight:1.45,
+                  }}>
+                    <LockKeyhole size={16} strokeWidth={2.1} />
+                    <span>Solo equipo autorizado de Nextcom Systems.</span>
+                  </div>
+
+                  <div style={{ display:"grid", gap:16, width:"100%", maxWidth:380, margin:"0 auto", boxSizing:"border-box" }}>
+                    <label style={{ display:"grid", gap:7, minWidth:0 }}>
+                      <span style={{ fontSize:12, fontWeight:760, color:"#334155", letterSpacing:".01em" }}>Usuario</span>
+                      <input
+                        type="email"
+                        value={internalUser}
+                        onChange={e => {
+                          setInternalUser(e.target.value);
+                          if (internalLoginError) setInternalLoginError(false);
+                        }}
+                        placeholder="usuario@nextcomsystems.com"
+                        autoComplete="username"
+                        style={{
+                          width:"100%",
+                          boxSizing:"border-box",
+                          height:46,
+                          border:"1px solid #CAD7E3",
+                          borderRadius:10,
+                          background:"#FDFEFF",
+                          padding:"0 14px",
+                          fontSize:14,
+                          color:"#0F172A",
+                          outline:"none",
+                          boxShadow:"0 1px 2px rgba(15,23,42,.035)",
+                        }}
+                      />
+                    </label>
+
+                    <label style={{ display:"grid", gap:7, minWidth:0 }}>
+                      <span style={{ fontSize:12, fontWeight:760, color:"#334155", letterSpacing:".01em" }}>Contraseña</span>
+                      <div style={{ position:"relative", minWidth:0 }}>
+                        <input
+                          type={showInternalPassword ? "text" : "password"}
+                          value={internalPassword}
+                          onChange={e => {
+                            setInternalPassword(e.target.value);
+                            if (internalLoginError) setInternalLoginError(false);
+                          }}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          style={{
+                            width:"100%",
+                            boxSizing:"border-box",
+                            height:46,
+                            border:"1px solid #CAD7E3",
+                            borderRadius:10,
+                            background:"#FDFEFF",
+                            padding:"0 48px 0 14px",
+                            fontSize:14,
+                            color:"#0F172A",
+                            outline:"none",
+                            boxShadow:"0 1px 2px rgba(15,23,42,.035)",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label={showInternalPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                          onClick={() => setShowInternalPassword(v => !v)}
+                          style={{
+                            position:"absolute",
+                            right:8,
+                            top:6,
+                            width:34,
+                            height:34,
+                            border:"none",
+                            borderRadius:10,
+                            background:"transparent",
+                            color:"#64748B",
+                            cursor:"pointer",
+                            display:"inline-flex",
+                            alignItems:"center",
+                            justifyContent:"center",
+                          }}
+                        >
+                          {showInternalPassword ? <EyeOff size={18} strokeWidth={2} /> : <Eye size={18} strokeWidth={2} />}
+                        </button>
+                      </div>
+                    </label>
+                  </div>
+
+                  {internalLoginError && (
+                    <div style={{ marginTop:14, border:"1px solid #FECACA", background:"#FEF2F2", color:"#B91C1C", borderRadius:12, padding:"10px 12px", fontSize:12.5, fontWeight:650 }}>
+                      Credenciales inválidas. Verifica tu usuario y contraseña.
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={internalLoginLoading}
+                    style={{
+                      width:"100%",
+                      maxWidth:380,
+                      boxSizing:"border-box",
+                      display:"block",
+                      height:48,
+                      border:"none",
+                      borderRadius:10,
+                      background:internalLoginLoading ? "#94A3B8" : "#082F49",
+                      color:"#FFFFFF",
+                      fontSize:14,
+                      fontWeight:800,
+                      cursor:internalLoginLoading ? "wait" : "pointer",
+                      margin:"20px auto 0",
+                      boxShadow:"0 14px 28px rgba(8,47,73,.16)",
+                    }}
+                  >
+                    {internalLoginLoading ? "Validando acceso..." : "Ingresar al panel interno"}
+                  </button>
+                </div>
+              </section>
+            </form>
+          )}
+
+          <div style={{ marginTop:isMobile ? 42 : 70, fontSize:11.5, color:"#94A3B8", lineHeight:1.55 }}>
+            <div>© 2025 Nextcom Systems, Inc.</div>
+            <div>Todos los derechos reservados.</div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -6940,26 +7470,17 @@ export default function App() {
 
   const goWelcome = () => setMode("welcome");
   const goClient = () => setMode("client");
-  const goPin = () => setMode("pin");
   const goInternal = () => setMode("internal");
 
   // Render
   if (mode === "welcome") {
-    return <WelcomeScreen onChooseClient={goClient} onChooseInternal={goPin} />;
+    return <WelcomeScreen onChooseClient={goClient} onChooseInternal={goInternal} />;
   }
   if (mode === "client") {
     return (
       <>
         <ClientApp />
         <BackToWelcomeButton onClick={goWelcome} />
-      </>
-    );
-  }
-  if (mode === "pin") {
-    return (
-      <>
-        <WelcomeScreen onChooseClient={goClient} onChooseInternal={() => {}} />
-        <PinModal onSuccess={goInternal} onCancel={goWelcome} />
       </>
     );
   }
