@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   AlertTriangle, BarChart3, ChevronRight, Download, FileText, Info, Mail, MessageSquare, Package,
   Plus, Search, Send, Shield, Sparkles, TrendingUp, Upload, X,
-  ArrowLeft, ArrowRight, BadgeCheck, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound, UsersRound
+  ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound, UsersRound
 } from "lucide-react";
 import { AssistantAvatar } from "@/components/assistant/AssistantAvatar";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
@@ -20,6 +20,7 @@ import {
   normalizeSupportPolicy,
 } from "@/data/visionOneProductScopes";
 import trendAiSidebarLogo from "@/assets/trendai-sidebar-logo.png";
+import trendAiElitePartnerLogo from "@/assets/trendai-elite-partner.png";
 import nextcomLogo from "@/assets/nextcom-logo.png";
 import nextcomLogoReverse from "@/assets/nextcom-logo-reverse.png";
 import iso9001Logo from "@/assets/iso-9001.png";
@@ -6784,12 +6785,6 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
     { icon: BarChart3, label: "Decisiones basadas en datos y experiencia Nextcom" },
     { icon: UsersRound, label: "Acompañamiento especializado en todo el ciclo" },
   ];
-  const badges = [
-    "Trend Micro Platinum Partner",
-    "ISO 9001:2015 Calidad",
-    "ISO 27001:2022 Seguridad",
-  ];
-
   return (
     <div style={{
       minHeight:"100vh",
@@ -6864,26 +6859,57 @@ function WelcomeScreen({ onChooseClient, onChooseInternal }) {
             </p>
           </div>
 
-          <div style={{ display:"flex", flexWrap:"wrap", gap:9, marginTop:isMobile ? 26 : 34 }}>
-            {badges.map(label => (
-              <span key={label} style={{
-                display:"inline-flex",
-                alignItems:"center",
-                gap:7,
-                padding:"7px 10px",
-                borderRadius:999,
-                background:"rgba(255,255,255,.065)",
-                border:"1px solid rgba(186,230,253,.18)",
-                color:"#E0F2FE",
-                fontSize:10.5,
-                fontWeight:700,
-                letterSpacing:".01em",
-                backdropFilter:"blur(10px)",
+          <div style={{
+            marginTop:isMobile ? 30 : 42,
+            paddingTop:isMobile ? 20 : 24,
+            borderTop:"1px solid rgba(226,242,255,.18)",
+            maxWidth:560,
+          }}>
+            <div style={{
+              fontSize:10,
+              fontWeight:780,
+              letterSpacing:".16em",
+              textTransform:"uppercase",
+              color:"rgba(226,242,255,.62)",
+              marginBottom:14,
+            }}>
+              Credenciales y alianzas
+            </div>
+            <div style={{
+              display:"grid",
+              gridTemplateColumns:isMobile ? "1fr" : "minmax(0, 1.25fr) minmax(180px, .75fr)",
+              gap:isMobile ? 14 : 22,
+              alignItems:"center",
+            }}>
+              <div style={{
+                maxWidth:isMobile ? 320 : 390,
+                padding:isMobile ? "2px 0" : "0",
               }}>
-                <BadgeCheck size={14} strokeWidth={2.2} />
-                {label}
-              </span>
-            ))}
+                <img
+                  src={trendAiElitePartnerLogo}
+                  alt="TrendAI Elite Partner"
+                  style={{
+                    display:"block",
+                    width:"100%",
+                    height:"auto",
+                    objectFit:"contain",
+                    filter:"drop-shadow(0 10px 22px rgba(0,0,0,.14))",
+                  }}
+                />
+              </div>
+              <div style={{
+                display:"grid",
+                gap:8,
+                paddingLeft:isMobile ? 0 : 18,
+                borderLeft:isMobile ? "none" : "1px solid rgba(226,242,255,.16)",
+                color:"rgba(248,250,252,.82)",
+                fontSize:isMobile ? 12.5 : 13,
+                lineHeight:1.45,
+              }}>
+                <div>ISO 9001:2015 · Gestión de Calidad</div>
+                <div>ISO 27001:2022 · Seguridad de la Información</div>
+              </div>
+            </div>
           </div>
         </div>
 
