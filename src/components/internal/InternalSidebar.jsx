@@ -14,11 +14,11 @@ import { cn } from "@/lib/utils"
 
 const sections = [
   { id: "calculator", label: "Calculadora", icon: Calculator },
-  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-  { id: "saved", label: "Cotizaciones", icon: ClipboardList },
-  { id: "clients", label: "Clientes", icon: Users },
-  { id: "closed", label: "Reportes", icon: PieChart },
-  { id: "admin", label: "Configuración", icon: Settings },
+  { id: "dashboard", label: "Dashboard", icon: BarChart3, comingSoon: true },
+  { id: "saved", label: "Cotizaciones", icon: ClipboardList, comingSoon: true },
+  { id: "clients", label: "Clientes", icon: Users, comingSoon: true },
+  { id: "closed", label: "Reportes", icon: PieChart, comingSoon: true },
+  { id: "admin", label: "Configuración", icon: Settings, comingSoon: true },
 ]
 
 export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSidebar, onSectionChange, nextcomLogo }) {
@@ -98,10 +98,10 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
                 key={section.id}
                 type="button"
                 onClick={() => handleSectionChange(section.id)}
-                title={section.label}
-                aria-label={section.label}
+                title={section.comingSoon ? `${section.label} · Próximamente` : section.label}
+                aria-label={section.comingSoon ? `${section.label}, próximamente` : section.label}
                 className={cn(
-                  "flex h-11 w-full appearance-none items-center rounded-lg border-0 bg-transparent text-[14px] font-medium transition-colors",
+                  "flex min-h-11 w-full appearance-none items-center rounded-lg border-0 bg-transparent text-[14px] font-medium transition-colors",
                   isOpen ? "justify-start gap-3 px-3 text-left" : "justify-center gap-0 px-0",
                   isActive
                     ? "bg-blue-600 text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)]"
@@ -115,9 +115,22 @@ export function InternalSidebar({ activeSection, isOpen, onClose, onToggleSideba
                   )}
                   aria-hidden="true"
                 />
-                <span className={cn("truncate transition-all duration-150", isOpen ? "ml-0 w-auto opacity-100" : "w-0 opacity-0 lg:hidden")}>
+                <span className={cn("min-w-0 flex-1 truncate transition-all duration-150", isOpen ? "ml-0 opacity-100" : "w-0 flex-none opacity-0 lg:hidden")}>
                   {section.label}
                 </span>
+                {section.comingSoon ? (
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] transition-all duration-150",
+                      isActive
+                        ? "bg-white/16 text-blue-50"
+                        : "bg-slate-400/10 text-slate-300/80",
+                      isOpen ? "opacity-100" : "hidden opacity-0 lg:hidden"
+                    )}
+                  >
+                    Próximamente
+                  </span>
+                ) : null}
               </button>
             )
           })}
